@@ -1,0 +1,401 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { AlertTriangle, FileText, RefreshCw, RotateCcw, Save } from "lucide-react"
+import { MarkdownContent } from "@/components/common/markdown-content"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  getAdminCompanyContent,
+  updateAdminCompanyContent,
+} from "@/lib/admin/admin-api"
+import { getAccessToken } from "@/lib/auth/token-storage"
+import { useAuth } from "@/components/auth/auth-provider"
+import { DEFAULT_COMPANY_CONTENT } from "@/lib/company/default-company-content"
+import type { CompanyContent } from "@/lib/company/company-content.types"
+
+function formatDate(value?: string): string {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return new Intl.DateTimeFormat("es-MX", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
+}
+
+function normalizeValuesInput(rawValue: string): string[] {
+  return [...new Set(rawValue.split("\n").map((value) => value.trim()).filter(Boolean))]
+}
+
+function normalizeContent(content: CompanyContent): CompanyContent {
+  return {
+    ...content,
+    privacyPolicy: {
+      title: content.privacyPolicy.title.trim(),
+      content: content.privacyPolicy.content.trim(),
+    },
+    termsAndConditions: {
+      title: content.termsAndConditions.title.trim(),
+      content: content.termsAndConditions.content.trim(),
+    },
+    about: {
+      mission: content.about.mission.trim(),
+      vision: content.about.vision.trim(),
+      values: [...new Set(content.about.values.map((value) => value.trim()).filter(Boolean))],
+    },
+  }
+}
+
+interface MarkdownEditorFieldProps {
+  value: string
+  placeholder: string
+  minHeightClassName?: string
+  disabled?: boolean
+  onChange: (value: string) => void
+}
+
+function MarkdownEditorField({
+  value,
+  placeholder,
+  minHeightClassName = "min-h-[220px]",
+  disabled,
+  onChange,
+}: MarkdownEditorFieldProps) {
+  return (
+    <Tabs defaultValue="editor" className="w-full">
+      <div className="flex items-center justify-between gap-3">
+        <TabsList className="h-9">
+          <TabsTrigger value="editor">Editor</TabsTrigger>
+          <TabsTrigger value="preview">Vista previa</TabsTrigger>
+        </TabsList>
+        <span className="text-xs text-muted-foreground">
+          Soporta Markdown (titulos, listas, links, tablas y citas)
+        </span>
+      </div>
+
+      <TabsContent value="editor" className="mt-3">
+        <Textarea
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          className={minHeightClassName}
+          placeholder={placeholder}
+          disabled={disabled}
+        />
+      </TabsContent>
+
+      <TabsContent value="preview" className="mt-3">
+        <div className={`
+          ${minHeightClassName}
+          rounded-md border border-border/70 bg-secondary/20 px-4 py-3
+        `}>
+          {value.trim().length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No hay contenido para previsualizar.
+            </p>
+          ) : (
+            <MarkdownContent content={value} />
+          )}
+        </div>
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+export function AdminCompanyContentSection() {
+  const { user } = useAuth()
+  const [content, setContent] = useState<CompanyContent>(DEFAULT_COMPANY_CONTENT)
+  const [draft, setDraft] = useState<CompanyContent>(DEFAULT_COMPANY_CONTENT)
+  const [valuesInput, setValuesInput] = useState(DEFAULT_COMPANY_CONTENT.about.values.join("\n"))
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const [resultMessage, setResultMessage] = useState("")
+  const canManageContent = user?.role === "admin"
+
+  const loadContent = useCallback(async () => {
+    setIsLoading(true)
+    setErrorMessage("")
+    setResultMessage("")
+
+    const token = getAccessToken()
+    if (!token) {
+      setErrorMessage("No se encontro token de acceso")
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const response = await getAdminCompanyContent(token)
+      setContent(response)
+      setDraft(response)
+      setValuesInput(response.about.values.join("\n"))
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo cargar el contenido de la empresa"
+      setErrorMessage(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadContent()
+  }, [loadContent])
+
+  const normalizedDraft = useMemo(
+    () =>
+      normalizeContent({
+        ...draft,
+        about: {
+          ...draft.about,
+          values: normalizeValuesInput(valuesInput),
+        },
+      }),
+    [draft, valuesInput],
+  )
+
+  const hasChanges = useMemo(() => {
+    return JSON.stringify(normalizedDraft) !== JSON.stringify(normalizeContent(content))
+  }, [content, normalizedDraft])
+
+  const handleSave = async () => {
+    const token = getAccessToken()
+    if (!token) {
+      setErrorMessage("No se encontro token de acceso")
+      return
+    }
+
+    setIsSaving(true)
+    setErrorMessage("")
+    setResultMessage("")
+
+    try {
+      const response = await updateAdminCompanyContent(
+        {
+          privacyPolicy: normalizedDraft.privacyPolicy,
+          termsAndConditions: normalizedDraft.termsAndConditions,
+          about: normalizedDraft.about,
+        },
+        token,
+      )
+
+      setContent(response)
+      setDraft(response)
+      setValuesInput(response.about.values.join("\n"))
+      setResultMessage("Informacion actualizada correctamente")
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo guardar la informacion"
+      setErrorMessage(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleLoadSuggestedTemplate = () => {
+    setDraft(DEFAULT_COMPANY_CONTENT)
+    setValuesInput(DEFAULT_COMPANY_CONTENT.about.values.join("\n"))
+    setResultMessage("Plantilla completa cargada. Guarda cambios para aplicarla en la base de datos.")
+    setErrorMessage("")
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
+      <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
+      <div className="pointer-events-none absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-emerald-400/10 blur-2xl" />
+
+      <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-primary">
+            Informacion de empresa
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Edita politicas, terminos, mision, vision y valores.
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          {canManageContent && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="transition-all hover:-translate-y-0.5"
+              onClick={handleLoadSuggestedTemplate}
+              disabled={isLoading || isSaving || !canManageContent}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Cargar plantilla completa
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="transition-all hover:-translate-y-0.5"
+            onClick={() => void loadContent()}
+            disabled={isLoading || isSaving || !canManageContent}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Recargar
+          </Button>
+          {canManageContent && (
+            <Button
+              type="button"
+              className="transition-all hover:-translate-y-0.5"
+              disabled={isLoading || isSaving || !hasChanges}
+              onClick={() => void handleSave()}
+            >
+              <Save className={`mr-2 h-4 w-4 ${isSaving ? "animate-spin" : ""}`} />
+              {isSaving ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
+        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm">
+          <span className="font-medium">Ultima actualizacion:</span> {formatDate(content.updatedAt)}
+        </div>
+        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm">
+          <span className="font-medium">Estado:</span> {hasChanges ? "Con cambios pendientes" : "Sin cambios"}
+        </div>
+      </div>
+
+      {errorMessage && (
+        <div className="relative z-10 mt-6 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <p className="inline-flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{errorMessage}</span>
+          </p>
+        </div>
+      )}
+
+      {resultMessage && (
+        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm text-foreground">
+          <p className="inline-flex items-start gap-2">
+            <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            <span>{resultMessage}</span>
+          </p>
+        </div>
+      )}
+
+      <div className="relative z-10 mt-6 grid gap-5">
+        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+          <h3 className="text-lg font-semibold text-foreground">Politicas de privacidad</h3>
+          <div className="mt-4 grid gap-3">
+            <Input
+              value={draft.privacyPolicy.title}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  privacyPolicy: {
+                    ...prev.privacyPolicy,
+                    title: event.target.value,
+                  },
+                }))
+              }
+              placeholder="Titulo de politicas"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+            <MarkdownEditorField
+              value={draft.privacyPolicy.content}
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  privacyPolicy: {
+                    ...prev.privacyPolicy,
+                    content: value,
+                  },
+                }))
+              }
+              placeholder="Contenido de politicas de privacidad"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+          <h3 className="text-lg font-semibold text-foreground">Terminos y condiciones</h3>
+          <div className="mt-4 grid gap-3">
+            <Input
+              value={draft.termsAndConditions.title}
+              onChange={(event) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  termsAndConditions: {
+                    ...prev.termsAndConditions,
+                    title: event.target.value,
+                  },
+                }))
+              }
+              placeholder="Titulo de terminos"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+            <MarkdownEditorField
+              value={draft.termsAndConditions.content}
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  termsAndConditions: {
+                    ...prev.termsAndConditions,
+                    content: value,
+                  },
+                }))
+              }
+              placeholder="Contenido de terminos y condiciones"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+          <h3 className="text-lg font-semibold text-foreground">Mision, vision y valores</h3>
+          <div className="mt-4 grid gap-3">
+            <MarkdownEditorField
+              value={draft.about.mission}
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  about: {
+                    ...prev.about,
+                    mission: value,
+                  },
+                }))
+              }
+              minHeightClassName="min-h-[150px]"
+              placeholder="Mision de la empresa"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+            <MarkdownEditorField
+              value={draft.about.vision}
+              onChange={(value) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  about: {
+                    ...prev.about,
+                    vision: value,
+                  },
+                }))
+              }
+              minHeightClassName="min-h-[150px]"
+              placeholder="Vision de la empresa"
+              disabled={isLoading || isSaving || !canManageContent}
+            />
+            <div className="grid gap-2">
+              <p className="text-sm font-medium text-foreground">Valores (uno por linea)</p>
+              <Textarea
+                value={valuesInput}
+                onChange={(event) => setValuesInput(event.target.value)}
+                className="min-h-[130px]"
+                placeholder={"Innovacion\nCalidad\nBienestar"}
+                disabled={isLoading || isSaving || !canManageContent}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

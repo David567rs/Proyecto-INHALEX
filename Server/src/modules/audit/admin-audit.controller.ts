@@ -1,0 +1,20 @@
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UserRole } from '../users/enums/user-role.enum';
+import { ListAuditLogsQueryDto } from './dto/list-audit-logs-query.dto';
+import { AuditService } from './audit.service';
+
+@Controller('admin/audit')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+export class AdminAuditController {
+  constructor(private readonly auditService: AuditService) {}
+
+  @Get('logs')
+  listLogs(@Query() query: ListAuditLogsQueryDto) {
+    return this.auditService.listLogs(query);
+  }
+}
+

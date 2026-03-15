@@ -1,0 +1,482 @@
+import { apiRequest } from "@/lib/api/client"
+import type { AuthUser } from "@/lib/auth/types"
+import type {
+  CompanyContent,
+  UpdateCompanyContentInput,
+} from "@/lib/company/company-content.types"
+
+export function listAdminUsers(token: string): Promise<AuthUser[]> {
+  return apiRequest<AuthUser[]>("/admin/users", {
+    method: "GET",
+    token,
+  })
+}
+
+interface UpdateAdminUserInput {
+  role?: AuthUser["role"]
+  status?: AuthUser["status"]
+}
+
+export function updateAdminUser(
+  userId: string,
+  payload: UpdateAdminUserInput,
+  token: string,
+): Promise<AuthUser> {
+  return apiRequest<AuthUser>(`/admin/users/${userId}`, {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export interface AdminProduct {
+  _id: string
+  name: string
+  slug: string
+  category: string
+  price: number
+  currency: string
+  presentation?: string
+  status: "draft" | "active" | "archived"
+  inStock: boolean
+  sortOrder?: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AdminProductCategory {
+  _id: string
+  slug: string
+  name: string
+  description?: string
+  isActive: boolean
+  sortOrder: number
+  productCount: number
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface AdminProductsResponse {
+  items: AdminProduct[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export interface SeedProductsResult {
+  created: number
+  updated: number
+  total: number
+}
+
+export interface ListAdminProductsQuery {
+  search?: string
+  category?: string
+  status?: AdminProduct["status"]
+  inStock?: boolean
+  page?: number
+  limit?: number
+}
+
+export function listAdminProducts(
+  token: string,
+  query: ListAdminProductsQuery = {},
+): Promise<AdminProductsResponse> {
+  const params = new URLSearchParams()
+
+  if (query.search) params.set("search", query.search)
+  if (query.category) params.set("category", query.category)
+  if (query.status) params.set("status", query.status)
+  if (query.inStock !== undefined) params.set("inStock", String(query.inStock))
+  if (query.page) params.set("page", String(query.page))
+  if (query.limit) params.set("limit", String(query.limit))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/products?${queryString}` : "/admin/products"
+
+  return apiRequest<AdminProductsResponse>(path, {
+    method: "GET",
+    token,
+  })
+}
+
+async function downloadAdminFile(
+  path: string,
+  token: string,
+  fallbackFileName: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? ""
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text()
+
+    if (payload && typeof payload === "object" && "message" in payload) {
+      const message = (payload as { message?: string | string[] }).message
+      if (Array.isArray(message)) throw new Error(message.join(", "))
+      if (typeof message === "string") throw new Error(message)
+    }
+
+    throw new Error("No se pudo descargar el archivo")
+  }
+
+  const blob = await response.blob()
+  const contentDisposition = response.headers.get("content-disposition") ?? ""
+  const fileNameMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i)
+  const fileName = fileNameMatch?.[1] ?? fallbackFileName
+
+  return { blob, fileName }
+}
+
+export async function exportAdminProductsCsv(
+  token: string,
+  query: ListAdminProductsQuery = {},
+): Promise<{ blob: Blob; fileName: string }> {
+  const params = new URLSearchParams()
+
+  if (query.search) params.set("search", query.search)
+  if (query.category) params.set("category", query.category)
+  if (query.status) params.set("status", query.status)
+  if (query.inStock !== undefined) params.set("inStock", String(query.inStock))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/products/csv?${queryString}` : "/admin/products/csv"
+
+  return downloadAdminFile(path, token, "productos.csv")
+}
+
+export async function exportAdminProductsTemplateCsv(
+  token: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  return downloadAdminFile("/admin/products/csv/template", token, "plantilla_productos.csv")
+}
+
+export interface AdminProductsCsvImportRow {
+  id?: string
+  slug?: string
+  nombre?: string
+  categoria?: string
+  precio?: string
+  moneda?: string
+  presentacion?: string
+  presentation_ml?: string
+  estado?: string
+  disponible?: string
+  orden?: string
+}
+
+export interface AdminProductsCsvImportResult {
+  totalRows: number
+  updated: number
+  skipped: number
+  failed: number
+  errors: Array<{
+    row: number
+    idOrSlug: string
+    message: string
+  }>
+}
+
+export function importAdminProductsCsv(
+  rows: AdminProductsCsvImportRow[],
+  token: string,
+): Promise<AdminProductsCsvImportResult> {
+  return apiRequest<AdminProductsCsvImportResult>("/admin/products/csv/import", {
+    method: "POST",
+    body: { rows },
+    token,
+  })
+}
+
+export function seedAdminProducts(token: string): Promise<SeedProductsResult> {
+  return apiRequest<SeedProductsResult>("/admin/products/seed-defaults", {
+    method: "POST",
+    token,
+  })
+}
+
+export interface UpdateAdminProductInput {
+  category?: string
+  price?: number
+  status?: AdminProduct["status"]
+  inStock?: boolean
+  sortOrder?: number
+}
+
+export function updateAdminProduct(
+  productId: string,
+  payload: UpdateAdminProductInput,
+  token: string,
+): Promise<AdminProduct> {
+  return apiRequest<AdminProduct>(`/admin/products/${productId}`, {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export interface CreateAdminProductCategoryInput {
+  name: string
+  slug?: string
+  description?: string
+  isActive?: boolean
+  sortOrder?: number
+}
+
+export interface UpdateAdminProductCategoryInput {
+  name?: string
+  slug?: string
+  description?: string
+  isActive?: boolean
+  sortOrder?: number
+}
+
+export function listAdminProductCategories(
+  token: string,
+): Promise<AdminProductCategory[]> {
+  return apiRequest<AdminProductCategory[]>("/admin/products/categories", {
+    method: "GET",
+    token,
+  })
+}
+
+export function createAdminProductCategory(
+  payload: CreateAdminProductCategoryInput,
+  token: string,
+): Promise<AdminProductCategory> {
+  return apiRequest<AdminProductCategory>("/admin/products/categories", {
+    method: "POST",
+    body: payload,
+    token,
+  })
+}
+
+export function updateAdminProductCategory(
+  categoryId: string,
+  payload: UpdateAdminProductCategoryInput,
+  token: string,
+): Promise<AdminProductCategory> {
+  return apiRequest<AdminProductCategory>(`/admin/products/categories/${categoryId}`, {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export function removeAdminProductCategory(
+  categoryId: string,
+  token: string,
+): Promise<{ deleted: boolean; categoryId: string }> {
+  return apiRequest<{ deleted: boolean; categoryId: string }>(
+    `/admin/products/categories/${categoryId}`,
+    {
+      method: "DELETE",
+      token,
+    },
+  )
+}
+
+export function getAdminCompanyContent(token: string): Promise<CompanyContent> {
+  return apiRequest<CompanyContent>("/admin/company-content", {
+    method: "GET",
+    token,
+  })
+}
+
+export function updateAdminCompanyContent(
+  payload: UpdateCompanyContentInput,
+  token: string,
+): Promise<CompanyContent> {
+  return apiRequest<CompanyContent>("/admin/company-content", {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export interface AdminAuditLog {
+  _id: string
+  actorUserId?: string
+  actorEmail?: string
+  actorRole?: string
+  method: string
+  action: "read" | "create" | "update" | "delete" | "other"
+  collection: string
+  route: string
+  resourceId?: string
+  statusCode: number
+  success: boolean
+  errorMessage?: string
+  responseTimeMs?: number
+  ip?: string
+  userAgent?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface AdminAuditLogsResponse {
+  items: AdminAuditLog[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export interface ListAdminAuditLogsQuery {
+  search?: string
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE"
+  action?: AdminAuditLog["action"]
+  collection?: string
+  success?: boolean
+  important?: boolean
+  page?: number
+  limit?: number
+}
+
+export function listAdminAuditLogs(
+  token: string,
+  query: ListAdminAuditLogsQuery = {},
+): Promise<AdminAuditLogsResponse> {
+  const params = new URLSearchParams()
+
+  if (query.search) params.set("search", query.search)
+  if (query.method) params.set("method", query.method)
+  if (query.action) params.set("action", query.action)
+  if (query.collection) params.set("collection", query.collection)
+  if (query.success !== undefined) params.set("success", String(query.success))
+  if (query.important !== undefined) params.set("important", String(query.important))
+  if (query.page) params.set("page", String(query.page))
+  if (query.limit) params.set("limit", String(query.limit))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/audit/logs?${queryString}` : "/admin/audit/logs"
+
+  return apiRequest<AdminAuditLogsResponse>(path, {
+    method: "GET",
+    token,
+  })
+}
+
+export interface AdminBackupCollectionInfo {
+  name: string
+  count: number
+}
+
+export interface AdminDatabaseBackup {
+  id: string
+  kind: "database"
+  createdAt: string
+  backupPath: string
+  totalCollections: number
+  totalDocuments: number
+  bundleFileName?: string
+  bundleFilePath?: string
+  bundleSizeBytes?: number
+  collections: Array<{
+    collection: string
+    count: number
+    fileName: string
+    filePath: string
+    sizeBytes: number
+  }>
+}
+
+export interface AdminCollectionBackup {
+  id: string
+  kind: "collection"
+  createdAt: string
+  backupPath: string
+  collection: string
+  count: number
+  fileName: string
+  sizeBytes: number
+}
+
+export type AdminBackupItem = AdminDatabaseBackup | AdminCollectionBackup
+export type AdminBackupImportMode = "replace" | "append"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api"
+
+export function listAdminBackupCollections(
+  token: string,
+): Promise<{ items: AdminBackupCollectionInfo[] }> {
+  return apiRequest<{ items: AdminBackupCollectionInfo[] }>("/admin/backups/collections", {
+    method: "GET",
+    token,
+  })
+}
+
+export function createAdminDatabaseBackup(
+  token: string,
+): Promise<AdminDatabaseBackup> {
+  return apiRequest<AdminDatabaseBackup>("/admin/backups/database", {
+    method: "POST",
+    token,
+  })
+}
+
+export function createAdminCollectionBackup(
+  collection: string,
+  token: string,
+): Promise<AdminCollectionBackup> {
+  return apiRequest<AdminCollectionBackup>("/admin/backups/collection", {
+    method: "POST",
+    token,
+    body: { collection },
+  })
+}
+
+export function listAdminBackups(
+  token: string,
+  limit = 20,
+): Promise<{ items: AdminBackupItem[] }> {
+  const query = new URLSearchParams()
+  query.set("limit", String(limit))
+
+  return apiRequest<{ items: AdminBackupItem[] }>(`/admin/backups?${query.toString()}`, {
+    method: "GET",
+    token,
+  })
+}
+
+export interface AdminImportBackupResult {
+  backupId: string
+  kind: AdminBackupItem["kind"]
+  mode: AdminBackupImportMode
+  importedAt: string
+  collections: Array<{
+    collection: string
+    totalInBackup: number
+    inserted: number
+    replaced: number
+    skipped: number
+  }>
+}
+
+export function importAdminBackup(
+  backupId: string,
+  mode: AdminBackupImportMode,
+  token: string,
+): Promise<AdminImportBackupResult> {
+  return apiRequest<AdminImportBackupResult>("/admin/backups/import", {
+    method: "POST",
+    body: { backupId, mode },
+    token,
+  })
+}
+
+export async function exportAdminBackup(
+  backupId: string,
+  token: string,
+): Promise<{ blob: Blob; fileName: string }> {
+  return downloadAdminFile(`/admin/backups/export/${backupId}`, token, `${backupId}.json`)
+}

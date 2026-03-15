@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Builds
+.next/
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Entorno
+.env
+.env.*
+!.env.example
+
+# Respaldos locales
+Server/backups/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/
