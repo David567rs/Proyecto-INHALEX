@@ -371,13 +371,72 @@ export interface AdminBackupCollectionInfo {
   count: number
 }
 
+export type AdminBackupStorageProvider = "local" | "cloudinary"
+export type AdminBackupStatus = "ready" | "failed" | "purged"
+export type AdminBackupTrigger = "manual" | "automatic"
+export type AdminBackupScope = "database" | "selectedCollections"
+
+export interface AdminBackupSettings {
+  automaticEnabled: boolean
+  rpoMinutes: number
+  rtoMinutes: number
+  backupScope: AdminBackupScope
+  selectedCollections: string[]
+  preferredStorage: AdminBackupStorageProvider
+  localDownloadsEnabled: boolean
+  keepLocalMirror: boolean
+  retentionDays: number
+  cloudFolder: string
+  cloudinaryConfigured: boolean
+  nextRunAt?: string
+  lastSuccessfulRunAt?: string
+  lastAttemptAt?: string
+  lastFailureAt?: string
+  lastError?: string
+  updatedAt?: string
+}
+
+export interface UpdateAdminBackupSettingsInput {
+  automaticEnabled?: boolean
+  rpoMinutes?: number
+  rtoMinutes?: number
+  backupScope?: AdminBackupScope
+  selectedCollections?: string[]
+  preferredStorage?: AdminBackupStorageProvider
+  localDownloadsEnabled?: boolean
+  keepLocalMirror?: boolean
+  retentionDays?: number
+  cloudFolder?: string
+}
+
+export interface AdminBackupStatusSummary {
+  automaticEnabled: boolean
+  preferredStorage: AdminBackupStorageProvider
+  cloudinaryConfigured: boolean
+  nextRunAt?: string
+  lastSuccessfulRunAt?: string
+  lastFailureAt?: string
+  lastError?: string
+  totalReady: number
+  totalFailed: number
+  totalPurged: number
+}
+
 export interface AdminDatabaseBackup {
   id: string
   kind: "database"
+  trigger: AdminBackupTrigger
+  status: AdminBackupStatus
   createdAt: string
   backupPath: string
   totalCollections: number
   totalDocuments: number
+  storageProvider: AdminBackupStorageProvider
+  localAvailable: boolean
+  remoteAvailable: boolean
+  remoteUrl?: string
+  notes?: string
+  errorMessage?: string
   bundleFileName?: string
   bundleFilePath?: string
   bundleSizeBytes?: number
@@ -393,12 +452,20 @@ export interface AdminDatabaseBackup {
 export interface AdminCollectionBackup {
   id: string
   kind: "collection"
+  trigger: AdminBackupTrigger
+  status: AdminBackupStatus
   createdAt: string
   backupPath: string
   collection: string
   count: number
   fileName: string
   sizeBytes: number
+  storageProvider: AdminBackupStorageProvider
+  localAvailable: boolean
+  remoteAvailable: boolean
+  remoteUrl?: string
+  notes?: string
+  errorMessage?: string
 }
 
 export type AdminBackupItem = AdminDatabaseBackup | AdminCollectionBackup
@@ -410,6 +477,31 @@ export function listAdminBackupCollections(
   token: string,
 ): Promise<{ items: AdminBackupCollectionInfo[] }> {
   return apiRequest<{ items: AdminBackupCollectionInfo[] }>("/admin/backups/collections", {
+    method: "GET",
+    token,
+  })
+}
+
+export function getAdminBackupSettings(token: string): Promise<AdminBackupSettings> {
+  return apiRequest<AdminBackupSettings>("/admin/backups/settings", {
+    method: "GET",
+    token,
+  })
+}
+
+export function updateAdminBackupSettings(
+  payload: UpdateAdminBackupSettingsInput,
+  token: string,
+): Promise<AdminBackupSettings> {
+  return apiRequest<AdminBackupSettings>("/admin/backups/settings", {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export function getAdminBackupStatus(token: string): Promise<AdminBackupStatusSummary> {
+  return apiRequest<AdminBackupStatusSummary>("/admin/backups/status", {
     method: "GET",
     token,
   })
@@ -433,6 +525,18 @@ export function createAdminCollectionBackup(
     token,
     body: { collection },
   })
+}
+
+export function runAdminBackupPolicy(
+  token: string,
+): Promise<{ scope: AdminBackupScope; created: AdminBackupItem[] }> {
+  return apiRequest<{ scope: AdminBackupScope; created: AdminBackupItem[] }>(
+    "/admin/backups/run-policy",
+    {
+      method: "POST",
+      token,
+    },
+  )
 }
 
 export function listAdminBackups(

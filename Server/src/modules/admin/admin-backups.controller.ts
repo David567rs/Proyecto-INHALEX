@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Param,
   Post,
   Query,
@@ -17,6 +18,7 @@ import { AdminBackupsService } from './admin-backups.service';
 import { CreateCollectionBackupDto } from './dto/create-collection-backup.dto';
 import { ImportBackupDto } from './dto/import-backup.dto';
 import { ListBackupsQueryDto } from './dto/list-backups-query.dto';
+import { UpdateBackupSettingsDto } from './dto/update-backup-settings.dto';
 
 @Controller('admin/backups')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,6 +31,21 @@ export class AdminBackupsController {
     return this.adminBackupsService.listCollections();
   }
 
+  @Get('settings')
+  getSettings() {
+    return this.adminBackupsService.getSettings();
+  }
+
+  @Patch('settings')
+  updateSettings(@Body() payload: UpdateBackupSettingsDto) {
+    return this.adminBackupsService.updateSettings(payload);
+  }
+
+  @Get('status')
+  getStatus() {
+    return this.adminBackupsService.getStatus();
+  }
+
   @Post('database')
   createDatabaseBackup() {
     return this.adminBackupsService.createDatabaseBackup();
@@ -37,6 +54,11 @@ export class AdminBackupsController {
   @Post('collection')
   createCollectionBackup(@Body() payload: CreateCollectionBackupDto) {
     return this.adminBackupsService.createCollectionBackup(payload.collection);
+  }
+
+  @Post('run-policy')
+  runPolicyBackup() {
+    return this.adminBackupsService.runPolicyBackupNow();
   }
 
   @Get()
@@ -50,7 +72,17 @@ export class AdminBackupsController {
     @Res() response: Response,
   ) {
     const exported = await this.adminBackupsService.getBackupExportFile(backupId);
-    return response.download(exported.filePath, exported.fileName);
+
+    if (exported.kind === 'file') {
+      return response.download(exported.filePath, exported.fileName);
+    }
+
+    response.setHeader('Content-Type', 'application/json; charset=utf-8');
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${exported.fileName}"`,
+    );
+    return response.send(exported.buffer);
   }
 
   @Post('import')
