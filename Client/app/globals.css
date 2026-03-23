@@ -116,11 +116,119 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@keyframes admin-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(18px, -14px, 0) scale(1.08);
+    opacity: 0.8;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .admin-panel-shell {
+    @apply relative overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur;
+  }
+
+  .admin-panel-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at top left, rgba(22, 163, 74, 0.14), transparent 34%),
+      radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent 32%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%);
+  }
+
+  .admin-panel-shell::after {
+    content: "";
+    position: absolute;
+    top: -3.5rem;
+    right: -3rem;
+    width: 16rem;
+    height: 16rem;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: rgba(22, 163, 74, 0.1);
+    filter: blur(56px);
+    animation: admin-float 14s ease-in-out infinite;
+  }
+
+  .admin-section-card {
+    @apply rounded-2xl border border-border/60 bg-card/88 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+  }
+
+  .admin-metric-card {
+    @apply flex min-h-[11.5rem] flex-col justify-between rounded-2xl border border-border/60 bg-card/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+  }
+
+  .admin-stat-chip {
+    @apply rounded-xl border border-border/60 bg-secondary/25 px-4 py-3.5 text-sm leading-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-secondary/35;
+  }
+
+  .admin-table-shell {
+    @apply overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+  }
+
+  .admin-table-scroll {
+    @apply relative max-h-[38rem] overflow-auto;
+  }
+
+  .admin-table-head-row {
+    @apply sticky top-0 z-10 border-b border-border/70 bg-background/92 backdrop-blur-md hover:bg-background/92;
+  }
+
+  .admin-table-head-cell {
+    @apply h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  .admin-table-body-compact {
+    @apply [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top;
+  }
+
+  .admin-empty-state {
+    @apply mx-auto flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-dashed border-border/70 bg-secondary/20 px-6 py-8 text-center shadow-sm backdrop-blur-sm;
+  }
+
+  .admin-skeleton-card {
+    @apply rounded-xl border border-border/60 bg-card/80 p-4 animate-pulse;
+  }
+
+  .admin-form-card {
+    @apply rounded-2xl border border-border/60 bg-card/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+  }
+
+  .admin-input-surface {
+    @apply border-border/70 bg-background/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.24)] transition-all duration-300 focus-visible:border-primary/30 focus-visible:ring-primary/15;
+  }
+
+  .admin-tab-surface {
+    @apply border border-border/60 bg-secondary/30 backdrop-blur-sm;
+  }
+
+  .admin-toolbar-surface {
+    @apply rounded-[1.6rem] border border-border/60 bg-background/80 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.28)] backdrop-blur-xl;
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1));
+  }
+
+  .admin-animate-card {
+    @apply motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500;
   }
 }

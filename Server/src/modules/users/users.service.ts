@@ -14,6 +14,8 @@ interface CreateUserInput {
   passwordHash: string;
   role?: UserRole;
   status?: UserStatus;
+  lastLoginAt?: Date;
+  lastSeenAt?: Date;
 }
 
 interface UpdateUserInput {
@@ -72,6 +74,40 @@ export class UsersService {
         returnDocument: 'after',
         runValidators: true,
       })
+      .exec();
+  }
+
+  async markLogin(userId: string): Promise<UserDocument | null> {
+    const now = new Date();
+    return this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            lastLoginAt: now,
+            lastSeenAt: now,
+          },
+        },
+        {
+          returnDocument: 'after',
+        },
+      )
+      .exec();
+  }
+
+  async markActivity(userId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            lastSeenAt: new Date(),
+          },
+        },
+        {
+          returnDocument: 'after',
+        },
+      )
       .exec();
   }
 }

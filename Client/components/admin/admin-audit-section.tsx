@@ -178,18 +178,15 @@ export function AdminAuditSection() {
   }, [loadLogs])
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
-      <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-amber-300/10 blur-2xl" />
-
+    <div className="admin-panel-shell admin-animate-card">
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-primary">Auditoria</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-primary">Auditoria detallada</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Bitacora visual de acciones sobre la base de datos desde el panel admin.
+            Bitacora de cambios, errores y trazabilidad del panel.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Vista inicial: solo eventos importantes (creacion, actualizacion, eliminacion o error).
+            Vista inicial: eventos clave.
           </p>
         </div>
 
@@ -206,13 +203,13 @@ export function AdminAuditSection() {
       </div>
 
       <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
+        <div className="admin-stat-chip">
           <span className="font-medium">Registros filtrados:</span> {meta.total}
         </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
+        <div className="admin-stat-chip">
           <span className="font-medium">Fallos en pagina:</span> {failedInCurrentPage}
         </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
+        <div className="admin-stat-chip">
           <span className="font-medium">Pagina:</span> {meta.page} / {meta.totalPages}
         </div>
       </div>
@@ -349,7 +346,7 @@ export function AdminAuditSection() {
             </div>
             <p className="font-medium text-foreground">No hay acciones para mostrar</p>
             <p className="text-xs text-muted-foreground">
-              Ajusta filtros o realiza acciones en el panel para generar registros.
+              Cambia filtros o genera actividad.
             </p>
           </div>
         ) : (

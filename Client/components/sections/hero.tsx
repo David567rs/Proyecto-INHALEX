@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { ArrowRight, Droplets, Leaf, Wind } from "lucide-react"
+import { PromoCarousel } from "@/components/sections/promo-carousel"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Leaf, Droplets, Wind } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const features = [
@@ -20,53 +21,58 @@ export function Hero() {
     setIsVisible(true)
   }, [])
 
+  const scrollToCatalog = () => {
+    const section = document.getElementById("catalogo")
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }
+
   return (
-    <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
-    >
-      {/* Background Image */}
+    <section className="relative overflow-hidden">
       <div className="absolute inset-0">
         <Image
           src="/images/fondo.jpg"
           alt="Laboratorio de plantas naturales"
           fill
-          className="object-cover object-center"
           priority
+          className="object-cover object-center"
         />
-        {/* Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.92),rgba(255,255,255,0.76)_34%,rgba(255,255,255,0.24)_68%,rgba(255,255,255,0.08)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/80 to-background/35" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-background/30" />
       </div>
 
-      <div className="container mx-auto py-20 relative z-10 px-4 lg:py-32 opacity-100">
-        <div className="max-w-2xl">
-          {/* Content Side */}
+      <div className="absolute inset-x-0 top-28 z-[1] hidden lg:block">
+        <div className="container mx-auto px-4">
+          <div className="h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        </div>
+      </div>
+
+      <div className="container relative z-10 mx-auto px-4 pb-16 pt-28 sm:pb-20 sm:pt-32 lg:pb-24 lg:pt-36">
+        <div className="grid items-center gap-10 xl:grid-cols-[minmax(0,0.96fr)_minmax(440px,560px)] xl:gap-14">
           <div
             className={cn(
-              "space-y-8 transition-all duration-1000 ease-out",
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
+              "max-w-2xl space-y-8 transition-all duration-1000 ease-out",
+              isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0",
             )}
           >
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-sm font-medium text-primary animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/10 px-4 py-2 text-sm font-medium text-primary shadow-sm">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
               Productos 100% Naturales
             </div>
 
-            {/* Headline */}
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-serif leading-tight text-balance">
-                <span className="block text-foreground">El Respiro</span>
-                <span className="block text-foreground">Que{" "}</span>
-                <span className="relative inline-block">
-                  <span className="text-primary">Alivia</span>
+            <div className="space-y-5">
+              <h1 className="max-w-[11ch] font-serif text-5xl leading-[0.95] text-balance text-foreground sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+                <span className="block">El Respiro</span>
+                <span className="block">Que</span>
+                <span className="relative inline-block text-primary">
+                  Alivia
                   <svg
-                    className="absolute -bottom-2 left-0 w-full h-3 text-primary/30"
+                    className="absolute -bottom-3 left-0 h-4 w-full text-primary/35"
                     viewBox="0 0 200 12"
                     preserveAspectRatio="none"
                   >
@@ -80,95 +86,91 @@ export function Hero() {
                   </svg>
                 </span>
               </h1>
+
+              <p className="max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
+                Descubre nuestra seleccion de productos naturales disenados para tu bienestar
+                respiratorio. Cada esencia ofrece una experiencia fresca de alivio para
+                congestion nasal, dolor de cabeza, resfriado, gripe y tos.
+              </p>
             </div>
 
-            {/* Description */}
-            <p className="text-lg text-muted-foreground max-w-lg leading-relaxed text-pretty">
-              Descubre nuestra selección de productos naturales diseñados para tu
-              bienestar respiratorio. Cada esencia, una experiencia única de
-              alivio y frescura para la congestión nasal, dolor de cabeza, 
-              resfriado, gripe y tos.
-            </p>
-
-            {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
               <Button
                 size="lg"
-                className="group bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-base font-medium shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+                onClick={scrollToCatalog}
+                className="group h-14 rounded-2xl px-8 text-base font-medium shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
               >
                 Ver Productos
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
+
               <Button
                 asChild
                 variant="outline"
                 size="lg"
-                className="px-8 py-6 text-base font-medium border-2 hover:bg-primary/5 hover:border-primary transition-all duration-300 bg-transparent"
+                className="h-14 rounded-2xl border-white/60 bg-white/65 px-8 text-base font-medium backdrop-blur-sm hover:bg-white/85"
               >
-                <Link href="/nosotros">Conocer Más</Link>
+                <Link href="/nosotros">Conocer Mas</Link>
               </Button>
             </div>
 
-            {/* Feature Pills */}
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap gap-4 pt-2">
               {features.map((feature, index) => (
                 <div
                   key={feature.text}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 bg-card rounded-full shadow-sm border border-border/50 transition-all duration-500",
-                    isVisible
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-4"
+                    "flex items-center gap-2 rounded-full border border-border/60 bg-white/82 px-4 py-2.5 shadow-sm backdrop-blur-sm transition-all duration-500",
+                    isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
                   )}
-                  style={{ transitionDelay: `${600 + index * 100}ms` }}
+                  style={{ transitionDelay: `${450 + index * 100}ms` }}
                 >
                   <feature.icon className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground/80">
-                    {feature.text}
-                  </span>
+                  <span className="text-sm font-medium text-foreground/85">{feature.text}</span>
                 </div>
               ))}
             </div>
           </div>
+
+          <div
+            className={cn(
+              "mx-auto w-full max-w-[560px] transition-all duration-1000 delay-150 ease-out xl:mx-0 xl:justify-self-end",
+              isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0",
+            )}
+          >
+            <PromoCarousel />
+          </div>
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-        <span className="text-xs text-muted-foreground">Descubre más</span>
-        <div className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2">
-          <div className="w-1.5 h-3 bg-primary rounded-full animate-scroll-down" />
-        </div>
+      <div className="absolute bottom-7 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 lg:flex">
+        <span className="text-xs text-muted-foreground">Descubre mas</span>
+        <button
+          type="button"
+          onClick={scrollToCatalog}
+          className="flex h-11 w-7 items-start justify-center rounded-full border border-primary/20 bg-white/70 pt-2 backdrop-blur-sm transition hover:border-primary/35 hover:bg-white"
+          aria-label="Ir al catalogo"
+        >
+          <span className="h-3 w-1.5 rounded-full bg-primary animate-scroll-down" />
+        </button>
       </div>
 
       <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        @keyframes float-delayed {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-15px); }
-        }
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
         @keyframes scroll-down {
-          0%, 100% { opacity: 1; transform: translateY(0); }
-          50% { opacity: 0.5; transform: translateY(8px); }
+          0%,
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          50% {
+            opacity: 0.45;
+            transform: translateY(8px);
+          }
         }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        .animate-float-delayed { animation: float-delayed 4s ease-in-out infinite; }
-        .animate-bounce-slow { animation: bounce-slow 2.5s ease-in-out infinite; }
-        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
-        .animate-scroll-down { animation: scroll-down 1.5s ease-in-out infinite; }
+
+        .animate-scroll-down {
+          animation: scroll-down 1.5s ease-in-out infinite;
+        }
       `}</style>
     </section>
   )
 }
-

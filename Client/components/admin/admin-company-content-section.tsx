@@ -67,7 +67,7 @@ function MarkdownEditorField({
   return (
     <Tabs defaultValue="editor" className="w-full">
       <div className="flex items-center justify-between gap-3">
-        <TabsList className="h-9">
+        <TabsList className="admin-tab-surface h-9">
           <TabsTrigger value="editor">Editor</TabsTrigger>
           <TabsTrigger value="preview">Vista previa</TabsTrigger>
         </TabsList>
@@ -80,17 +80,19 @@ function MarkdownEditorField({
         <Textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className={minHeightClassName}
+          className={`admin-input-surface ${minHeightClassName}`}
           placeholder={placeholder}
           disabled={disabled}
         />
       </TabsContent>
 
       <TabsContent value="preview" className="mt-3">
-        <div className={`
-          ${minHeightClassName}
-          rounded-md border border-border/70 bg-secondary/20 px-4 py-3
-        `}>
+        <div
+          className={`
+            ${minHeightClassName}
+            admin-section-card rounded-xl bg-secondary/20 px-4 py-3
+          `}
+        >
           {value.trim().length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No hay contenido para previsualizar.
@@ -203,10 +205,7 @@ export function AdminCompanyContentSection() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
-      <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-emerald-400/10 blur-2xl" />
-
+    <div className="admin-panel-shell admin-animate-card">
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-primary">
@@ -255,10 +254,10 @@ export function AdminCompanyContentSection() {
       </div>
 
       <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm">
+        <div className="admin-stat-chip">
           <span className="font-medium">Ultima actualizacion:</span> {formatDate(content.updatedAt)}
         </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm">
+        <div className="admin-stat-chip">
           <span className="font-medium">Estado:</span> {hasChanges ? "Con cambios pendientes" : "Sin cambios"}
         </div>
       </div>
@@ -282,10 +281,11 @@ export function AdminCompanyContentSection() {
       )}
 
       <div className="relative z-10 mt-6 grid gap-5">
-        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+        <div className="admin-form-card">
           <h3 className="text-lg font-semibold text-foreground">Politicas de privacidad</h3>
           <div className="mt-4 grid gap-3">
             <Input
+              className="admin-input-surface"
               value={draft.privacyPolicy.title}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -316,10 +316,11 @@ export function AdminCompanyContentSection() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+        <div className="admin-form-card">
           <h3 className="text-lg font-semibold text-foreground">Terminos y condiciones</h3>
           <div className="mt-4 grid gap-3">
             <Input
+              className="admin-input-surface"
               value={draft.termsAndConditions.title}
               onChange={(event) =>
                 setDraft((prev) => ({
@@ -350,7 +351,7 @@ export function AdminCompanyContentSection() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-card/80 p-5">
+        <div className="admin-form-card">
           <h3 className="text-lg font-semibold text-foreground">Mision, vision y valores</h3>
           <div className="mt-4 grid gap-3">
             <MarkdownEditorField
@@ -388,7 +389,7 @@ export function AdminCompanyContentSection() {
               <Textarea
                 value={valuesInput}
                 onChange={(event) => setValuesInput(event.target.value)}
-                className="min-h-[130px]"
+                className="admin-input-surface min-h-[130px]"
                 placeholder={"Innovacion\nCalidad\nBienestar"}
                 disabled={isLoading || isSaving || !canManageContent}
               />

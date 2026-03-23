@@ -379,9 +379,9 @@ export class ProductsService {
     return this.mapAdminCategory(updatedCategory, productCount);
   }
 
-  async removeCategory(
+  async deactivateCategory(
     categoryId: string,
-  ): Promise<{ deleted: boolean; categoryId: string }> {
+  ): Promise<{ deactivated: boolean; categoryId: string }> {
     if (!Types.ObjectId.isValid(categoryId)) {
       throw new BadRequestException('Invalid category id');
     }
@@ -391,18 +391,19 @@ export class ProductsService {
       throw new NotFoundException('Category not found');
     }
 
-    const productsUsingCategory = await this.productModel
-      .countDocuments({ category: category.slug })
-      .exec();
-
-    if (productsUsingCategory > 0) {
-      throw new BadRequestException(
-        'Cannot remove category with associated products',
-      );
+    if (!category.isActive) {
+      return { deactivated: true, categoryId };
     }
 
-    await this.productCategoryModel.findByIdAndDelete(categoryId).exec();
-    return { deleted: true, categoryId };
+    await this.productCategoryModel
+      .findByIdAndUpdate(
+        categoryId,
+        { $set: { isActive: false } },
+        { new: false },
+      )
+      .exec();
+
+    return { deactivated: true, categoryId };
   }
 
   async listPublicCategories(): Promise<PublicCategoryItem[]> {

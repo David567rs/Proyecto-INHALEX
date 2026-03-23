@@ -479,43 +479,51 @@ export function AdminBackupsSection() {
     <div className="relative overflow-hidden rounded-[2rem] border border-border/60 bg-card/95 p-6 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(22,163,74,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]" />
       <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="space-y-3">
-            <Badge variant="outline" className="border-primary/30 bg-primary/5 px-3 py-1 text-primary">
-              Centro de recuperacion
-            </Badge>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-                Respaldos y continuidad operacional
-              </h2>
-              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-                Administra la estrategia de respaldo, decide si los archivos se guardan en nube o
-                local, automatiza la ejecucion con base en tu RPO y deja la restauracion preparada
-                desde un solo tablero.
-              </p>
-            </div>
+        <div className="space-y-3">
+          <Badge variant="outline" className="border-primary/30 bg-primary/5 px-3 py-1 text-primary">
+            Centro de recuperacion
+          </Badge>
+          <div className="space-y-2">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">
+              Respaldos y continuidad operacional
+            </h2>
+            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+              Controla estrategia, ejecucion y restauracion desde un solo tablero.
+            </p>
           </div>
+        </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full px-5"
-              onClick={() => void loadAll(false)}
-              disabled={isRefreshing || isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-              Recargar tablero
-            </Button>
-            <Button
-              type="button"
-              className="rounded-full px-5 shadow-[0_14px_40px_-18px_rgba(22,163,74,0.8)]"
-              onClick={runPolicy}
-              disabled={isRunningPolicy || isLoading}
-            >
-              <Bot className={`h-4 w-4 ${isRunningPolicy ? "animate-pulse" : ""}`} />
-              Ejecutar politica ahora
-            </Button>
+        <div className="admin-toolbar-surface px-4 py-4 lg:sticky lg:top-0 lg:z-20">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">Centro operativo</span>
+              <Badge variant="secondary">{status?.totalReady ?? readyBackups.length} listos</Badge>
+              <Badge variant="outline">
+                {draft?.automaticEnabled ? "Automatico activo" : "Automatico pausado"}
+              </Badge>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-full px-5"
+                onClick={() => void loadAll(false)}
+                disabled={isRefreshing || isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Recargar tablero
+              </Button>
+              <Button
+                type="button"
+                className="rounded-full px-5 shadow-[0_14px_40px_-18px_rgba(22,163,74,0.8)]"
+                onClick={runPolicy}
+                disabled={isRunningPolicy || isLoading}
+              >
+                <Bot className={`h-4 w-4 ${isRunningPolicy ? "animate-pulse" : ""}`} />
+                Ejecutar politica ahora
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -523,7 +531,7 @@ export function AdminBackupsSection() {
           <LoadingGrid />
         ) : (
           <div className="grid gap-4 xl:grid-cols-4">
-            <Card className="group border-primary/15 bg-primary/[0.04] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+            <Card className="group min-h-[11.5rem] border-primary/15 bg-primary/[0.04] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="gap-1">
                 <CardDescription>Destino activo</CardDescription>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -543,13 +551,10 @@ export function AdminBackupsSection() {
                       : "Faltan credenciales de Cloudinary. Se mantendra el respaldo local como respaldo alterno."
                     : "La estrategia actual guarda los archivos dentro del servidor."}
                 </p>
-                <Badge variant="secondary" className="rounded-full">
-                  {storageLabel(settings?.preferredStorage ?? "local")}
-                </Badge>
               </CardContent>
             </Card>
 
-            <Card className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+            <Card className="min-h-[11.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="gap-1">
                 <CardDescription>RPO objetivo</CardDescription>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -558,11 +563,11 @@ export function AdminBackupsSection() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Tiempo maximo de informacion que aceptas perder entre una captura y la siguiente.
+                Perdida maxima aceptada entre capturas.
               </CardContent>
             </Card>
 
-            <Card className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+            <Card className="min-h-[11.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="gap-1">
                 <CardDescription>RTO objetivo</CardDescription>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -571,11 +576,11 @@ export function AdminBackupsSection() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Tiempo maximo esperado para dejar nuevamente operativo el sistema despues de una restauracion.
+                Tiempo maximo para volver a operar.
               </CardContent>
             </Card>
 
-            <Card className="transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+            <Card className="min-h-[11.5rem] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
               <CardHeader className="gap-1">
                 <CardDescription>Proxima ejecucion</CardDescription>
                 <CardTitle className="flex items-center gap-2 text-xl">
@@ -587,7 +592,7 @@ export function AdminBackupsSection() {
                 <p>
                   Listos: {status?.totalReady ?? 0} | Fallidos: {status?.totalFailed ?? 0} | Purgados: {status?.totalPurged ?? 0}
                 </p>
-                <p>Ultima ejecucion exitosa: {formatDate(settings?.lastSuccessfulRunAt)}</p>
+                <p>Ultimo exito: {formatDate(settings?.lastSuccessfulRunAt)}</p>
               </CardContent>
             </Card>
           </div>
@@ -612,17 +617,19 @@ export function AdminBackupsSection() {
         )}
 
         <Tabs defaultValue="strategy" className="space-y-5">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-muted/60 p-1 lg:w-auto">
-            <TabsTrigger value="strategy" className="rounded-xl px-4 py-2">
-              Estrategia
-            </TabsTrigger>
-            <TabsTrigger value="execution" className="rounded-xl px-4 py-2">
-              Ejecucion
-            </TabsTrigger>
-            <TabsTrigger value="history" className="rounded-xl px-4 py-2">
-              Historial
-            </TabsTrigger>
-          </TabsList>
+          <div className="lg:sticky lg:top-24 lg:z-10">
+            <TabsList className="admin-toolbar-surface grid h-auto w-full grid-cols-3 p-1 lg:w-auto">
+              <TabsTrigger value="strategy" className="rounded-xl px-4 py-2">
+                Estrategia
+              </TabsTrigger>
+              <TabsTrigger value="execution" className="rounded-xl px-4 py-2">
+                Ejecucion
+              </TabsTrigger>
+              <TabsTrigger value="history" className="rounded-xl px-4 py-2">
+                Historial
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="strategy" className="space-y-4">
             <div className="grid gap-4 xl:grid-cols-[1.3fr_0.95fr]">
@@ -948,7 +955,7 @@ export function AdminBackupsSection() {
                         <p className="text-sm font-medium text-foreground">Politica automatica actual</p>
                         <p className="text-sm text-muted-foreground">
                           {draft?.automaticEnabled
-                            ? `Siguiente ventana estimada: ${formatDate(status?.nextRunAt)}`
+                            ? "La estrategia esta lista para ejecutarse en la proxima ventana programada."
                             : "La automatizacion esta pausada; solo se ejecutaran respaldos manuales."}
                         </p>
                       </div>

@@ -16,72 +16,61 @@ const MODULE_CARDS = [
   {
     href: "/admin/usuarios",
     title: "Administracion de usuarios",
-    description:
-      "Gestiona roles y estado de cuentas para controlar acceso y operacion del panel.",
+    description: "Gestiona roles, estado y acceso al panel.",
     icon: Users,
   },
   {
     href: "/admin/productos",
     title: "Administracion de productos",
-    description:
-      "Edita catalogo, disponibilidad, precios y estado de publicacion de cada aroma.",
+    description: "Edita catalogo, precios y visibilidad.",
     icon: ShoppingBag,
   },
   {
     href: "/admin/catalogo/categorias",
     title: "Categorias del catalogo",
-    description:
-      "Organiza lineas, clasificacion y orden de visualizacion para filtros publicos.",
+    description: "Ordena lineas y filtros del catalogo.",
     icon: Tags,
   },
   {
     href: "/admin/catalogo/inventario",
     title: "Inventario",
-    description:
-      "Prepara control de existencias por producto con alertas y seguimiento interno.",
+    description: "Control de existencias y alertas.",
     icon: PackageCheck,
   },
   {
     href: "/admin/contenido",
     title: "Informacion de empresa",
-    description:
-      "Mantiene actualizados terminos, politicas y secciones corporativas visibles al cliente.",
+    description: "Actualiza paginas, terminos y politicas.",
     icon: FileText,
   },
   {
     href: "/admin/auditoria",
-    title: "Auditoria de acciones",
-    description:
-      "Visualiza cada accion ejecutada en el panel admin: usuario, coleccion, resultado y hora.",
+    title: "Monitoreo y auditoria",
+    description: "Supervisa actividad, recursos y bitacora.",
     icon: History,
   },
   {
     href: "/admin/respaldos",
     title: "Respaldos de base de datos",
-    description:
-      "Crea copias de seguridad de toda la base o por coleccion desde el panel.",
+    description: "Crea y restaura copias de seguridad.",
     icon: DatabaseBackup,
   },
 ]
 
 export default function AdminPage() {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
-      <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-emerald-400/10 blur-2xl" />
-
+    <section className="admin-panel-shell admin-animate-card">
       <div className="relative z-10">
         <h3 className="text-2xl font-semibold tracking-tight text-primary">Resumen general</h3>
         <p className="mt-2 text-sm text-muted-foreground">
-          Elige un modulo para continuar. Cada seccion esta separada para mantener el panel
-          ordenado y facil de operar.
+          Elige un modulo. Cada seccion concentra una operacion del panel.
         </p>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {MODULE_CARDS.map((module) => (
             <article
               key={module.href}
-              className="rounded-xl border border-border/60 bg-card/90 p-5 transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+              className="admin-section-card flex min-h-[13.25rem] flex-col p-5"
             >
               <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <module.icon className="h-5 w-5" />
@@ -92,7 +81,7 @@ export default function AdminPage() {
 
               <Link
                 href={module.href}
-                className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
+                className="mt-auto pt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors hover:text-primary/80"
               >
                 Abrir modulo
                 <ArrowRight className="h-4 w-4" />

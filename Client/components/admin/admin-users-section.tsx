@@ -1,7 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, RefreshCw, Save, Users } from "lucide-react"
+import {
+  AlertTriangle,
+  RefreshCw,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +30,7 @@ import {
 import { getAccessToken } from "@/lib/auth/token-storage"
 import { listAdminUsers, updateAdminUser } from "@/lib/admin/admin-api"
 import type { AuthUser } from "@/lib/auth/types"
+import { cn } from "@/lib/utils"
 
 interface UserDraft {
   role: AuthUser["role"]
@@ -51,14 +59,40 @@ export function AdminUsersSection() {
   const { user } = useAuth()
   const [users, setUsers] = useState<AuthUser[]>([])
   const [draftsById, setDraftsById] = useState<Record<string, UserDraft>>({})
+  const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
   const [savingByUserId, setSavingByUserId] = useState<Record<string, boolean>>({})
   const [rowMessageByUserId, setRowMessageByUserId] = useState<Record<string, string>>({})
 
+  const hasChanges = useCallback(
+    (currentUser: AuthUser): boolean => {
+      const draft = draftsById[currentUser._id]
+      if (!draft) return false
+      return draft.role !== currentUser.role || draft.status !== currentUser.status
+    },
+    [draftsById],
+  )
+
   const totalAdmins = useMemo(
     () => users.filter((currentUser) => currentUser.role === "admin").length,
     [users],
+  )
+  const totalActive = useMemo(
+    () => users.filter((currentUser) => currentUser.status === "active").length,
+    [users],
+  )
+  const totalInactive = useMemo(
+    () => users.filter((currentUser) => currentUser.status === "inactive").length,
+    [users],
+  )
+  const pendingChangesCount = useMemo(
+    () => users.filter((currentUser) => hasChanges(currentUser)).length,
+    [hasChanges, users],
+  )
+  const editingUser = useMemo(
+    () => users.find((currentUser) => currentUser._id === editingUserId) ?? null,
+    [editingUserId, users],
   )
 
   const loadUsers = useCallback(async () => {
@@ -85,6 +119,9 @@ export function AdminUsersSection() {
           return acc
         }, {}),
       )
+      setEditingUserId((prev) =>
+        prev && response.some((currentUser) => currentUser._id === prev) ? prev : null,
+      )
       setRowMessageByUserId({})
     } catch (error) {
       const message =
@@ -103,6 +140,7 @@ export function AdminUsersSection() {
   }, [loadUsers, user?.role])
 
   const updateDraft = (userId: string, draft: Partial<UserDraft>) => {
+    setEditingUserId(userId)
     setDraftsById((prev) => {
       const previous = prev[userId]
       if (!previous) return prev
@@ -119,12 +157,6 @@ export function AdminUsersSection() {
       ...prev,
       [userId]: "",
     }))
-  }
-
-  const hasChanges = (currentUser: AuthUser): boolean => {
-    const draft = draftsById[currentUser._id]
-    if (!draft) return false
-    return draft.role !== currentUser.role || draft.status !== currentUser.status
   }
 
   const saveUser = async (currentUser: AuthUser) => {
@@ -194,15 +226,12 @@ export function AdminUsersSection() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
-      <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute -left-6 bottom-0 h-24 w-24 rounded-full bg-emerald-400/10 blur-xl" />
-
+    <div className="admin-panel-shell admin-animate-card">
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-primary">Usuarios</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Gestión de usuarios conectada a <code>GET/PATCH /api/admin/users</code>
+            Gestion conectada a <code>GET/PATCH /api/admin/users</code>.
           </p>
         </div>
 
@@ -218,15 +247,147 @@ export function AdminUsersSection() {
         </Button>
       </div>
 
-      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Total usuarios:</span> {users.length}
+      <div className="relative z-10 mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Total de cuentas
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {users.length}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Cuentas registradas.
+          </p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Total administradores:</span> {totalAdmins}
+
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Administradores
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {totalAdmins}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Con acceso al panel.
+          </p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Tu rol:</span> {user?.role ? roleLabel(user.role) : "-"}
+
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Estado operativo
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {totalActive}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {totalInactive} inactivos.
+          </p>
+        </div>
+
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Cambios pendientes
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {pendingChangesCount}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Filas sin guardar.
+          </p>
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="admin-form-card">
+          <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <Sparkles className="h-4 w-4" />
+            Centro de accesos
+          </p>
+          <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+            Gobierno de roles y estados
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Revisa roles, estado y cambios antes de guardar.
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="admin-stat-chip">
+              <span className="font-medium">Tu rol:</span> {user?.role ? roleLabel(user.role) : "-"}
+            </div>
+            <div className="admin-stat-chip">
+              <span className="font-medium">Tu estado:</span>{" "}
+              {user?.status ? userStatusLabel(user.status) : "-"}
+            </div>
+            <div className="admin-stat-chip">
+              <span className="font-medium">Endpoint:</span> <code>/api/admin/users</code>
+            </div>
+            <div className="admin-stat-chip">
+              <span className="font-medium">Flujo:</span> editar y guardar
+            </div>
+          </div>
+        </div>
+
+        <div className="admin-form-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Estado de edicion
+          </p>
+          <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+            {editingUser ? editingUser.name : "Sin usuario en foco"}
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {editingUser
+              ? "Resumen del usuario en foco."
+              : "Al editar una fila, aparece aqui."}
+          </p>
+
+          {editingUser ? (
+            <div className="mt-5 grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Correo:</span> {editingUser.email}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Creado:</span> {formatDate(editingUser.createdAt)}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Rol:</span> {roleLabel(editingUser.role)}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Estado:</span>{" "}
+                  {userStatusLabel(editingUser.status)}
+                </div>
+              </div>
+
+              {hasChanges(editingUser) && (
+                <Badge className="w-fit shadow-[0_10px_28px_-18px_rgba(22,163,74,0.75)]">
+                  Cambio pendiente
+                </Badge>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingUserId(null)}
+                >
+                  Limpiar foco
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="admin-empty-state mt-5 max-w-none items-start text-left">
+              <div className="rounded-full bg-primary/10 p-3 text-primary">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Todavia no hay un usuario en edicion</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Al editar una fila, veras su resumen.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -239,84 +400,95 @@ export function AdminUsersSection() {
         </div>
       )}
 
-      <div className="relative z-10 mt-6 overflow-hidden rounded-xl border border-border/60 bg-card/80">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-secondary/30">
-              <TableHead>Usuario</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Creado</TableHead>
-              <TableHead>Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`user-skeleton-${index}`} className="animate-pulse">
-                  <TableCell>
-                    <div className="h-4 w-36 rounded bg-secondary/60" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 w-52 rounded bg-secondary/60" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="h-9 w-28 rounded-md bg-secondary/60" />
-                      <div className="h-6 w-24 rounded-full bg-secondary/60" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
+      <div className="admin-table-shell relative z-10 mt-6">
+        <div className="admin-table-scroll">
+          <Table>
+            <TableHeader>
+              <TableRow className="admin-table-head-row">
+                <TableHead className="admin-table-head-cell">Usuario</TableHead>
+                <TableHead className="admin-table-head-cell">Email</TableHead>
+                <TableHead className="admin-table-head-cell">Rol</TableHead>
+                <TableHead className="admin-table-head-cell">Estado</TableHead>
+                <TableHead className="admin-table-head-cell">Creado</TableHead>
+                <TableHead className="admin-table-head-cell">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="admin-table-body-compact">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={`user-skeleton-${index}`} className="animate-pulse bg-background/40">
+                    <TableCell>
+                      <div className="h-4 w-36 rounded bg-secondary/60" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-52 rounded bg-secondary/60" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-9 w-36 rounded-md bg-secondary/60" />
+                    </TableCell>
+                    <TableCell>
                       <div className="h-9 w-32 rounded-md bg-secondary/60" />
-                      <div className="h-6 w-24 rounded-full bg-secondary/60" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-4 w-40 rounded bg-secondary/60" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="h-9 w-28 rounded-md bg-secondary/60" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : users.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    <div className="admin-empty-state">
+                      <div className="rounded-full bg-primary/10 p-3 text-primary">
+                        <Users className="h-5 w-5" />
+                      </div>
+                      <p className="font-medium text-foreground">No hay usuarios para mostrar</p>
+                      <p className="text-xs">Los usuarios registrados apareceran aqui.</p>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 w-40 rounded bg-secondary/60" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-9 w-28 rounded-md bg-secondary/60" />
                   </TableCell>
                 </TableRow>
-              ))
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
-                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 bg-secondary/20 px-6 py-8">
-                    <div className="rounded-full bg-primary/10 p-3 text-primary">
-                      <Users className="h-5 w-5" />
-                    </div>
-                    <p className="font-medium text-foreground">No hay usuarios para mostrar</p>
-                    <p className="text-xs">Cuando existan usuarios registrados apareceran aqui.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((currentUser, index) => {
-                const draft = draftsById[currentUser._id]
-                const isSaving = Boolean(savingByUserId[currentUser._id])
-                const rowMessage = rowMessageByUserId[currentUser._id]
+              ) : (
+                users.map((currentUser, index) => {
+                  const draft = draftsById[currentUser._id]
+                  const isSaving = Boolean(savingByUserId[currentUser._id])
+                  const rowMessage = rowMessageByUserId[currentUser._id]
+                  const hasPendingChanges = hasChanges(currentUser)
+                  const currentRole = draft?.role ?? currentUser.role
+                  const currentStatus = draft?.status ?? currentUser.status
 
-                return (
-                  <TableRow
-                    key={currentUser._id}
-                    className="transition-colors hover:bg-secondary/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500"
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <TableCell className="font-medium">{currentUser.name}</TableCell>
-                    <TableCell>{currentUser.email}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                  return (
+                    <TableRow
+                      key={currentUser._id}
+                      className={cn(
+                        "transition-colors hover:bg-secondary/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500",
+                        hasPendingChanges && "bg-primary/[0.035]",
+                      )}
+                      style={{ animationDelay: `${index * 40}ms` }}
+                    >
+                      <TableCell>
+                        <div className="space-y-1">
+                          <p className="font-medium text-foreground">{currentUser.name}</p>
+                          {hasPendingChanges && (
+                            <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                              Cambio pendiente
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>{currentUser.email}</TableCell>
+
+                      <TableCell>
                         <Select
-                          value={draft?.role ?? currentUser.role}
+                          value={currentRole}
                           onValueChange={(value) =>
                             updateDraft(currentUser._id, { role: value as AuthUser["role"] })
                           }
                           disabled={isSaving}
                         >
-                          <SelectTrigger className="w-48">
+                          <SelectTrigger className="admin-input-surface w-48">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -324,21 +496,17 @@ export function AdminUsersSection() {
                             <SelectItem value="admin">{roleLabel("admin")}</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Badge variant={(draft?.role ?? currentUser.role) === "admin" ? "default" : "secondary"}>
-                          {roleLabel(draft?.role ?? currentUser.role)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                      </TableCell>
+
+                      <TableCell>
                         <Select
-                          value={draft?.status ?? currentUser.status}
+                          value={currentStatus}
                           onValueChange={(value) =>
                             updateDraft(currentUser._id, { status: value as AuthUser["status"] })
                           }
                           disabled={isSaving}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="admin-input-surface w-32">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -346,33 +514,32 @@ export function AdminUsersSection() {
                             <SelectItem value="inactive">{userStatusLabel("inactive")}</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Badge variant={(draft?.status ?? currentUser.status) === "active" ? "outline" : "destructive"}>
-                          {userStatusLabel(draft?.status ?? currentUser.status)}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatDate(currentUser.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          type="button"
-                          className="transition-all hover:-translate-y-0.5"
-                          onClick={() => void saveUser(currentUser)}
-                          disabled={!hasChanges(currentUser) || isSaving}
-                        >
-                          <Save className="mr-1 h-4 w-4" />
-                          {isSaving ? "Guardando..." : "Guardar"}
-                        </Button>
-                        {rowMessage && <span className="text-xs text-muted-foreground">{rowMessage}</span>}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            )}
-          </TableBody>
-        </Table>
+                      </TableCell>
+
+                      <TableCell>{formatDate(currentUser.createdAt)}</TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            type="button"
+                            className="transition-all hover:-translate-y-0.5"
+                            onClick={() => void saveUser(currentUser)}
+                            disabled={!hasChanges(currentUser) || isSaving}
+                          >
+                            <Save className="mr-1 h-4 w-4" />
+                            {isSaving ? "Guardando..." : "Guardar"}
+                          </Button>
+                          {rowMessage && <span className="text-xs text-muted-foreground">{rowMessage}</span>}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

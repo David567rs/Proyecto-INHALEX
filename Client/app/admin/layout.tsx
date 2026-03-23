@@ -52,7 +52,7 @@ interface AdminNavLink {
 const RESUMEN_LINK: AdminNavLink = {
   href: "/admin",
   label: "Resumen",
-  description: "Vista general del panel",
+  description: "Vista general",
   icon: LayoutDashboard,
   isActive: (pathname) => pathname === "/admin",
 }
@@ -60,7 +60,7 @@ const RESUMEN_LINK: AdminNavLink = {
 const USUARIOS_LINK: AdminNavLink = {
   href: "/admin/usuarios",
   label: "Usuarios",
-  description: "Roles, estado y permisos",
+  description: "Roles y accesos",
   icon: Users,
   isActive: (pathname) => pathname.startsWith("/admin/usuarios"),
 }
@@ -68,15 +68,15 @@ const USUARIOS_LINK: AdminNavLink = {
 const CONTENIDO_LINK: AdminNavLink = {
   href: "/admin/contenido",
   label: "Contenido",
-  description: "Politicas, terminos y mision",
+  description: "Paginas y politicas",
   icon: FileText,
   isActive: (pathname) => pathname.startsWith("/admin/contenido"),
 }
 
 const AUDITORIA_LINK: AdminNavLink = {
   href: "/admin/auditoria",
-  label: "Auditoria",
-  description: "Bitacora de acciones y cambios",
+  label: "Monitoreo",
+  description: "Tiempo real y auditoria",
   icon: History,
   isActive: (pathname) => pathname.startsWith("/admin/auditoria"),
 }
@@ -84,7 +84,7 @@ const AUDITORIA_LINK: AdminNavLink = {
 const RESPALDOS_LINK: AdminNavLink = {
   href: "/admin/respaldos",
   label: "Respaldos",
-  description: "Copias de seguridad de base y colecciones",
+  description: "Base y colecciones",
   icon: DatabaseBackup,
   isActive: (pathname) => pathname.startsWith("/admin/respaldos"),
 }
@@ -93,14 +93,14 @@ const CATALOGO_LINKS: AdminNavLink[] = [
   {
     href: "/admin/productos",
     label: "Productos",
-    description: "Catalogo principal de aromas",
+    description: "Catalogo y precios",
     icon: ShoppingBag,
     isActive: (pathname) => pathname.startsWith("/admin/productos"),
   },
   {
     href: "/admin/catalogo/categorias",
     label: "Categorias",
-    description: "Lineas y clasificacion",
+    description: "Lineas y orden",
     icon: Tags,
     isActive: (pathname) => pathname.startsWith("/admin/catalogo/categorias"),
   },
@@ -250,16 +250,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       <ProtectedPage requireAdmin>
-        <div className="container mx-auto px-3 py-6 sm:px-4 lg:py-8">
+        <div className="container mx-auto px-3 py-6 sm:px-4 lg:h-[calc(100dvh-2.5rem)] lg:overflow-hidden lg:py-5">
           <div
             className={cn(
-              "grid gap-5",
+              "grid gap-5 lg:h-full lg:min-h-0 lg:items-start",
               isSidebarCollapsed
                 ? "lg:grid-cols-[88px_1fr]"
                 : "lg:grid-cols-[248px_1fr] xl:grid-cols-[272px_1fr]",
             )}
           >
-            <aside className="space-y-3 lg:sticky lg:top-6 lg:h-fit">
+            <aside className="space-y-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
               <div className="hidden justify-end lg:flex">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -286,203 +286,206 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </Tooltip>
               </div>
 
-              {!isSidebarCollapsed && (
-                <div className="rounded-2xl border border-border/60 bg-card/85 p-4 shadow-sm backdrop-blur xl:p-5">
-                  <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    <ShieldCheck className="h-4 w-4" />
-                    Administracion
-                  </p>
-                  <h1 className="mt-3 text-lg font-semibold tracking-tight text-foreground xl:text-xl">
-                    Panel INHALEX
-                  </h1>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Bienvenido, {user?.name ?? "Administrador"}.
-                  </p>
-                </div>
-              )}
-
-              <nav
-                className={cn(
-                  "rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur",
-                  isSidebarCollapsed ? "p-2" : "p-2.5 xl:p-3",
-                )}
-              >
+              <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
                 {!isSidebarCollapsed && (
-                  <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Modulos
-                  </p>
+                  <div className="admin-section-card p-4 xl:p-5">
+                    <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                      <ShieldCheck className="h-4 w-4" />
+                      Administracion
+                    </p>
+                    <h1 className="mt-3 text-lg font-semibold tracking-tight text-foreground xl:text-xl">
+                      Panel INHALEX
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Bienvenido, {user?.name ?? "Administrador"}.
+                    </p>
+                  </div>
                 )}
 
-                <div className="space-y-1.5">
-                  {isSidebarCollapsed ? (
-                    visibleMobileLinks.map((link) => (
-                      <SidebarLink
-                        key={link.href}
-                        link={link}
-                        pathname={pathname}
-                        collapsed
-                      />
-                    ))
-                  ) : (
-                    <>
-                      {visiblePrimaryLinks.map((link) => (
-                        <SidebarLink key={link.href} link={link} pathname={pathname} />
-                      ))}
+                <nav
+                  className={cn(
+                    "admin-section-card",
+                    isSidebarCollapsed ? "p-2" : "p-2.5 xl:p-3",
+                  )}
+                >
+                  {!isSidebarCollapsed && (
+                    <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Modulos
+                    </p>
+                  )}
 
-                      {visibleCatalogLinks.length > 0 && (
-                        <Collapsible open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
-                          <CollapsibleTrigger
-                            className={cn(
-                              "flex w-full items-center justify-between rounded-xl border px-2.5 py-2.5 text-left transition-all xl:px-3 xl:py-3",
-                              isCatalogActive(pathname)
-                                ? "border-primary/30 bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                                : "border-transparent hover:border-border/70 hover:bg-secondary/40",
-                            )}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Layers3 className="h-4 w-4 shrink-0" />
-                              <div>
-                                <p className="text-xs font-semibold xl:text-sm">Catalogo</p>
-                                <p
-                                  className={cn(
-                                    "hidden text-xs 2xl:block",
-                                    isCatalogActive(pathname)
-                                      ? "text-primary-foreground/85"
-                                      : "text-muted-foreground",
-                                  )}
-                                >
-                                  Productos, categorias e inventario
-                                </p>
-                              </div>
-                            </div>
-                            <ChevronDown
+                  <div className="space-y-1.5">
+                    {isSidebarCollapsed ? (
+                      visibleMobileLinks.map((link) => (
+                        <SidebarLink
+                          key={link.href}
+                          link={link}
+                          pathname={pathname}
+                          collapsed
+                        />
+                      ))
+                    ) : (
+                      <>
+                        {visiblePrimaryLinks.map((link) => (
+                          <SidebarLink key={link.href} link={link} pathname={pathname} />
+                        ))}
+
+                        {visibleCatalogLinks.length > 0 && (
+                          <Collapsible open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
+                            <CollapsibleTrigger
                               className={cn(
-                                "h-4 w-4 transition-transform",
-                                isCatalogOpen ? "rotate-180" : "",
+                                "flex w-full items-center justify-between rounded-xl border px-2.5 py-2.5 text-left transition-all xl:px-3 xl:py-3",
+                                isCatalogActive(pathname)
+                                  ? "border-primary/30 bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                  : "border-transparent hover:border-border/70 hover:bg-secondary/40",
                               )}
-                            />
-                          </CollapsibleTrigger>
+                            >
+                              <div className="flex items-center gap-2">
+                                <Layers3 className="h-4 w-4 shrink-0" />
+                                <div>
+                                  <p className="text-xs font-semibold xl:text-sm">Catalogo</p>
+                                  <p
+                                    className={cn(
+                                      "hidden text-xs 2xl:block",
+                                      isCatalogActive(pathname)
+                                        ? "text-primary-foreground/85"
+                                        : "text-muted-foreground",
+                                    )}
+                                  >
+                                    Productos, categorias e inventario
+                                  </p>
+                                </div>
+                              </div>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transition-transform",
+                                  isCatalogOpen ? "rotate-180" : "",
+                                )}
+                              />
+                            </CollapsibleTrigger>
 
-                          <CollapsibleContent className="mt-2 pl-3 pr-1">
-                            <div className="space-y-1.5 border-l border-border/70 pl-3">
-                              {visibleCatalogLinks.map((link) => (
-                                <SidebarLink
-                                  key={link.href}
-                                  link={link}
-                                  pathname={pathname}
-                                  compact
-                                />
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      )}
+                            <CollapsibleContent className="mt-2 pl-3 pr-1">
+                              <div className="space-y-1.5 border-l border-border/70 pl-3">
+                                {visibleCatalogLinks.map((link) => (
+                                  <SidebarLink
+                                    key={link.href}
+                                    link={link}
+                                    pathname={pathname}
+                                    compact
+                                  />
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
 
-                      {visibleSecondaryLinks.map((link) => (
-                        <SidebarLink key={link.href} link={link} pathname={pathname} />
-                      ))}
-                    </>
+                        {visibleSecondaryLinks.map((link) => (
+                          <SidebarLink key={link.href} link={link} pathname={pathname} />
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </nav>
+
+                <div
+                  className={cn(
+                    "admin-section-card",
+                    isSidebarCollapsed ? "p-2" : "p-2.5 xl:p-3",
                   )}
-                </div>
-              </nav>
-
-              <div
-                className={cn(
-                  "rounded-2xl border border-border/60 bg-card/80 shadow-sm backdrop-blur",
-                  isSidebarCollapsed ? "p-2" : "p-2.5 xl:p-3",
-                )}
-              >
-                {!isSidebarCollapsed && (
-                  <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Accesos
-                  </p>
-                )}
-                <div className={cn("grid gap-2", isSidebarCollapsed && "place-items-center")}>
-                  {isSidebarCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-9 w-9 p-0"
-                          size="icon"
-                          asChild
-                        >
-                          <Link href="/">
-                            <ExternalLink className="h-4 w-4" />
-                            <span className="sr-only">Ver sitio publico</span>
-                          </Link>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={8}>
-                        Ver sitio publico
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Button variant="outline" className="justify-start" asChild>
-                      <Link href="/">
-                        <ExternalLink className="h-4 w-4" />
-                        Ver sitio publico
-                      </Link>
-                    </Button>
+                >
+                  {!isSidebarCollapsed && (
+                    <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Accesos
+                    </p>
                   )}
+                  <div className={cn("grid gap-2", isSidebarCollapsed && "place-items-center")}>
+                    {isSidebarCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-9 w-9 p-0"
+                            size="icon"
+                            asChild
+                          >
+                            <Link href="/">
+                              <ExternalLink className="h-4 w-4" />
+                              <span className="sr-only">Ver sitio publico</span>
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" sideOffset={8}>
+                          Ver sitio publico
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button variant="outline" className="justify-start" asChild>
+                        <Link href="/">
+                          <ExternalLink className="h-4 w-4" />
+                          Ver sitio publico
+                        </Link>
+                      </Button>
+                    )}
 
-                  {isSidebarCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="h-9 w-9 p-0"
-                          size="icon"
-                          asChild
-                        >
-                          <Link href="/cuenta">
-                            <UserCircle2 className="h-4 w-4" />
-                            <span className="sr-only">Mi cuenta</span>
-                          </Link>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={8}>
-                        Mi cuenta
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Button variant="outline" className="justify-start" asChild>
-                      <Link href="/cuenta">
-                        <UserCircle2 className="h-4 w-4" />
-                        Mi cuenta
-                      </Link>
-                    </Button>
-                  )}
+                    {isSidebarCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="h-9 w-9 p-0"
+                            size="icon"
+                            asChild
+                          >
+                            <Link href="/cuenta">
+                              <UserCircle2 className="h-4 w-4" />
+                              <span className="sr-only">Mi cuenta</span>
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" sideOffset={8}>
+                          Mi cuenta
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button variant="outline" className="justify-start" asChild>
+                        <Link href="/cuenta">
+                          <UserCircle2 className="h-4 w-4" />
+                          Mi cuenta
+                        </Link>
+                      </Button>
+                    )}
 
-                  {isSidebarCollapsed ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          className="h-9 w-9 p-0"
-                          size="icon"
-                          onClick={handleLogout}
-                        >
-                          <LogOut className="h-4 w-4" />
-                          <span className="sr-only">Cerrar sesion</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" sideOffset={8}>
+                    {isSidebarCollapsed ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            className="h-9 w-9 p-0"
+                            size="icon"
+                            onClick={handleLogout}
+                          >
+                            <LogOut className="h-4 w-4" />
+                            <span className="sr-only">Cerrar sesion</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" sideOffset={8}>
+                          Cerrar sesion
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Button variant="destructive" className="justify-start" onClick={handleLogout}>
+                        <LogOut className="h-4 w-4" />
                         Cerrar sesion
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Button variant="destructive" className="justify-start" onClick={handleLogout}>
-                      <LogOut className="h-4 w-4" />
-                      Cerrar sesion
-                    </Button>
-                  )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </aside>
 
-            <section className="space-y-4">
-              <header className="rounded-2xl border border-border/60 bg-card/80 px-5 py-4 shadow-sm backdrop-blur">
+            <section className="space-y-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+              <header className="sticky top-3 z-20 shrink-0 lg:top-0">
+                <div className="admin-section-card px-5 py-4 backdrop-blur-xl supports-[backdrop-filter]:bg-card/82">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Modulo activo
                 </p>
@@ -508,9 +511,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     </Link>
                   ))}
                 </div>
+                </div>
               </header>
 
-              <main className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+              <main className="animate-in fade-in-0 slide-in-from-bottom-2 duration-500 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
                 {children}
               </main>
             </section>

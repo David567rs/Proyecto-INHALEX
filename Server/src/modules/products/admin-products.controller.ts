@@ -94,7 +94,7 @@ export class AdminProductsController {
 
   @Delete('categories/:id')
   removeCategory(@Param('id') id: string) {
-    return this.productsService.removeCategory(id);
+    return this.productsService.deactivateCategory(id);
   }
 
   @Get(':idOrSlug')

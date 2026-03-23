@@ -272,19 +272,6 @@ export function updateAdminProductCategory(
   })
 }
 
-export function removeAdminProductCategory(
-  categoryId: string,
-  token: string,
-): Promise<{ deleted: boolean; categoryId: string }> {
-  return apiRequest<{ deleted: boolean; categoryId: string }>(
-    `/admin/products/categories/${categoryId}`,
-    {
-      method: "DELETE",
-      token,
-    },
-  )
-}
-
 export function getAdminCompanyContent(token: string): Promise<CompanyContent> {
   return apiRequest<CompanyContent>("/admin/company-content", {
     method: "GET",
@@ -361,6 +348,155 @@ export function listAdminAuditLogs(
   const path = queryString ? `/admin/audit/logs?${queryString}` : "/admin/audit/logs"
 
   return apiRequest<AdminAuditLogsResponse>(path, {
+    method: "GET",
+    token,
+  })
+}
+
+export interface AdminMonitoringOverview {
+  generatedAt: string
+  windowMinutes: number
+  bucketMinutes: number
+  database: {
+    name: string
+    collections: number
+    objects: number
+    dataSizeBytes: number
+    storageSizeBytes: number
+    indexSizeBytes: number
+    indexes: number
+    avgObjSizeBytes: number
+    activeConnections: number
+    availableConnections: number
+    uptimeSeconds: number
+    engine: string
+    cacheUsedBytes: number
+    cacheDirtyBytes: number
+    cacheMaxBytes: number
+    operations: {
+      insert: number
+      query: number
+      update: number
+      delete: number
+      getmore: number
+      command: number
+    }
+    capabilities: {
+      dbStats: boolean
+      collStats: boolean
+      serverStatus: boolean
+    }
+    notes: string[]
+  }
+  collections: Array<{
+    name: string
+    documents: number
+    avgObjSizeBytes: number
+    dataSizeBytes: number
+    storageSizeBytes: number
+    totalIndexSizeBytes: number
+    indexes: number
+    sizeSharePercent: number
+    documentSharePercent: number
+    totalRequests: number
+    reads: number
+    writes: number
+    failedRequests: number
+    avgResponseTimeMs: number
+    lastActivityAt?: string
+    activityLevel: "hot" | "warm" | "idle"
+  }>
+  traffic: {
+    totalRequests: number
+    failedRequests: number
+    successRate: number
+    avgResponseTimeMs: number
+    timeline: Array<{
+      bucketStart: string
+      totalRequests: number
+      failedRequests: number
+      avgResponseTimeMs: number
+    }>
+    methods: Array<{
+      key: string
+      value: number
+    }>
+    actions: Array<{
+      key: string
+      value: number
+    }>
+    topRoutes: Array<{
+      route: string
+      totalRequests: number
+      failedRequests: number
+      avgResponseTimeMs: number
+      lastSeenAt?: string
+    }>
+  }
+  users: {
+    total: number
+    admins: number
+    inactive: number
+    activeLast5Minutes: number
+    activeLast60Minutes: number
+    recentlyRegistered: number
+    spotlightUsers: Array<{
+      userId: string
+      name: string
+      email: string
+      role: AuthUser["role"]
+      status: AuthUser["status"]
+      lastSeenAt?: string
+      lastLoginAt?: string
+      createdAt?: string
+      requestsLastWindow: number
+      failedRequests: number
+      avgResponseTimeMs: number
+      lastRoute?: string
+      activityLevel: "online" | "recent" | "idle"
+    }>
+  }
+  runtime: {
+    hostname: string
+    pid: number
+    nodeVersion: string
+    platform: string
+    cpuCount: number
+    processUptimeSeconds: number
+    processCpuPercent: number
+    processMemoryBytes: {
+      rss: number
+      heapTotal: number
+      heapUsed: number
+      external: number
+      arrayBuffers: number
+    }
+    systemMemoryBytes: {
+      total: number
+      free: number
+      used: number
+    }
+  }
+}
+
+export interface GetAdminMonitoringQuery {
+  windowMinutes?: number
+  topCollections?: number
+}
+
+export function getAdminMonitoringOverview(
+  token: string,
+  query: GetAdminMonitoringQuery = {},
+): Promise<AdminMonitoringOverview> {
+  const params = new URLSearchParams()
+
+  if (query.windowMinutes) params.set("windowMinutes", String(query.windowMinutes))
+  if (query.topCollections) params.set("topCollections", String(query.topCollections))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/audit/monitoring?${queryString}` : "/admin/audit/monitoring"
+
+  return apiRequest<AdminMonitoringOverview>(path, {
     method: "GET",
     token,
   })

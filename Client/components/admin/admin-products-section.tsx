@@ -2,9 +2,26 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
-import { AlertTriangle, Database, Download, FileSpreadsheet, Plus, RefreshCw, Save, Upload } from "lucide-react"
+import {
+  AlertTriangle,
+  ChevronDown,
+  Database,
+  Download,
+  FileSpreadsheet,
+  Filter,
+  Plus,
+  RefreshCw,
+  Save,
+  Sparkles,
+  Upload,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -37,6 +54,7 @@ import {
 } from "@/lib/admin/admin-api"
 import type { ProductCategoryOption } from "@/lib/products/categories"
 import { useAuth } from "@/components/auth/auth-provider"
+import { cn } from "@/lib/utils"
 
 interface ProductDraft {
   category: string
@@ -86,12 +104,6 @@ function formatPrice(value: number, currency: string): string {
     style: "currency",
     currency: currency || "MXN",
   }).format(value)
-}
-
-function statusVariant(status: AdminProduct["status"]): "default" | "secondary" | "outline" {
-  if (status === "active") return "default"
-  if (status === "draft") return "secondary"
-  return "outline"
 }
 
 const PRODUCT_STATUS_LABELS: Record<AdminProduct["status"], string> = {
@@ -282,6 +294,8 @@ export function AdminProductsSection() {
   const [rowMessageById, setRowMessageById] = useState<Record<string, string>>({})
   const [filters, setFilters] = useState<ProductFilters>(INITIAL_PRODUCT_FILTERS)
   const [searchInput, setSearchInput] = useState("")
+  const [isActionsOpen, setIsActionsOpen] = useState(true)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true)
   const [meta, setMeta] = useState<ProductListMeta>({
     total: 0,
     page: 1,
@@ -294,6 +308,23 @@ export function AdminProductsSection() {
     () => products.filter((product) => product.status === "active").length,
     [products],
   )
+  const totalDraftProductsInPage = useMemo(
+    () => products.filter((product) => product.status === "draft").length,
+    [products],
+  )
+  const totalOutOfStockProductsInPage = useMemo(
+    () => products.filter((product) => !product.inStock).length,
+    [products],
+  )
+  const activeFilterCount = useMemo(() => {
+    let total = 0
+    if (searchInput.trim()) total += 1
+    if (filters.category !== "all") total += 1
+    if (filters.status !== "all") total += 1
+    if (filters.inStock !== "all") total += 1
+    if (filters.limit !== INITIAL_PRODUCT_FILTERS.limit) total += 1
+    return total
+  }, [filters.category, filters.inStock, filters.limit, filters.status, searchInput])
 
   const productCategoryOptions = useMemo(
     () => categoryOptions.filter((category) => category.id !== "all"),
@@ -328,6 +359,11 @@ export function AdminProductsSection() {
       ...patch,
       page: resetPage ? 1 : (patch.page ?? prev.page),
     }))
+  }, [])
+
+  const resetFilters = useCallback(() => {
+    setSearchInput("")
+    setFilters(INITIAL_PRODUCT_FILTERS)
   }, [])
 
   const loadProducts = useCallback(async () => {
@@ -529,6 +565,12 @@ export function AdminProductsSection() {
     if (draftSortOrder !== product.sortOrder) return true
     return false
   }
+
+  const pendingChangesCount = useMemo(
+    () => products.filter((product) => hasChanges(product)).length,
+    [productDraftsById, products],
+  )
+  const editingProductHasChanges = editingProduct ? hasChanges(editingProduct) : false
 
   const saveProduct = async (product: AdminProduct) => {
     const token = getAccessToken()
@@ -736,82 +778,12 @@ export function AdminProductsSection() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/85 p-6 shadow-sm backdrop-blur">
-      <div className="pointer-events-none absolute -right-10 -top-14 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-amber-300/10 blur-2xl" />
-
-      <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-primary">Productos</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Catalogo conectado a <code>GET/PATCH /api/admin/products</code> y precarga con
-            <code> POST /api/admin/products/seed-defaults</code>. Flujo CSV en
-            <code> GET /api/admin/products/csv</code> y
-            <code> POST /api/admin/products/csv/import</code>
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            className="transition-all hover:-translate-y-0.5"
-            onClick={() => void loadProducts()}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Recargar productos
-          </Button>
-          {canManageCatalog && (
-            <Button
-              type="button"
-              variant="outline"
-              className="transition-all hover:-translate-y-0.5"
-              onClick={() => void handleExportProductsTemplate()}
-              disabled={isExportingProductsTemplate}
-            >
-              <FileSpreadsheet
-                className={`mr-2 h-4 w-4 ${isExportingProductsTemplate ? "animate-spin" : ""}`}
-              />
-              {isExportingProductsTemplate ? "Descargando..." : "Plantilla CSV"}
-            </Button>
-          )}
-          {canManageCatalog && (
-            <Button
-              type="button"
-              variant="outline"
-              className="transition-all hover:-translate-y-0.5"
-              onClick={() => void handleExportProductsCsv()}
-              disabled={isExportingProductsCsv}
-            >
-              <Download className={`mr-2 h-4 w-4 ${isExportingProductsCsv ? "animate-spin" : ""}`} />
-              {isExportingProductsCsv ? "Exportando..." : "Exportar CSV"}
-            </Button>
-          )}
-          {canManageCatalog && (
-            <Button
-              type="button"
-              variant="outline"
-              className="transition-all hover:-translate-y-0.5"
-              onClick={() => csvFileInputRef.current?.click()}
-              disabled={isImportingProductsCsv}
-            >
-              <Upload className={`mr-2 h-4 w-4 ${isImportingProductsCsv ? "animate-spin" : ""}`} />
-              {isImportingProductsCsv ? "Importando..." : "Importar CSV"}
-            </Button>
-          )}
-          {canManageCatalog && (
-            <Button
-              type="button"
-              className="transition-all hover:-translate-y-0.5"
-              onClick={() => void handleSeedProducts()}
-              disabled={isSeedingProducts}
-            >
-              <Database className={`mr-2 h-4 w-4 ${isSeedingProducts ? "animate-spin" : ""}`} />
-              {isSeedingProducts ? "Sembrando..." : "Sembrar catalogo"}
-            </Button>
-          )}
-        </div>
+    <div className="admin-panel-shell admin-animate-card">
+      <div className="relative z-10">
+        <h2 className="text-2xl font-semibold tracking-tight text-primary">Productos</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Gestion conectada a <code>GET/PATCH /api/admin/products</code> con CSV y precarga.
+        </p>
       </div>
 
       <input
@@ -822,123 +794,437 @@ export function AdminProductsSection() {
         onChange={(event) => void handleImportProductsCsvFile(event)}
       />
 
-      {canManageCatalog && (
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-secondary/20 p-3">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              placeholder="Nueva categoria (ej. Linea relajante)"
-              value={newCategoryName}
-              maxLength={80}
-              onChange={(event) => {
-                setNewCategoryName(event.target.value)
-                setCreateCategoryMessage("")
-              }}
-            />
+      <div className="admin-toolbar-surface relative z-20 mt-4 px-4 py-4 lg:sticky lg:top-0">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Centro rapido del catalogo</span>
+            <Badge variant="secondary">{pendingChangesCount} cambios pendientes</Badge>
+            <Badge variant="outline">{meta.total} visibles</Badge>
+            <Badge variant="outline">{activeFilterCount} filtros</Badge>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
-              className="sm:w-auto"
-              onClick={() => void handleCreateCategory()}
-              disabled={isCreatingCategory}
+              className="transition-all hover:-translate-y-0.5"
+              onClick={() => void loadProducts()}
+              disabled={isLoading}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              {isCreatingCategory ? "Creando..." : "Crear categoria"}
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              Recargar productos
             </Button>
+            {canManageCatalog && (
+              <Button
+                type="button"
+                variant="outline"
+                className="transition-all hover:-translate-y-0.5"
+                onClick={() => void handleExportProductsTemplate()}
+                disabled={isExportingProductsTemplate}
+              >
+                <FileSpreadsheet
+                  className={`mr-2 h-4 w-4 ${isExportingProductsTemplate ? "animate-spin" : ""}`}
+                />
+                {isExportingProductsTemplate ? "Descargando..." : "Plantilla CSV"}
+              </Button>
+            )}
+            {canManageCatalog && (
+              <Button
+                type="button"
+                variant="outline"
+                className="transition-all hover:-translate-y-0.5"
+                onClick={() => void handleExportProductsCsv()}
+                disabled={isExportingProductsCsv}
+              >
+                <Download className={`mr-2 h-4 w-4 ${isExportingProductsCsv ? "animate-spin" : ""}`} />
+                {isExportingProductsCsv ? "Exportando..." : "Exportar CSV"}
+              </Button>
+            )}
+            {canManageCatalog && (
+              <Button
+                type="button"
+                variant="outline"
+                className="transition-all hover:-translate-y-0.5"
+                onClick={() => csvFileInputRef.current?.click()}
+                disabled={isImportingProductsCsv}
+              >
+                <Upload className={`mr-2 h-4 w-4 ${isImportingProductsCsv ? "animate-spin" : ""}`} />
+                {isImportingProductsCsv ? "Importando..." : "Importar CSV"}
+              </Button>
+            )}
+            {canManageCatalog && (
+              <Button
+                type="button"
+                className="transition-all hover:-translate-y-0.5"
+                onClick={() => void handleSeedProducts()}
+                disabled={isSeedingProducts}
+              >
+                <Database className={`mr-2 h-4 w-4 ${isSeedingProducts ? "animate-spin" : ""}`} />
+                {isSeedingProducts ? "Sembrando..." : "Sembrar catalogo"}
+              </Button>
+            )}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {editingProduct
-              ? `Producto en edicion: ${editingProduct.name}. La categoria nueva se asignara automaticamente a esta fila.`
-              : "Selecciona o edita una fila para asignar la nueva categoria automaticamente."}
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Visibilidad
           </p>
-          {createCategoryMessage && (
-            <p className="mt-2 text-xs text-muted-foreground">{createCategoryMessage}</p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{meta.total}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Productos filtrados con la segmentacion actual.</p>
+          
+        </div>
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Activos en pagina
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {totalActiveProductsInPage}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {totalDraftProductsInPage} borradores, {totalOutOfStockProductsInPage} sin stock.
+          </p>
+        </div>
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Cambios pendientes
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {pendingChangesCount}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Filas sin guardar.
+          </p>
+        </div>
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Navegacion
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {meta.page} / {meta.totalPages}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {filters.limit} por pagina.
+          </p>
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+        <Collapsible
+          open={isActionsOpen}
+          onOpenChange={setIsActionsOpen}
+          className="admin-form-card overflow-hidden"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <Sparkles className="h-4 w-4" />
+                Centro de acciones
+              </p>
+              <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+                Operaciones del catalogo
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Exporta, importa y recarga el catalogo.
+              </p>
+            </div>
+
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" type="button" className="sm:self-start">
+                {isActionsOpen ? "Ocultar acciones" : "Mostrar acciones"}
+                <ChevronDown
+                  className={cn("ml-2 h-4 w-4 transition-transform", isActionsOpen && "rotate-180")}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+
+          <CollapsibleContent className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
+            <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+              <div className="admin-section-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Acciones rapidas
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="transition-all hover:-translate-y-0.5"
+                    onClick={() => void loadProducts()}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    Recargar productos
+                  </Button>
+                  {canManageCatalog && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="transition-all hover:-translate-y-0.5"
+                      onClick={() => void handleExportProductsTemplate()}
+                      disabled={isExportingProductsTemplate}
+                    >
+                      <FileSpreadsheet
+                        className={`mr-2 h-4 w-4 ${isExportingProductsTemplate ? "animate-spin" : ""}`}
+                      />
+                      {isExportingProductsTemplate ? "Descargando..." : "Plantilla CSV"}
+                    </Button>
+                  )}
+                  {canManageCatalog && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="transition-all hover:-translate-y-0.5"
+                      onClick={() => void handleExportProductsCsv()}
+                      disabled={isExportingProductsCsv}
+                    >
+                      <Download className={`mr-2 h-4 w-4 ${isExportingProductsCsv ? "animate-spin" : ""}`} />
+                      {isExportingProductsCsv ? "Exportando..." : "Exportar CSV"}
+                    </Button>
+                  )}
+                  {canManageCatalog && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="transition-all hover:-translate-y-0.5"
+                      onClick={() => csvFileInputRef.current?.click()}
+                      disabled={isImportingProductsCsv}
+                    >
+                      <Upload className={`mr-2 h-4 w-4 ${isImportingProductsCsv ? "animate-spin" : ""}`} />
+                      {isImportingProductsCsv ? "Importando..." : "Importar CSV"}
+                    </Button>
+                  )}
+                  {canManageCatalog && (
+                    <Button
+                      type="button"
+                      className="transition-all hover:-translate-y-0.5"
+                      onClick={() => void handleSeedProducts()}
+                      disabled={isSeedingProducts}
+                    >
+                      <Database className={`mr-2 h-4 w-4 ${isSeedingProducts ? "animate-spin" : ""}`} />
+                      {isSeedingProducts ? "Sembrando..." : "Sembrar catalogo"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="admin-section-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Atajo de categorias
+                </p>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Input
+                    className="admin-input-surface"
+                    placeholder="Nueva categoria (ej. Linea relajante)"
+                    value={newCategoryName}
+                    maxLength={80}
+                    onChange={(event) => {
+                      setNewCategoryName(event.target.value)
+                      setCreateCategoryMessage("")
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="sm:w-auto"
+                    onClick={() => void handleCreateCategory()}
+                    disabled={isCreatingCategory}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {isCreatingCategory ? "Creando..." : "Crear"}
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {editingProduct
+                    ? `En foco: ${editingProduct.name}. Se asignara al guardar.`
+                    : "Si editas una fila, se asignara al guardar."}
+                </p>
+                {createCategoryMessage && (
+                  <p className="mt-2 text-xs font-medium text-primary">{createCategoryMessage}</p>
+                )}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        <div className="admin-form-card">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Estado de edicion
+              </p>
+              <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+                {editingProduct ? editingProduct.name : "Sin producto en foco"}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {editingProduct
+                  ? "Resumen del producto en foco."
+                  : "Al editar una fila, aparece aqui."}
+              </p>
+            </div>
+            {editingProductHasChanges && (
+              <Badge className="shadow-[0_10px_28px_-18px_rgba(22,163,74,0.75)]">Pendiente</Badge>
+            )}
+          </div>
+
+          {editingProduct ? (
+            <div className="mt-5 grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Slug:</span> /{editingProduct.slug}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Precio actual:</span>{" "}
+                  {formatPrice(editingProduct.price, editingProduct.currency)}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Estado:</span> {statusLabel(editingProduct.status)}
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">Stock:</span>{" "}
+                  {editingProduct.inStock ? "Disponible" : "Agotado"}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingProductId(null)}
+                >
+                  Limpiar foco
+                </Button>
+                <Button variant="link" size="sm" asChild className="px-0">
+                  <Link href={`/productos/${editingProduct.slug}`}>Abrir vista publica</Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="admin-empty-state mt-5 max-w-none items-start text-left">
+              <div className="rounded-full bg-primary/10 p-3 text-primary">
+                <Save className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Todavia no hay una fila en edicion</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Al editar una fila, veras su resumen.
+                </p>
+              </div>
+            </div>
           )}
         </div>
-      )}
-
-      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Total filtrados:</span> {meta.total}
-        </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Activos en pagina:</span> {totalActiveProductsInPage}
-        </div>
-        <div className="rounded-xl border border-border/60 bg-secondary/25 px-4 py-3 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary/35">
-          <span className="font-medium">Pagina:</span> {meta.page} / {meta.totalPages}
-        </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Input
-          className="min-w-[240px] flex-[2_1_300px]"
-          placeholder="Buscar por nombre o descripcion"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-        />
+      <Collapsible
+        open={isFiltersOpen}
+        onOpenChange={setIsFiltersOpen}
+        className="admin-form-card relative z-10 mt-6 overflow-hidden lg:sticky lg:top-28 lg:z-10 xl:top-24"
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <Filter className="h-4 w-4" />
+              Segmentacion
+            </p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+              Filtros y navegacion del listado
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Filtra por categoria, estado, stock y pagina.
+            </p>
+          </div>
 
-        <div className="min-w-[180px] flex-1">
-          <Select value={filters.category} onValueChange={(value) => setFilter({ category: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              {productCategoryOptions.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary">{activeFilterCount} filtros activos</Badge>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+              disabled={activeFilterCount === 0 && filters.page === 1}
+            >
+              Restablecer
+            </Button>
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" type="button" size="sm">
+                {isFiltersOpen ? "Ocultar filtros" : "Mostrar filtros"}
+                <ChevronDown
+                  className={cn("ml-2 h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")}
+                />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
         </div>
 
-        <div className="min-w-[160px] flex-1">
-          <Select
-            value={filters.status}
-            onValueChange={(value) => setFilter({ status: value as ProductFilters["status"] })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="draft">{statusLabel("draft")}</SelectItem>
-              <SelectItem value="active">{statusLabel("active")}</SelectItem>
-              <SelectItem value="archived">{statusLabel("archived")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <CollapsibleContent className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]">
+            <Input
+              className="admin-input-surface"
+              placeholder="Buscar por nombre o descripcion"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
 
-        <div className="min-w-[180px] flex-1">
-          <Select
-            value={filters.inStock}
-            onValueChange={(value) => setFilter({ inStock: value as ProductFilters["inStock"] })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Disponibilidad" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="true">{stockLabel("true")}</SelectItem>
-              <SelectItem value="false">{stockLabel("false")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            <Select value={filters.category} onValueChange={(value) => setFilter({ category: value })}>
+              <SelectTrigger className="admin-input-surface">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {productCategoryOptions.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <div className="min-w-[120px] flex-1">
-          <Select value={String(filters.limit)} onValueChange={(value) => setFilter({ limit: Number(value) })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Registros" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            <Select
+              value={filters.status}
+              onValueChange={(value) => setFilter({ status: value as ProductFilters["status"] })}
+            >
+              <SelectTrigger className="admin-input-surface">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="draft">{statusLabel("draft")}</SelectItem>
+                <SelectItem value="active">{statusLabel("active")}</SelectItem>
+                <SelectItem value="archived">{statusLabel("archived")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={filters.inStock}
+              onValueChange={(value) => setFilter({ inStock: value as ProductFilters["inStock"] })}
+            >
+              <SelectTrigger className="admin-input-surface">
+                <SelectValue placeholder="Disponibilidad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="true">{stockLabel("true")}</SelectItem>
+                <SelectItem value="false">{stockLabel("false")}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={String(filters.limit)} onValueChange={(value) => setFilter({ limit: Number(value) })}>
+              <SelectTrigger className="admin-input-surface">
+                <SelectValue placeholder="Registros" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {errorMessage && (
         <div className="relative z-10 mt-6 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -950,7 +1236,7 @@ export function AdminProductsSection() {
       )}
 
       {seedProductsMessage && (
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm text-foreground">
+        <div className="admin-section-card relative z-10 mt-4 rounded-xl bg-secondary/30 px-4 py-3 text-sm text-foreground">
           <p className="inline-flex items-start gap-2">
             <Database className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>{seedProductsMessage}</span>
@@ -959,7 +1245,7 @@ export function AdminProductsSection() {
       )}
 
       {csvMessage && (
-        <div className="relative z-10 mt-4 rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm text-foreground">
+        <div className="admin-section-card relative z-10 mt-4 rounded-xl bg-secondary/30 px-4 py-3 text-sm text-foreground">
           <p className="inline-flex items-start gap-2">
             <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             <span>{csvMessage}</span>
@@ -967,24 +1253,25 @@ export function AdminProductsSection() {
         </div>
       )}
 
-      <div className="relative z-10 mt-6 hidden overflow-hidden rounded-xl border border-border/60 bg-card/80 2xl:block">
+      <div className="admin-table-shell relative z-10 mt-6 hidden 2xl:block">
+        <div className="admin-table-scroll">
         <Table>
           <TableHeader>
-            <TableRow className="bg-secondary/30">
-              <TableHead>Producto</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Precio</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead>Disponibilidad</TableHead>
-              <TableHead>Orden</TableHead>
-              <TableHead>Actualizado</TableHead>
-              <TableHead>Acciones</TableHead>
+            <TableRow className="admin-table-head-row">
+              <TableHead className="admin-table-head-cell">Producto</TableHead>
+              <TableHead className="admin-table-head-cell">Categoria</TableHead>
+              <TableHead className="admin-table-head-cell">Precio</TableHead>
+              <TableHead className="admin-table-head-cell">Estado</TableHead>
+              <TableHead className="admin-table-head-cell">Disponibilidad</TableHead>
+              <TableHead className="admin-table-head-cell">Orden</TableHead>
+              <TableHead className="admin-table-head-cell">Actualizado</TableHead>
+              <TableHead className="admin-table-head-cell">Acciones</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="admin-table-body-compact">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`product-skeleton-${index}`} className="animate-pulse">
+                <TableRow key={`product-skeleton-${index}`} className="animate-pulse bg-background/40">
                   <TableCell>
                     <div className="space-y-2">
                       <div className="h-4 w-36 rounded bg-secondary/60" />
@@ -1020,7 +1307,7 @@ export function AdminProductsSection() {
             ) : products.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
-                  <div className="mx-auto flex max-w-sm flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 bg-secondary/20 px-6 py-8">
+                  <div className="admin-empty-state">
                     <div className="rounded-full bg-primary/10 p-3 text-primary">
                       <Database className="h-5 w-5" />
                     </div>
@@ -1034,6 +1321,7 @@ export function AdminProductsSection() {
                 const draft = productDraftsById[product._id]
                 const isSaving = Boolean(savingProductById[product._id])
                 const rowMessage = rowMessageById[product._id]
+                const hasPendingChanges = hasChanges(product)
                 const selectedCategory = draft?.category ?? product.category
                 const selectedCategoryExists = productCategoryOptions.some(
                   (category) => category.id === selectedCategory,
@@ -1042,56 +1330,56 @@ export function AdminProductsSection() {
                 return (
                   <TableRow
                     key={product._id}
-                    className="transition-colors hover:bg-secondary/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500"
+                    className={cn(
+                      "transition-colors hover:bg-secondary/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500",
+                      hasPendingChanges && "bg-primary/[0.035]",
+                    )}
                     style={{ animationDelay: `${index * 35}ms` }}
                   >
                     <TableCell className="font-medium">
                       <div className="flex flex-col">
                         <span>{product.name}</span>
                         <span className="text-xs text-muted-foreground">/{product.slug}</span>
+                        {hasPendingChanges && (
+                          <span className="mt-1 inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                            Cambio pendiente
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex min-w-40 flex-col gap-1">
-                        <Select
-                          value={selectedCategory}
-                          onValueChange={(value) => updateProductDraft(product._id, { category: value })}
-                          disabled={isSaving || !canManageCatalog}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {!selectedCategoryExists && (
-                              <SelectItem value={selectedCategory}>
-                                {categoryLabelById[selectedCategory] ?? selectedCategory}
-                              </SelectItem>
-                            )}
-                            {productCategoryOptions.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <span className="text-xs text-muted-foreground">
-                          {categoryLabelById[selectedCategory] ?? selectedCategory}
-                        </span>
-                      </div>
+                      <Select
+                        value={selectedCategory}
+                        onValueChange={(value) => updateProductDraft(product._id, { category: value })}
+                        disabled={isSaving || !canManageCatalog}
+                      >
+                        <SelectTrigger className="admin-input-surface min-w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {!selectedCategoryExists && (
+                            <SelectItem value={selectedCategory}>
+                              {categoryLabelById[selectedCategory] ?? selectedCategory}
+                            </SelectItem>
+                          )}
+                          {productCategoryOptions.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         min={0}
                         step="0.01"
-                        className="w-24"
+                        className="admin-input-surface w-24"
                         value={draft?.price ?? String(product.price)}
                         disabled={isSaving || !canManageCatalog}
                         onChange={(event) => updateProductDraft(product._id, { price: event.target.value })}
                       />
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {formatPrice(product.price, product.currency)}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -1101,7 +1389,7 @@ export function AdminProductsSection() {
                         }
                         disabled={isSaving || !canManageCatalog}
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="admin-input-surface w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1119,7 +1407,7 @@ export function AdminProductsSection() {
                         }
                         disabled={isSaving || !canManageCatalog}
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="admin-input-surface w-32">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -1132,7 +1420,7 @@ export function AdminProductsSection() {
                       <Input
                         type="number"
                         min={1}
-                        className="w-20"
+                        className="admin-input-surface w-20"
                         value={draft?.sortOrder ?? ""}
                         disabled={isSaving || !canManageCatalog}
                         onChange={(event) => updateProductDraft(product._id, { sortOrder: event.target.value })}
@@ -1163,15 +1451,13 @@ export function AdminProductsSection() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <div className="relative z-10 mt-6 grid gap-4 2xl:hidden">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={`product-card-skeleton-${index}`}
-              className="rounded-xl border border-border/60 bg-card/80 p-4 animate-pulse"
-            >
+            <div key={`product-card-skeleton-${index}`} className="admin-skeleton-card">
               <div className="h-5 w-48 rounded bg-secondary/60" />
               <div className="mt-2 h-4 w-32 rounded bg-secondary/50" />
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1183,7 +1469,7 @@ export function AdminProductsSection() {
             </div>
           ))
         ) : products.length === 0 ? (
-          <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 bg-secondary/20 px-6 py-8 text-center">
+          <div className="admin-empty-state">
             <div className="rounded-full bg-primary/10 p-3 text-primary">
               <Database className="h-5 w-5" />
             </div>
@@ -1207,13 +1493,21 @@ export function AdminProductsSection() {
             return (
               <div
                 key={product._id}
-                className="rounded-xl border border-border/60 bg-card/80 p-4 transition-colors hover:bg-secondary/10 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500"
+                className={cn(
+                  "admin-section-card p-4 transition-colors hover:bg-secondary/10 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500",
+                  hasChanges(product) && "bg-primary/[0.035]",
+                )}
                 style={{ animationDelay: `${index * 35}ms` }}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-foreground">{product.name}</p>
                     <p className="text-xs text-muted-foreground">/{product.slug}</p>
+                    {hasChanges(product) && (
+                      <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                        Cambio pendiente
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground">Actualizado: {formatDate(product.updatedAt)}</p>
                 </div>
@@ -1226,7 +1520,7 @@ export function AdminProductsSection() {
                       onValueChange={(value) => updateProductDraft(product._id, { category: value })}
                       disabled={isSaving || !canManageCatalog}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="admin-input-surface">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1247,6 +1541,7 @@ export function AdminProductsSection() {
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Precio</p>
                     <Input
+                      className="admin-input-surface"
                       type="number"
                       min={0}
                       step="0.01"
@@ -1254,9 +1549,6 @@ export function AdminProductsSection() {
                       disabled={isSaving || !canManageCatalog}
                       onChange={(event) => updateProductDraft(product._id, { price: event.target.value })}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {formatPrice(product.price, product.currency)}
-                    </p>
                   </div>
 
                   <div className="space-y-1">
@@ -1268,7 +1560,7 @@ export function AdminProductsSection() {
                       }
                       disabled={isSaving || !canManageCatalog}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="admin-input-surface">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1288,7 +1580,7 @@ export function AdminProductsSection() {
                       }
                       disabled={isSaving || !canManageCatalog}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="admin-input-surface">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1301,6 +1593,7 @@ export function AdminProductsSection() {
                   <div className="space-y-1 sm:max-w-[160px]">
                     <p className="text-xs text-muted-foreground">Orden</p>
                     <Input
+                      className="admin-input-surface"
                       type="number"
                       min={1}
                       value={draft?.sortOrder ?? ""}
@@ -1311,10 +1604,6 @@ export function AdminProductsSection() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <Badge variant={statusVariant(currentStatus)}>{statusLabel(currentStatus)}</Badge>
-                  <Badge variant={currentStock === "true" ? "outline" : "destructive"}>
-                    {stockLabel(currentStock)}
-                  </Badge>
                   <Button
                     size="sm"
                     type="button"

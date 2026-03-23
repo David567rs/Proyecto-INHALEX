@@ -1,0 +1,15 @@
+{
+  "name": "proyecto-inhalex",
+  "private": true,
+  "scripts": {
+    "dev:client": "npm --prefix Client run dev",
+    "dev:server": "npm --prefix Server run start:dev",
+    "start:client": "npm --prefix Client run start",
+    "start:server": "npm --prefix Server run start",
+    "build:client": "npm --prefix Client run build",
+    "build:server": "npm --prefix Server run build",
+    "lint:client": "npm --prefix Client run lint",
+    "lint:server": "npm --prefix Server run lint",
+    "test:server": "npm --prefix Server run test"
+  }
+}

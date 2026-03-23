@@ -32,6 +32,7 @@ export class AuthService {
     const lastName = registerDto.lastName.trim();
     const fullName = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
     const phone = registerDto.phone.trim();
+    const now = new Date();
 
     const passwordHash = await bcrypt.hash(registerDto.password, 12);
     const user = await this.usersService.create({
@@ -41,6 +42,8 @@ export class AuthService {
       email: registerDto.email,
       phone,
       passwordHash,
+      lastLoginAt: now,
+      lastSeenAt: now,
     });
 
     const accessToken = await this.generateAccessToken(user);
@@ -78,15 +81,18 @@ export class AuthService {
 
     this.authSecurityService.clearLoginFailures(normalizedEmail, clientIp);
 
-    const accessToken = await this.generateAccessToken(user);
+    const activeUser = (await this.usersService.markLogin(user.id)) ?? user;
+    const accessToken = await this.generateAccessToken(activeUser);
     return {
       accessToken,
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(activeUser),
     };
   }
 
   async getProfile(userId: string) {
-    const user = await this.usersService.findById(userId);
+    const user =
+      (await this.usersService.markActivity(userId)) ??
+      (await this.usersService.findById(userId));
 
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');

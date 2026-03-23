@@ -7,6 +7,7 @@ import {
 import { Response } from 'express';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
+import { UsersService } from '../users/users.service';
 import { AuditService } from './audit.service';
 
 const SENSITIVE_KEYS = new Set([
@@ -62,7 +63,10 @@ function sanitizeValue(
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly auditService: AuditService,
+    private readonly usersService: UsersService,
+  ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     if (context.getType() !== 'http') {
@@ -96,6 +100,7 @@ export class AuditInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       tap(() => {
+        this.touchActorActivity(actorUserId);
         this.saveLog({
           actorUserId,
           actorEmail,
@@ -118,6 +123,7 @@ export class AuditInterceptor implements NestInterceptor {
         const statusCode = this.resolveStatusCode(error);
         const errorMessage = this.resolveErrorMessage(error);
 
+        this.touchActorActivity(actorUserId);
         this.saveLog({
           actorUserId,
           actorEmail,
@@ -183,5 +189,10 @@ export class AuditInterceptor implements NestInterceptor {
 
   private saveLog(payload: Parameters<AuditService['createLog']>[0]): void {
     void this.auditService.createLog(payload).catch(() => undefined);
+  }
+
+  private touchActorActivity(actorUserId?: string): void {
+    if (!actorUserId) return;
+    void this.usersService.markActivity(actorUserId).catch(() => undefined);
   }
 }

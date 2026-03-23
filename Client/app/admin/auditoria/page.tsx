@@ -1,6 +1,6 @@
-import { AdminAuditSection } from "@/components/admin/admin-audit-section"
+import { AdminMonitoringSection } from "@/components/admin/admin-monitoring-section"
 
 export default function AdminAuditPage() {
-  return <AdminAuditSection />
+  return <AdminMonitoringSection />
 }
 

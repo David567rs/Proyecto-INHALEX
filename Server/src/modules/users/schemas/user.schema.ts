@@ -36,6 +36,12 @@ export class User {
 
   @Prop({ type: String, enum: UserStatus, default: UserStatus.ACTIVE })
   status: UserStatus;
+
+  @Prop({ index: true })
+  lastLoginAt?: Date;
+
+  @Prop({ index: true })
+  lastSeenAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
