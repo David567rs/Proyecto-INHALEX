@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"backupId":{"$numberInt":"1"}},"name":"backupId_1","unique":true}],"uuid":"42f4147f6e5d4d14b32517cd814b7601","collectionName":"respaldos_generados","type":"collection"}
