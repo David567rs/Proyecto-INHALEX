@@ -15,7 +15,7 @@ export default async function AboutPage() {
       <Header />
 
       <main className="flex-1">
-        <section className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-20 bg-secondary/30 border-b border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-6 duration-700">
+        <section className="page-fade-up relative overflow-hidden border-b border-border bg-secondary/30 pt-28 pb-16 lg:pt-36 lg:pb-20">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-10 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
             <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
@@ -37,7 +37,7 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        <section className="py-16 lg:py-20 bg-secondary/20">
+        <section className="page-fade-up page-fade-up-delay-1 bg-secondary/20 py-16 lg:py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
               <article className="bg-card rounded-3xl border border-border/60 p-6 lg:p-8 shadow-lg">
@@ -57,7 +57,7 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        <section className="py-16 lg:py-20">
+        <section className="page-fade-up page-fade-up-delay-2 py-16 lg:py-20">
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-10">
@@ -81,7 +81,8 @@ export default async function AboutPage() {
                     return (
                       <article
                         key={`${value}-${index}`}
-                        className="group bg-card border border-border/60 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-primary/30 transition-all duration-300"
+                        className="page-fade-up public-card-lift group rounded-2xl border border-border/60 bg-card p-5 shadow-sm hover:border-primary/30 hover:shadow-lg"
+                        style={{ animationDelay: `${180 + index * 70}ms` }}
                       >
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                           <Icon className="w-6 h-6 text-primary group-hover:text-primary-foreground" />

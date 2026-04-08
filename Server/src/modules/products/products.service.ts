@@ -6,17 +6,25 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { AdjustProductInventoryDto } from './dto/adjust-product-inventory.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 import { ImportProductsCsvRowDto } from './dto/import-products-csv.dto';
+import { ListInventoryMovementsQueryDto } from './dto/list-inventory-movements-query.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
+import { InventoryMovementType } from './enums/inventory-movement-type.enum';
 import { ProductDocument, Product } from './schemas/product.schema';
 import {
   ProductCategoryDocument,
   ProductCategoryEntity,
 } from './schemas/product-category.schema';
+import {
+  ProductInventoryMovement,
+  ProductInventoryMovementDocument,
+} from './schemas/product-inventory-movement.schema';
 import { ProductStatus } from './enums/product-status.enum';
 import { DEFAULT_PRODUCTS } from './data/default-products';
 import { PRODUCT_CATEGORY_LABELS } from './constants/category-labels.constant';
@@ -72,6 +80,40 @@ export interface AdminProductsCsvImportResult {
   errors: AdminProductsCsvImportError[];
 }
 
+export interface InventorySummaryResponse {
+  totalTrackedProducts: number;
+  totalPendingInitialization: number;
+  totalAvailableUnits: number;
+  totalReservedUnits: number;
+  lowStockProducts: number;
+  outOfStockProducts: number;
+  backorderEnabledProducts: number;
+}
+
+export interface InventoryMovementResponse {
+  id: string;
+  productId: string;
+  productName: string;
+  type: InventoryMovementType;
+  quantity: number;
+  previousAvailable?: number;
+  nextAvailable: number;
+  previousReserved: number;
+  nextReserved: number;
+  note?: string;
+  actorId?: string;
+  actorEmail?: string;
+  createdAt?: string;
+}
+
+interface InventorySnapshot {
+  tracked: boolean;
+  available: number;
+  reserved: number;
+  min: number;
+  allowBackorder: boolean;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -79,6 +121,8 @@ export class ProductsService {
     private readonly productModel: Model<ProductDocument>,
     @InjectModel(ProductCategoryEntity.name)
     private readonly productCategoryModel: Model<ProductCategoryDocument>,
+    @InjectModel(ProductInventoryMovement.name)
+    private readonly inventoryMovementModel: Model<ProductInventoryMovementDocument>,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<ProductDocument> {
@@ -112,6 +156,222 @@ export class ProductsService {
 
   async listAdmin(query: ListProductsQueryDto): Promise<PaginatedProductsResponse> {
     return this.list(query, false);
+  }
+
+  async getInventorySummary(): Promise<InventorySummaryResponse> {
+    const products = await this.productModel
+      .find({ status: { $ne: ProductStatus.ARCHIVED } })
+      .select(
+        'stockAvailable stockReserved stockMin allowBackorder inStock status slug name',
+      )
+      .exec();
+
+    const summary: InventorySummaryResponse = {
+      totalTrackedProducts: 0,
+      totalPendingInitialization: 0,
+      totalAvailableUnits: 0,
+      totalReservedUnits: 0,
+      lowStockProducts: 0,
+      outOfStockProducts: 0,
+      backorderEnabledProducts: 0,
+    };
+
+    for (const product of products) {
+      const inventory = this.readInventorySnapshot(product);
+      if (!inventory.tracked) {
+        summary.totalPendingInitialization += 1;
+      } else {
+        summary.totalTrackedProducts += 1;
+        summary.totalAvailableUnits += inventory.available;
+        summary.totalReservedUnits += inventory.reserved;
+
+        if (inventory.available === 0) {
+          summary.outOfStockProducts += 1;
+        }
+
+        if (inventory.min > 0 && inventory.available <= inventory.min) {
+          summary.lowStockProducts += 1;
+        }
+      }
+
+      if (inventory.allowBackorder) {
+        summary.backorderEnabledProducts += 1;
+      }
+    }
+
+    return summary;
+  }
+
+  async listInventoryMovements(
+    productId: string,
+    query: ListInventoryMovementsQueryDto,
+  ): Promise<{ items: InventoryMovementResponse[]; total: number; limit: number }> {
+    if (!Types.ObjectId.isValid(productId)) {
+      throw new BadRequestException('Invalid product id');
+    }
+
+    const product = await this.productModel.findById(productId).select('_id').exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const limit = query.limit ?? 12;
+    const [items, total] = await Promise.all([
+      this.inventoryMovementModel
+        .find({ productId })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .exec(),
+      this.inventoryMovementModel.countDocuments({ productId }).exec(),
+    ]);
+
+    return {
+      items: items.map((item) => this.mapInventoryMovement(item)),
+      total,
+      limit,
+    };
+  }
+
+  async adjustInventory(
+    productId: string,
+    adjustProductInventoryDto: AdjustProductInventoryDto,
+    actor: JwtPayload,
+  ): Promise<{ product: ProductDocument; movement: InventoryMovementResponse }> {
+    if (!Types.ObjectId.isValid(productId)) {
+      throw new BadRequestException('Invalid product id');
+    }
+
+    const product = await this.productModel.findById(productId).exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.status === ProductStatus.ARCHIVED) {
+      throw new BadRequestException(
+        'No se puede ajustar inventario de un producto archivado',
+      );
+    }
+
+    const inventory = this.readInventorySnapshot(product);
+    const note = adjustProductInventoryDto.note?.trim() || undefined;
+    const quantity = adjustProductInventoryDto.quantity;
+
+    if (
+      adjustProductInventoryDto.type !== InventoryMovementType.SET_AVAILABLE &&
+      quantity <= 0
+    ) {
+      throw new BadRequestException(
+        'La cantidad debe ser mayor a cero para este ajuste',
+      );
+    }
+
+    let nextAvailable = inventory.available;
+    let nextReserved = inventory.reserved;
+
+    switch (adjustProductInventoryDto.type) {
+      case InventoryMovementType.RESTOCK:
+        nextAvailable = inventory.available + quantity;
+        break;
+      case InventoryMovementType.DEDUCT:
+        this.assertInventoryTracked(
+          inventory,
+          'Inicializa el inventario antes de registrar salidas',
+        );
+        if (quantity > inventory.available) {
+          throw new BadRequestException(
+            'No puedes descontar mas unidades que las disponibles',
+          );
+        }
+        nextAvailable = inventory.available - quantity;
+        break;
+      case InventoryMovementType.SET_AVAILABLE:
+        if (quantity < inventory.reserved) {
+          throw new BadRequestException(
+            'La cantidad disponible no puede quedar por debajo del stock reservado',
+          );
+        }
+        nextAvailable = quantity;
+        break;
+      case InventoryMovementType.RESERVE:
+        this.assertInventoryTracked(
+          inventory,
+          'Inicializa el inventario antes de reservar unidades',
+        );
+        if (quantity > inventory.available) {
+          throw new BadRequestException(
+            'No puedes reservar mas unidades que las disponibles',
+          );
+        }
+        nextAvailable = inventory.available - quantity;
+        nextReserved = inventory.reserved + quantity;
+        break;
+      case InventoryMovementType.RELEASE:
+        this.assertInventoryTracked(
+          inventory,
+          'No hay inventario inicializado para liberar unidades',
+        );
+        if (quantity > inventory.reserved) {
+          throw new BadRequestException(
+            'No puedes liberar mas unidades que las reservadas',
+          );
+        }
+        nextAvailable = inventory.available + quantity;
+        nextReserved = inventory.reserved - quantity;
+        break;
+      default:
+        throw new BadRequestException('Tipo de ajuste invalido');
+    }
+
+    if (nextAvailable < 0 || nextReserved < 0) {
+      throw new BadRequestException('El inventario no puede quedar en numeros negativos');
+    }
+
+    const movementType =
+      !inventory.tracked &&
+      (adjustProductInventoryDto.type === InventoryMovementType.RESTOCK ||
+        adjustProductInventoryDto.type === InventoryMovementType.SET_AVAILABLE)
+        ? InventoryMovementType.INITIALIZE
+        : adjustProductInventoryDto.type;
+
+    const updatedProduct = await this.productModel
+      .findByIdAndUpdate(
+        productId,
+        {
+          $set: {
+            stockAvailable: nextAvailable,
+            stockReserved: nextReserved,
+            inStock: nextAvailable > 0,
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      )
+      .exec();
+
+    if (!updatedProduct) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const movement = await this.inventoryMovementModel.create({
+      productId: updatedProduct._id,
+      productName: updatedProduct.name,
+      type: movementType,
+      quantity,
+      previousAvailable: inventory.tracked ? inventory.available : undefined,
+      nextAvailable,
+      previousReserved: inventory.reserved,
+      nextReserved,
+      note,
+      actorId: actor.sub,
+      actorEmail: actor.email,
+    });
+
+    return {
+      product: updatedProduct,
+      movement: this.mapInventoryMovement(movement),
+    };
   }
 
   async exportAdminCsv(
@@ -494,6 +754,10 @@ export class ProductsService {
       updatePayload.category = categorySlug;
     }
 
+    if (this.hasTrackedInventory(existingProduct)) {
+      delete updatePayload.inStock;
+    }
+
     const updatedProduct = await this.productModel
       .findByIdAndUpdate(productId, updatePayload, {
         returnDocument: 'after',
@@ -523,6 +787,11 @@ export class ProductsService {
         currency: (seedProduct.currency ?? 'MXN').toUpperCase(),
         benefits: this.normalizeStringArray(seedProduct.benefits),
         aromas: this.normalizeStringArray(seedProduct.aromas),
+        stockAvailable:
+          seedProduct.stockAvailable ?? (seedProduct.inStock ? 24 : 0),
+        stockReserved: 0,
+        stockMin: seedProduct.stockMin ?? 6,
+        allowBackorder: seedProduct.allowBackorder ?? true,
       };
 
       const existing = await this.productModel.findOne({ slug }).select('_id').exec();
@@ -873,6 +1142,58 @@ export class ProductsService {
       return false;
     }
     throw new BadRequestException('Disponibilidad invalida');
+  }
+
+  private readInventorySnapshot(product: ProductDocument): InventorySnapshot {
+    return {
+      tracked: typeof product.stockAvailable === 'number',
+      available:
+        typeof product.stockAvailable === 'number' && Number.isFinite(product.stockAvailable)
+          ? Math.max(0, Math.floor(product.stockAvailable))
+          : 0,
+      reserved:
+        typeof product.stockReserved === 'number' && Number.isFinite(product.stockReserved)
+          ? Math.max(0, Math.floor(product.stockReserved))
+          : 0,
+      min:
+        typeof product.stockMin === 'number' && Number.isFinite(product.stockMin)
+          ? Math.max(0, Math.floor(product.stockMin))
+          : 0,
+      allowBackorder: Boolean(product.allowBackorder),
+    };
+  }
+
+  private hasTrackedInventory(product: ProductDocument): boolean {
+    return typeof product.stockAvailable === 'number';
+  }
+
+  private assertInventoryTracked(
+    inventory: InventorySnapshot,
+    message: string,
+  ): void {
+    if (!inventory.tracked) {
+      throw new BadRequestException(message);
+    }
+  }
+
+  private mapInventoryMovement(
+    movement: ProductInventoryMovementDocument,
+  ): InventoryMovementResponse {
+    return {
+      id: movement.id,
+      productId: movement.productId.toString(),
+      productName: movement.productName,
+      type: movement.type,
+      quantity: movement.quantity,
+      previousAvailable: movement.previousAvailable,
+      nextAvailable: movement.nextAvailable,
+      previousReserved: movement.previousReserved ?? 0,
+      nextReserved: movement.nextReserved ?? 0,
+      note: movement.note,
+      actorId: movement.actorId,
+      actorEmail: movement.actorEmail,
+      createdAt: movement.createdAt?.toISOString(),
+    };
   }
 
   private mapProductToCsvRow(product: ProductDocument): Record<string, string> {

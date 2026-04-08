@@ -6,7 +6,6 @@ import {
   RefreshCw,
   Save,
   ShieldCheck,
-  Sparkles,
   Users,
 } from "lucide-react"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -297,17 +296,17 @@ export function AdminUsersSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
         <div className="admin-form-card">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <Sparkles className="h-4 w-4" />
-            Centro de accesos
+            <ShieldCheck className="h-4 w-4" />
+            Controles del modulo
           </p>
           <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-            Gobierno de roles y estados
+            Roles y estados del panel
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Revisa roles, estado y cambios antes de guardar.
+            Gestiona acceso operativo sin tocar informacion comercial del usuario.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -319,11 +318,16 @@ export function AdminUsersSection() {
               {user?.status ? userStatusLabel(user.status) : "-"}
             </div>
             <div className="admin-stat-chip">
-              <span className="font-medium">Endpoint:</span> <code>/api/admin/users</code>
+              <span className="font-medium">Seguridad:</span> solo admin puede editar
             </div>
             <div className="admin-stat-chip">
-              <span className="font-medium">Flujo:</span> editar y guardar
+              <span className="font-medium">Flujo:</span> cambios por fila
             </div>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.05] px-4 py-3 text-sm text-muted-foreground">
+            Usa este modulo para ajustar permisos y estado de acceso. Los cambios se aplican
+            usuario por usuario para evitar errores masivos.
           </div>
         </div>
 
@@ -337,7 +341,7 @@ export function AdminUsersSection() {
           <p className="mt-2 text-sm text-muted-foreground">
             {editingUser
               ? "Resumen del usuario en foco."
-              : "Al editar una fila, aparece aqui."}
+              : "Al editar una fila, aparece aqui para darte contexto inmediato."}
           </p>
 
           {editingUser ? (
@@ -401,6 +405,23 @@ export function AdminUsersSection() {
       )}
 
       <div className="admin-table-shell relative z-10 mt-6">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Listado principal
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Cuentas registradas
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Revisa correos, define rol y actualiza estado operativo desde una sola tabla.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{users.length} cuentas</Badge>
+            <Badge variant="secondary">{pendingChangesCount} pendientes</Badge>
+          </div>
+        </div>
         <div className="admin-table-scroll">
           <Table>
             <TableHeader>

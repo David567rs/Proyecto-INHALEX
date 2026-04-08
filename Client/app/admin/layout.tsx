@@ -1,6 +1,6 @@
 "use client"
 
-import type { LucideIcon, ReactNode } from "react"
+import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
@@ -21,6 +21,7 @@ import {
   Tags,
   UserCircle2,
   Users,
+  type LucideIcon,
 } from "lucide-react"
 import { ProtectedPage } from "@/components/auth/protected-page"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -63,6 +64,14 @@ const USUARIOS_LINK: AdminNavLink = {
   description: "Roles y accesos",
   icon: Users,
   isActive: (pathname) => pathname.startsWith("/admin/usuarios"),
+}
+
+const PEDIDOS_LINK: AdminNavLink = {
+  href: "/admin/pedidos",
+  label: "Pedidos",
+  description: "Revision y estados",
+  icon: ShoppingBag,
+  isActive: (pathname) => pathname.startsWith("/admin/pedidos"),
 }
 
 const CONTENIDO_LINK: AdminNavLink = {
@@ -113,11 +122,12 @@ const CATALOGO_LINKS: AdminNavLink[] = [
   },
 ]
 
-const DESKTOP_PRIMARY_LINKS: AdminNavLink[] = [RESUMEN_LINK, USUARIOS_LINK]
+const DESKTOP_PRIMARY_LINKS: AdminNavLink[] = [RESUMEN_LINK, USUARIOS_LINK, PEDIDOS_LINK]
 const DESKTOP_SECONDARY_LINKS: AdminNavLink[] = [CONTENIDO_LINK, AUDITORIA_LINK, RESPALDOS_LINK]
 const MOBILE_LINKS: AdminNavLink[] = [
   RESUMEN_LINK,
   USUARIOS_LINK,
+  PEDIDOS_LINK,
   ...CATALOGO_LINKS,
   CONTENIDO_LINK,
   AUDITORIA_LINK,

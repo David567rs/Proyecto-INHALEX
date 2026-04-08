@@ -4,6 +4,11 @@ import type {
   CompanyContent,
   UpdateCompanyContentInput,
 } from "@/lib/company/company-content.types"
+import type {
+  DraftOrderIssue,
+  DraftOrderPreviewItem,
+  OrderStatus,
+} from "@/lib/orders/orders-api"
 
 export function listAdminUsers(token: string): Promise<AuthUser[]> {
   return apiRequest<AuthUser[]>("/admin/users", {
@@ -39,6 +44,10 @@ export interface AdminProduct {
   presentation?: string
   status: "draft" | "active" | "archived"
   inStock: boolean
+  stockAvailable?: number
+  stockReserved?: number
+  stockMin?: number
+  allowBackorder?: boolean
   sortOrder?: number
   createdAt?: string
   updatedAt?: string
@@ -209,7 +218,52 @@ export interface UpdateAdminProductInput {
   price?: number
   status?: AdminProduct["status"]
   inStock?: boolean
+  stockMin?: number
+  allowBackorder?: boolean
   sortOrder?: number
+}
+
+export type InventoryMovementType =
+  | "initialize"
+  | "restock"
+  | "deduct"
+  | "set_available"
+  | "reserve"
+  | "release"
+  | "commit_reserved"
+
+export interface AdminInventorySummary {
+  totalTrackedProducts: number
+  totalPendingInitialization: number
+  totalAvailableUnits: number
+  totalReservedUnits: number
+  lowStockProducts: number
+  outOfStockProducts: number
+  backorderEnabledProducts: number
+}
+
+export interface AdminInventoryMovement {
+  id: string
+  productId: string
+  productName: string
+  type: InventoryMovementType
+  quantity: number
+  previousAvailable?: number
+  nextAvailable: number
+  previousReserved: number
+  nextReserved: number
+  note?: string
+  actorId?: string
+  actorEmail?: string
+  orderId?: string
+  orderReference?: string
+  createdAt?: string
+}
+
+export interface AdjustAdminInventoryInput {
+  type: InventoryMovementType
+  quantity: number
+  note?: string
 }
 
 export function updateAdminProduct(
@@ -218,6 +272,147 @@ export function updateAdminProduct(
   token: string,
 ): Promise<AdminProduct> {
   return apiRequest<AdminProduct>(`/admin/products/${productId}`, {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export function getAdminInventorySummary(
+  token: string,
+): Promise<AdminInventorySummary> {
+  return apiRequest<AdminInventorySummary>("/admin/products/inventory/summary", {
+    method: "GET",
+    token,
+  })
+}
+
+export function listAdminInventoryMovements(
+  productId: string,
+  token: string,
+  limit = 12,
+): Promise<{ items: AdminInventoryMovement[]; total: number; limit: number }> {
+  return apiRequest<{ items: AdminInventoryMovement[]; total: number; limit: number }>(
+    `/admin/products/${productId}/inventory/movements?limit=${limit}`,
+    {
+      method: "GET",
+      token,
+    },
+  )
+}
+
+export function adjustAdminInventory(
+  productId: string,
+  payload: AdjustAdminInventoryInput,
+  token: string,
+): Promise<{ product: AdminProduct; movement: AdminInventoryMovement }> {
+  return apiRequest<{ product: AdminProduct; movement: AdminInventoryMovement }>(
+    `/admin/products/${productId}/inventory/adjust`,
+    {
+      method: "POST",
+      body: payload,
+      token,
+    },
+  )
+}
+
+export type AdminOrderStatus = OrderStatus
+
+export interface AdminOrderStatusNote {
+  status: AdminOrderStatus
+  note: string
+  actorId?: string
+  actorEmail?: string
+  createdAt: string
+}
+
+export interface AdminOrderListItem {
+  id: string
+  reference: string
+  status: AdminOrderStatus
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  totalItems: number
+  subtotal: number
+  currency: string
+  needsManualReview: boolean
+  createdAt?: string
+  confirmedAt?: string
+  cancelledAt?: string
+  completedAt?: string
+}
+
+export interface AdminOrderDetail extends AdminOrderListItem {
+  channel: string
+  customerNotes?: string
+  customerUserId?: string
+  customerUserEmail?: string
+  items: DraftOrderPreviewItem[]
+  issues: DraftOrderIssue[]
+  statusNotes: AdminOrderStatusNote[]
+  lastValidatedAt?: string
+}
+
+interface AdminOrdersResponse {
+  items: AdminOrderListItem[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: Record<AdminOrderStatus, number> & {
+    manualReview: number
+  }
+}
+
+export interface ListAdminOrdersQuery {
+  search?: string
+  status?: AdminOrderStatus
+  page?: number
+  limit?: number
+}
+
+export interface UpdateAdminOrderStatusInput {
+  status: AdminOrderStatus
+  note?: string
+}
+
+export function listAdminOrders(
+  token: string,
+  query: ListAdminOrdersQuery = {},
+): Promise<AdminOrdersResponse> {
+  const params = new URLSearchParams()
+
+  if (query.search) params.set("search", query.search)
+  if (query.status) params.set("status", query.status)
+  if (query.page) params.set("page", String(query.page))
+  if (query.limit) params.set("limit", String(query.limit))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/orders?${queryString}` : "/admin/orders"
+
+  return apiRequest<AdminOrdersResponse>(path, {
+    method: "GET",
+    token,
+  })
+}
+
+export function getAdminOrder(
+  orderId: string,
+  token: string,
+): Promise<AdminOrderDetail> {
+  return apiRequest<AdminOrderDetail>(`/admin/orders/${orderId}`, {
+    method: "GET",
+    token,
+  })
+}
+
+export function updateAdminOrderStatus(
+  orderId: string,
+  payload: UpdateAdminOrderStatusInput,
+  token: string,
+): Promise<AdminOrderDetail> {
+  return apiRequest<AdminOrderDetail>(`/admin/orders/${orderId}/status`, {
     method: "PATCH",
     body: payload,
     token,
@@ -507,7 +702,7 @@ export interface AdminBackupCollectionInfo {
   count: number
 }
 
-export type AdminBackupStorageProvider = "local" | "cloudinary"
+export type AdminBackupStorageProvider = "local" | "cloudinary" | "r2"
 export type AdminBackupStatus = "ready" | "failed" | "purged"
 export type AdminBackupTrigger = "manual" | "automatic"
 export type AdminBackupScope = "database" | "selectedCollections"
@@ -524,6 +719,7 @@ export interface AdminBackupSettings {
   retentionDays: number
   cloudFolder: string
   cloudinaryConfigured: boolean
+  r2Configured: boolean
   nextRunAt?: string
   lastSuccessfulRunAt?: string
   lastAttemptAt?: string
@@ -549,6 +745,7 @@ export interface AdminBackupStatusSummary {
   automaticEnabled: boolean
   preferredStorage: AdminBackupStorageProvider
   cloudinaryConfigured: boolean
+  r2Configured: boolean
   nextRunAt?: string
   lastSuccessfulRunAt?: string
   lastFailureAt?: string
@@ -571,6 +768,7 @@ export interface AdminDatabaseBackup {
   localAvailable: boolean
   remoteAvailable: boolean
   remoteUrl?: string
+  remoteIdentifier?: string
   notes?: string
   errorMessage?: string
   bundleFileName?: string
@@ -579,9 +777,6 @@ export interface AdminDatabaseBackup {
   collections: Array<{
     collection: string
     count: number
-    fileName: string
-    filePath: string
-    sizeBytes: number
   }>
 }
 
@@ -600,6 +795,7 @@ export interface AdminCollectionBackup {
   localAvailable: boolean
   remoteAvailable: boolean
   remoteUrl?: string
+  remoteIdentifier?: string
   notes?: string
   errorMessage?: string
 }

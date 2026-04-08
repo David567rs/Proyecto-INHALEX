@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import Link from "next/link"
 import { ArrowRight, Leaf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -65,18 +66,22 @@ export function CTASection() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
+              asChild
               size="lg"
-              className="group bg-white text-primary hover:bg-white/90 px-8 py-6 text-base font-medium shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-0.5"
+              className="group bg-white px-8 py-6 text-base font-medium text-primary shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-2xl"
             >
-              Explorar Productos
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              <Link href="/#catalogo">
+                Explorar Productos
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
             </Button>
             <Button
+              asChild
               variant="outline"
               size="lg"
               className="px-8 py-6 text-base font-medium border-2 border-white/30 text-primary-foreground hover:bg-white/10 hover:border-white/50 bg-transparent transition-all duration-300"
             >
-              Conoce Nuestra Historia
+              <Link href="/nosotros">Conoce Nuestra Historia</Link>
             </Button>
           </div>
 
@@ -93,7 +98,7 @@ export function CTASection() {
               { value: "100%", label: "Ingredientes Naturales" },
               { value: "4.8", label: "Calificación Promedio" },
             ].map((stat) => (
-              <div key={stat.label} className="text-center">
+              <div key={stat.label} className="text-center transition-transform duration-500 hover:-translate-y-1">
                 <p className="text-3xl lg:text-4xl font-bold text-primary-foreground mb-1">
                   {stat.value}
                 </p>

@@ -5,6 +5,10 @@ import {
   ProductCategoryEntity,
   ProductCategorySchema,
 } from './schemas/product-category.schema';
+import {
+  ProductInventoryMovement,
+  ProductInventoryMovementSchema,
+} from './schemas/product-inventory-movement.schema';
 import { ProductsService } from './products.service';
 import { ProductsController } from './products.controller';
 import { AdminProductsController } from './admin-products.controller';
@@ -17,6 +21,10 @@ import { AuthModule } from '../auth/auth.module';
     MongooseModule.forFeature([
       { name: Product.name, schema: ProductSchema },
       { name: ProductCategoryEntity.name, schema: ProductCategorySchema },
+      {
+        name: ProductInventoryMovement.name,
+        schema: ProductInventoryMovementSchema,
+      },
     ]),
   ],
   controllers: [ProductsController, AdminProductsController],

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/products/product-card"
 import { ProductModal } from "@/components/products/product-modal"
+import { useCart } from "@/components/cart/cart-provider"
 import { cn } from "@/lib/utils"
 import {
   PRODUCT_CATEGORIES,
@@ -39,6 +40,7 @@ export function ProductsSection({
   const [currentPage, setCurrentPage] = useState(1)
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
+  const { addItem } = useCart()
 
   const productsPerPage = 4
   const effectiveCategory = controlledCategory ?? localCategory
@@ -90,6 +92,7 @@ export function ProductsSection({
   }
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
+    addItem(product, quantity)
     onAddToCart?.(product, quantity)
   }
 
@@ -144,7 +147,7 @@ export function ProductsSection({
         {/* Category Filter */}
         <div
           className={cn(
-            "flex flex-wrap items-center justify-center gap-2 mb-10 transition-all duration-1000 delay-200",
+            "mb-10 flex flex-wrap items-center justify-center gap-2.5 transition-all duration-1000 delay-200",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
         >
@@ -154,10 +157,10 @@ export function ProductsSection({
               key={category.id}
               onClick={() => handleCategoryChange(category.id)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300",
+                "rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-300",
                 effectiveCategory === category.id
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                  : "bg-secondary text-secondary-foreground hover:bg-primary/10"
+                  ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_14px_30px_-18px_rgba(16,112,58,0.55)]"
+                  : "border-emerald-100/80 bg-white/85 text-secondary-foreground shadow-[0_8px_24px_-22px_rgba(15,84,43,0.4)] hover:-translate-y-0.5 hover:border-primary/15 hover:bg-primary/10"
               )}
             >
               {category.name}
@@ -168,7 +171,7 @@ export function ProductsSection({
         {/* Products Carousel */}
         <div
           className={cn(
-            "mb-12 overflow-hidden",
+            "mb-12 overflow-hidden rounded-[34px] px-2 py-3",
             "transition-all duration-1000 delay-300",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
@@ -213,7 +216,7 @@ export function ProductsSection({
                 return (
                   <div
                     key={`page-${pageIndex}`}
-                    className="w-full flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-1"
+                    className="grid w-full flex-shrink-0 auto-rows-fr grid-cols-1 gap-7 px-1 sm:grid-cols-2 lg:grid-cols-4"
                   >
                     {pageProducts.map((product, index) => (
                       <ProductCard
@@ -235,14 +238,14 @@ export function ProductsSection({
         {totalPages > 1 && filteredProducts.length > 0 && (
           <div
             className={cn(
-              "flex items-center justify-center gap-2 transition-all duration-1000 delay-500",
+              "flex items-center justify-center gap-2.5 transition-all duration-1000 delay-500",
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             )}
           >
             <Button
               variant="outline"
               size="icon"
-              className="h-10 w-10 rounded-full bg-transparent"
+              className="h-11 w-11 rounded-full border-emerald-100/80 bg-white/90 shadow-[0_10px_24px_-20px_rgba(15,84,43,0.5)] backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white"
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
@@ -255,10 +258,10 @@ export function ProductsSection({
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
                 className={cn(
-                  "h-10 w-10 rounded-full text-sm font-medium transition-all duration-300",
+                  "h-11 min-w-11 rounded-full border px-4 text-sm font-semibold transition-all duration-300",
                   currentPage === i + 1
-                    ? "bg-primary text-primary-foreground shadow-lg"
-                    : "bg-secondary text-secondary-foreground hover:bg-primary/10"
+                    ? "border-primary/20 bg-primary text-primary-foreground shadow-[0_14px_30px_-18px_rgba(16,112,58,0.55)]"
+                    : "border-emerald-100/80 bg-white/85 text-secondary-foreground shadow-[0_10px_24px_-20px_rgba(15,84,43,0.45)] hover:-translate-y-0.5 hover:border-primary/15 hover:bg-primary/10"
                 )}
               >
                 {i + 1}
@@ -268,7 +271,7 @@ export function ProductsSection({
             <Button
               variant="outline"
               size="icon"
-              className="h-10 w-10 rounded-full bg-transparent"
+              className="h-11 w-11 rounded-full border-emerald-100/80 bg-white/90 shadow-[0_10px_24px_-20px_rgba(15,84,43,0.5)] backdrop-blur-sm hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white"
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             >

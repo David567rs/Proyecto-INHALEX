@@ -18,7 +18,6 @@ import {
 } from "@/lib/products/categories"
 
 export default function HomePage() {
-  const [cartCount, setCartCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [products, setProducts] = useState<Product[]>([])
@@ -65,27 +64,13 @@ export default function HomePage() {
     scrollToCatalog()
   }
 
-  const handleLineSelect = (categoryId: string) => {
-    setSelectedCategory(categoryId)
-    setSearchQuery("")
-    setTimeout(scrollToCatalog, 50)
-  }
-
-  const handleAddToCart = (product: Product, quantity: number) => {
-    setCartCount(prev => prev + quantity)
-    // In a real app, you would also update cart state/context
-    console.log(`Added ${quantity}x ${product.name} to cart`)
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header
-        cartCount={cartCount}
         searchQuery={searchQuery}
         catalogProducts={products}
         catalogCategories={categories}
         onSearchChange={setSearchQuery}
-        onLineSelect={handleLineSelect}
         onSearchSelect={handleSearchSelect}
       />
       
@@ -96,7 +81,6 @@ export default function HomePage() {
           categories={categories}
           isLoading={isProductsLoading}
           errorMessage={productsError}
-          onAddToCart={handleAddToCart}
           searchQuery={searchQuery}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}

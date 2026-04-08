@@ -2,135 +2,196 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react"
+import {
+  ArrowRight,
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  Phone,
+  Twitter,
+} from "lucide-react"
+import {
+  CONTACT_CITY,
+  CONTACT_EMAIL,
+  CONTACT_EMAIL_HREF,
+  CONTACT_PHONE_DISPLAY,
+  CONTACT_PHONE_HREF,
+  HELP_LINKS,
+  PAYMENT_METHODS,
+  SOCIAL_LINKS,
+} from "@/lib/company/contact-info"
 
-const helpLinks = [
-  { name: "Politica de privacidad", href: "/politicas" },
-  { name: "Terminos y Condiciones", href: "/terminos" },
-  { name: "Preguntas Frecuentes", href: "/faq" },
-]
-
-const socialLinks = [
-  { name: "Facebook", icon: Facebook, href: "https://facebook.com/inhalex" },
-  { name: "Instagram", icon: Instagram, href: "https://instagram.com/inhalex" },
-  { name: "Twitter", icon: Twitter, href: "https://twitter.com/inhalex" },
-]
-
-const paymentMethods = ["VISA", "MC", "Mercado Pago", "PayPal"]
+const socialIcons = {
+  Facebook,
+  Instagram,
+  Twitter,
+}
 
 export function Footer() {
   return (
-    <footer className="bg-secondary/30 border-t border-border">
-      {/* Main Footer Content */}
-      <div className="container mx-auto px-4 py-10 lg:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10 items-start">
-          {/* Brand Column */}
-          <div className="flex flex-col items-start">
+    <footer className="relative overflow-hidden border-t border-border/70 bg-[linear-gradient(180deg,rgba(243,249,244,0.98),rgba(255,255,255,1))]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[8%] top-10 h-52 w-52 rounded-full bg-primary/8 blur-3xl" />
+        <div className="absolute bottom-0 right-[10%] h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl" />
+      </div>
+
+      <div className="container relative z-10 mx-auto px-4 py-10 lg:py-12">
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr_0.8fr_0.9fr]">
+          <section className="page-fade-up page-fade-up-delay-1 public-soft-surface rounded-[2rem] p-5 lg:p-6">
             <Link
               href="/"
-              className="inline-block group transition-transform duration-300 hover:scale-105"
+              className="inline-flex w-full justify-center transition-all duration-500 hover:-translate-y-1 hover:scale-[1.01] lg:justify-start"
             >
-              <div className="relative w-44 h-40">
+              <div className="relative aspect-[3.18/1] w-[15rem] sm:w-[16.75rem] lg:w-[17.5rem]">
                 <Image
-                  src="/images/inhalex-logonegro.png"
-                  alt="INHALEX SAS de CV"
+                  src="/images/NuevoLogo.png"
+                  alt="INHALEX - El Respiro Que Alivia"
                   fill
-                  className="object-contain"
+                  className="object-cover drop-shadow-[0_12px_24px_rgba(15,84,43,0.06)]"
+                  style={{ objectPosition: "50% 50.6%" }}
                 />
               </div>
             </Link>
-          </div>
 
-          {/* Contact Column */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+            <p className="mt-4 max-w-sm text-[0.97rem] leading-7 text-muted-foreground">
+              Productos aromaticos para respirar con mas calma, claridad y bienestar, con
+              una experiencia visual y sensorial mas cuidada en cada linea.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
+                100% Natural
+              </span>
+              <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
+                Aromas por linea
+              </span>
+              <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
+                Bienestar diario
+              </span>
+            </div>
+          </section>
+
+          <section className="page-fade-up page-fade-up-delay-2 public-soft-surface rounded-[2rem] p-5 lg:p-6">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-foreground/72">
               Contacto
-            </h3>
-            <a
-              href="mailto:danielcruzhernandezinhalex@gmail.com"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Mail className="w-4 h-4" />
-              danielcruzhernandezinhalex@gmail.com
-            </a>
-            <a
-              href="tel:+527712034573"
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Phone className="w-4 h-4" />
-              +52 77 1203 4573
-            </a>
-            <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>Huejutla de Reyes, Hgo. Mexico</span>
-            </div>
-          </div>
+            </p>
+            <div className="mt-4 space-y-3">
+              <a
+                href={CONTACT_EMAIL_HREF}
+                className="group flex items-start gap-3 rounded-[1.2rem] border border-emerald-100/80 bg-white/84 px-4 py-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_16px_32px_-24px_rgba(15,84,43,0.18)]"
+              >
+                <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                  <Mail className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">Correo</span>
+                  <span className="mt-1 block text-sm text-muted-foreground group-hover:text-foreground/80">
+                    {CONTACT_EMAIL}
+                  </span>
+                </span>
+              </a>
 
-          {/* Help Column */}
-          <div className="lg:pl-4">
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
+              <a
+                href={CONTACT_PHONE_HREF}
+                className="group flex items-start gap-3 rounded-[1.2rem] border border-emerald-100/80 bg-white/84 px-4 py-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_16px_32px_-24px_rgba(15,84,43,0.18)]"
+              >
+                <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                  <Phone className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">Telefono</span>
+                  <span className="mt-1 block text-sm text-muted-foreground group-hover:text-foreground/80">
+                    {CONTACT_PHONE_DISPLAY}
+                  </span>
+                </span>
+              </a>
+
+              <div className="flex items-start gap-3 rounded-[1.2rem] border border-emerald-100/80 bg-white/84 px-4 py-3.5">
+                <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                  <MapPin className="h-4 w-4" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">Ubicacion</span>
+                  <span className="mt-1 block text-sm text-muted-foreground">{CONTACT_CITY}</span>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section className="page-fade-up page-fade-up-delay-3 public-soft-surface rounded-[2rem] p-5 lg:p-6">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-foreground/72">
               Ayuda
-            </h3>
-            <ul className="space-y-2.5">
-              {helpLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300 inline-block"
+            </p>
+            <nav className="mt-4 space-y-1.5">
+              {HELP_LINKS.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="group flex items-center justify-between rounded-[1.05rem] border border-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-300 hover:border-emerald-100/80 hover:bg-white/86 hover:text-primary"
+                >
+                  {link.name}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
+              ))}
+            </nav>
+          </section>
+
+          <section className="page-fade-up page-fade-up-delay-4 public-soft-surface rounded-[2rem] p-5 lg:p-6">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-foreground/72">
+              Comunidad
+            </p>
+            <div className="mt-4 flex items-center gap-2.5">
+              {SOCIAL_LINKS.map((social) => {
+                const Icon = socialIcons[social.name]
+
+                return (
+                  <a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-emerald-100/80 bg-white/90 text-muted-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary hover:text-primary-foreground hover:shadow-[0_16px_28px_-20px_rgba(16,112,58,0.38)]"
+                    aria-label={social.name}
                   >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Social & Payment Column */}
-          <div>
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
-              Siguenos
-            </h3>
-            <div className="flex items-center gap-2.5 mb-6">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary hover:bg-primary/5 transition-all duration-300"
-                  aria-label={social.name}
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
+                    <Icon className="h-5 w-5" />
+                  </a>
+                )
+              })}
             </div>
 
-            <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider mb-4">
-              Metodos de pago
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {paymentMethods.map((method) => (
-                <div
-                  key={method}
-                  className="px-2.5 py-1 bg-card border border-border rounded text-xs font-medium text-muted-foreground"
-                >
-                  {method}
-                </div>
-              ))}
+            <p className="mt-5 text-sm leading-7 text-muted-foreground">
+              Sigue los lanzamientos, nuevas lineas y noticias del proyecto desde nuestros
+              canales oficiales.
+            </p>
+
+            <div className="mt-5">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-foreground/72">
+                Metodos de pago
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {PAYMENT_METHODS.map((method) => (
+                  <span
+                    key={method}
+                    className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-semibold text-foreground/75"
+                  >
+                    {method}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
+          </section>
         </div>
-      </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-border">
-        <div className="container mx-auto px-4 py-5">
-          <p className="text-sm text-muted-foreground text-center">
+        <div className="page-fade-up page-fade-up-delay-4 mt-6 flex flex-col items-center justify-between gap-2.5 border-t border-emerald-100/80 pt-5 text-center sm:flex-row sm:text-left">
+          <p className="text-sm text-muted-foreground">
             {new Date().getFullYear()} INHALEX. Todos los derechos reservados.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Diseno natural, limpio y pensado para explorar con calma.
           </p>
         </div>
       </div>
     </footer>
   )
 }
-

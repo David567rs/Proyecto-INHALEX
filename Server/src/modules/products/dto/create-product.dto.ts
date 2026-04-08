@@ -70,6 +70,15 @@ export class CreateProductDto {
   origin?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  stockMin?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  allowBackorder?: boolean;
+
+  @IsOptional()
   @IsBoolean()
   inStock?: boolean;
 

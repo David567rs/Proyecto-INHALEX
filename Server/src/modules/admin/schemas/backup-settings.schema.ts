@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose';
 export type BackupSettingsDocument = HydratedDocument<BackupSettings>;
 
 export type BackupScope = 'database' | 'selectedCollections';
-export type BackupStorageProvider = 'local' | 'cloudinary';
+export type BackupStorageProvider = 'local' | 'cloudinary' | 'r2';
 
 @Schema({
   timestamps: true,
@@ -34,7 +34,7 @@ export class BackupSettings {
   @Prop({ type: [String], default: [] })
   selectedCollections: string[];
 
-  @Prop({ type: String, enum: ['local', 'cloudinary'], default: 'local' })
+  @Prop({ type: String, enum: ['local', 'cloudinary', 'r2'], default: 'local' })
   preferredStorage: BackupStorageProvider;
 
   @Prop({ default: true })

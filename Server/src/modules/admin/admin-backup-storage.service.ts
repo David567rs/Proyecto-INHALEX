@@ -4,6 +4,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { v2 as cloudinary } from 'cloudinary';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -20,11 +26,13 @@ export interface CloudBackupFileInfo {
   bytes: number;
 }
 
+export type RemoteBackupStorageProvider = 'cloudinary' | 'r2';
+
 @Injectable()
 export class AdminBackupStorageService {
   private readonly logger = new Logger(AdminBackupStorageService.name);
-  private cloudinaryConfigured = false;
   private cloudinaryInitialized = false;
+  private r2Client: S3Client | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -40,6 +48,19 @@ export class AdminBackupStorageService {
       ?.trim();
 
     return Boolean(cloudName && apiKey && apiSecret);
+  }
+
+  isR2Configured(): boolean {
+    const accountId = this.configService.get<string>('BACKUP_R2_ACCOUNT_ID')?.trim();
+    const accessKeyId = this.configService
+      .get<string>('BACKUP_R2_ACCESS_KEY_ID')
+      ?.trim();
+    const secretAccessKey = this.configService
+      .get<string>('BACKUP_R2_SECRET_ACCESS_KEY')
+      ?.trim();
+    const bucket = this.configService.get<string>('BACKUP_R2_BUCKET')?.trim();
+
+    return Boolean(accountId && accessKeyId && secretAccessKey && bucket);
   }
 
   getBackupRootDir(): string {
@@ -124,28 +145,104 @@ export class AdminBackupStorageService {
     });
   }
 
-  async downloadRemoteFile(remoteUrl: string): Promise<Buffer> {
-    const response = await fetch(remoteUrl);
-    if (!response.ok) {
+  async uploadToR2(
+    objectKey: string,
+    buffer: Buffer,
+    contentType = 'application/json',
+  ): Promise<CloudBackupFileInfo> {
+    const client = this.getR2Client();
+    const bucket = this.getR2Bucket();
+
+    await client.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: objectKey,
+        Body: buffer,
+        ContentType: contentType,
+      }),
+    );
+
+    const publicBaseUrl = this.configService
+      .get<string>('BACKUP_R2_PUBLIC_BASE_URL')
+      ?.trim()
+      ?.replace(/\/+$/, '');
+
+    return {
+      publicId: objectKey,
+      secureUrl: publicBaseUrl ? `${publicBaseUrl}/${objectKey}` : '',
+      bytes: buffer.byteLength,
+    };
+  }
+
+  async downloadRemoteFile(
+    provider: RemoteBackupStorageProvider,
+    remoteIdentifier: string,
+    remoteUrl?: string,
+  ): Promise<Buffer> {
+    if (provider === 'cloudinary') {
+      if (!remoteUrl) {
+        throw new InternalServerErrorException(
+          'No se encontro la URL del respaldo remoto en Cloudinary',
+        );
+      }
+
+      const response = await fetch(remoteUrl);
+      if (!response.ok) {
+        throw new InternalServerErrorException(
+          'No se pudo descargar el respaldo remoto',
+        );
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    }
+
+    const client = this.getR2Client();
+    const bucket = this.getR2Bucket();
+    const response = await client.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: remoteIdentifier,
+      }),
+    );
+
+    if (!response.Body) {
       throw new InternalServerErrorException(
-        'No se pudo descargar el respaldo remoto',
+        'No se encontro el archivo remoto en Cloudflare R2',
       );
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    const bytes = await response.Body.transformToByteArray();
+    return Buffer.from(bytes);
   }
 
-  async deleteRemoteFile(publicId?: string): Promise<void> {
-    if (!publicId || !this.isCloudinaryConfigured()) return;
+  async deleteRemoteFile(
+    provider: RemoteBackupStorageProvider | undefined,
+    remoteIdentifier?: string,
+  ): Promise<void> {
+    if (!provider || !remoteIdentifier) return;
 
     try {
-      this.initializeCloudinary();
-      await cloudinary.uploader.destroy(publicId, {
-        resource_type: 'raw',
-      });
+      if (provider === 'cloudinary') {
+        if (!this.isCloudinaryConfigured()) return;
+        this.initializeCloudinary();
+        await cloudinary.uploader.destroy(remoteIdentifier, {
+          resource_type: 'raw',
+        });
+        return;
+      }
+
+      if (!this.isR2Configured()) return;
+      const client = this.getR2Client();
+      const bucket = this.getR2Bucket();
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: bucket,
+          Key: remoteIdentifier,
+        }),
+      );
     } catch {
-      this.logger.warn(`No se pudo eliminar el respaldo remoto ${publicId}`);
+      this.logger.warn(`No se pudo eliminar el respaldo remoto ${remoteIdentifier}`);
     }
   }
 
@@ -163,9 +260,44 @@ export class AdminBackupStorageService {
       api_secret: this.configService.get<string>('BACKUP_CLOUDINARY_API_SECRET'),
       secure: true,
     });
-
-    this.cloudinaryConfigured = true;
     this.cloudinaryInitialized = true;
+  }
+
+  private getR2Client(): S3Client {
+    if (this.r2Client) return this.r2Client;
+    if (!this.isR2Configured()) {
+      throw new InternalServerErrorException(
+        'Cloudflare R2 no esta configurado para respaldos',
+      );
+    }
+
+    const accountId = this.configService.get<string>('BACKUP_R2_ACCOUNT_ID')!;
+    const endpoint =
+      this.configService.get<string>('BACKUP_R2_ENDPOINT')?.trim() ||
+      `https://${accountId}.r2.cloudflarestorage.com`;
+
+    this.r2Client = new S3Client({
+      region: 'auto',
+      endpoint,
+      credentials: {
+        accessKeyId: this.configService.get<string>('BACKUP_R2_ACCESS_KEY_ID')!,
+        secretAccessKey: this.configService.get<string>(
+          'BACKUP_R2_SECRET_ACCESS_KEY',
+        )!,
+      },
+    });
+
+    return this.r2Client;
+  }
+
+  private getR2Bucket(): string {
+    const bucket = this.configService.get<string>('BACKUP_R2_BUCKET')?.trim();
+    if (!bucket) {
+      throw new InternalServerErrorException(
+        'No se definio el bucket de Cloudflare R2 para respaldos',
+      );
+    }
+    return bucket;
   }
 
   private resolvePathInsideRoot(targetRelativePath: string): string {

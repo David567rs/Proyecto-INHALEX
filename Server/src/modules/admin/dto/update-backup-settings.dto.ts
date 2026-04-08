@@ -39,8 +39,8 @@ export class UpdateBackupSettingsDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['local', 'cloudinary'])
-  preferredStorage?: 'local' | 'cloudinary';
+  @IsIn(['local', 'cloudinary', 'r2'])
+  preferredStorage?: 'local' | 'cloudinary' | 'r2';
 
   @IsOptional()
   @IsBoolean()

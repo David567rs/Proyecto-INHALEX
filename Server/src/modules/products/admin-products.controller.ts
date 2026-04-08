@@ -1,4 +1,5 @@
 import {
+  Req,
   Body,
   Controller,
   Delete,
@@ -14,10 +15,13 @@ import type { Response } from 'express';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { UserRole } from '../users/enums/user-role.enum';
+import { AdjustProductInventoryDto } from './dto/adjust-product-inventory.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 import { ImportProductsCsvDto } from './dto/import-products-csv.dto';
+import { ListInventoryMovementsQueryDto } from './dto/list-inventory-movements-query.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
@@ -42,6 +46,11 @@ export class AdminProductsController {
   @Get()
   listAdmin(@Query() query: ListProductsQueryDto) {
     return this.productsService.listAdmin(query);
+  }
+
+  @Get('inventory/summary')
+  getInventorySummary() {
+    return this.productsService.getInventorySummary();
   }
 
   @Get('csv')
@@ -95,6 +104,27 @@ export class AdminProductsController {
   @Delete('categories/:id')
   removeCategory(@Param('id') id: string) {
     return this.productsService.deactivateCategory(id);
+  }
+
+  @Get(':id/inventory/movements')
+  listInventoryMovements(
+    @Param('id') id: string,
+    @Query() query: ListInventoryMovementsQueryDto,
+  ) {
+    return this.productsService.listInventoryMovements(id, query);
+  }
+
+  @Post(':id/inventory/adjust')
+  adjustInventory(
+    @Param('id') id: string,
+    @Body() adjustProductInventoryDto: AdjustProductInventoryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.productsService.adjustInventory(
+      id,
+      adjustProductInventoryDto,
+      request.user,
+    );
   }
 
   @Get(':idOrSlug')

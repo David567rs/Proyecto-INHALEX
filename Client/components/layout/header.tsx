@@ -25,12 +25,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CartSheet } from "@/components/cart/cart-sheet"
+import { useCart } from "@/components/cart/cart-provider"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import {
   PRODUCT_CATEGORIES,
   type ProductCategoryOption,
 } from "@/lib/products/categories"
+import { getLineaHref } from "@/lib/products/lineas"
 import type { Product } from "@/lib/types/product"
 
 const navLinks = [
@@ -46,7 +49,6 @@ interface HeaderProps {
   catalogProducts?: Product[]
   catalogCategories?: ProductCategoryOption[]
   onSearchChange?: (value: string) => void
-  onLineSelect?: (categoryId: string) => void
   onSearchSelect?: (value: string) => void
 }
 
@@ -56,11 +58,11 @@ export function Header({
   catalogProducts = [],
   catalogCategories = PRODUCT_CATEGORIES,
   onSearchChange,
-  onLineSelect,
   onSearchSelect,
 }: HeaderProps) {
   const router = useRouter()
   const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth()
+  const { itemCount, isSheetOpen, setSheetOpen } = useCart()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [localSearchQuery, setLocalSearchQuery] = useState("")
@@ -93,6 +95,7 @@ export function Header({
   }
 
   const suggestions = getProductSuggestions(effectiveSearchQuery)
+  const effectiveCartCount = cartCount || itemCount
 
   const handleSearchChange = (value: string) => {
     if (onSearchChange) {
@@ -126,30 +129,34 @@ export function Header({
   const handleCategorySelect = (categoryId: string) => {
     if (onSearchChange) {
       onSearchChange("")
-      setIsSearchOpen(false)
     }
-
-    if (onLineSelect) {
-      onLineSelect(categoryId)
-    }
+    setIsSearchOpen(false)
+    setIsMobileMenuOpen(false)
+    router.push(getLineaHref(categoryId))
   }
 
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out",
-        isScrolled ? "bg-card/95 backdrop-blur-md shadow-lg py-2" : "bg-transparent py-4",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        isScrolled
+          ? "border-b border-white/50 bg-card/88 py-2 shadow-[0_18px_44px_-32px_rgba(15,84,43,0.28)] backdrop-blur-2xl"
+          : "bg-transparent py-4",
       )}
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center transition-transform duration-300 hover:scale-105">
-            <div className="relative h-16 w-56 md:h-20 md:w-72">
+          <Link
+            href="/"
+            className="flex shrink-0 items-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
+          >
+            <div className="relative aspect-[3.18/1] w-[11.5rem] sm:w-[12.75rem] md:w-[15.25rem]">
               <Image
-                src="/images/logoletras.png"
+                src="/images/NuevoLogo.png"
                 alt="INHALEX - El Respiro Que Alivia"
                 fill
-                className="object-contain object-left"
+                className="object-cover drop-shadow-[0_12px_24px_rgba(15,84,43,0.06)]"
+                style={{ objectPosition: "50% 50.6%" }}
                 priority
               />
             </div>
@@ -165,11 +172,11 @@ export function Header({
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={() => setIsSearchOpen(true)}
                 onBlur={() => setTimeout(() => setIsSearchOpen(false), 150)}
-                className="pl-10 pr-4 w-full bg-secondary/50 border-transparent focus:border-primary focus:bg-card transition-all duration-300"
+                className="w-full border-transparent bg-secondary/50 pl-10 pr-4 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] focus:border-primary focus:bg-card focus:shadow-[0_12px_28px_-22px_rgba(16,112,58,0.45)]"
               />
 
               {hasQuery && isSearchOpen && (
-                <div className="absolute left-0 right-0 mt-3 bg-card border border-border/60 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                <div className="public-soft-surface absolute left-0 right-0 z-50 mt-3 overflow-hidden rounded-[1.6rem] animate-in fade-in-0 slide-in-from-top-2 duration-300">
                   <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                       Sugerencias
@@ -237,9 +244,9 @@ export function Header({
           </div>
 
           <nav className="hidden lg:flex items-center gap-1">
-            <Link
+              <Link
               href="/"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 relative group"
+              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
             >
               Inicio
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -247,29 +254,20 @@ export function Header({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300">
+                <button className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary">
                   Lineas
                   <ChevronDown className="h-4 w-4 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="center"
-                className="w-48 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
+                className="w-52 rounded-2xl border border-border/60 bg-card/96 p-1 shadow-[0_22px_48px_-30px_rgba(15,84,43,0.25)] backdrop-blur-xl animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-300"
               >
                 {categoryOptions.map((category) => (
                   <DropdownMenuItem key={category.id} asChild>
                     <Link
-                      href={`/categorias/${category.id}`}
+                      href={getLineaHref(category.id)}
                       className="cursor-pointer transition-colors hover:text-primary"
-                      onClick={(event) => {
-                        if (!onLineSelect) {
-                          return
-                        }
-
-                        event.preventDefault()
-                        handleCategorySelect(category.id)
-                        router.push("/")
-                      }}
                     >
                       {category.name}
                     </Link>
@@ -278,25 +276,25 @@ export function Header({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link
+              <Link
               href="/productos"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 relative group"
+              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
             >
               Productos
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
             </Link>
 
-            <Link
+              <Link
               href="/nosotros"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 relative group"
+              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
             >
               Sobre Nosotros
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
             </Link>
 
-            <Link
+              <Link
               href="/contacto"
-              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 relative group"
+              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
             >
               Contacto
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -307,12 +305,13 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-primary/10 transition-colors duration-300"
+              className="relative transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
+              onClick={() => setSheetOpen(!isSheetOpen)}
             >
               <ShoppingBag className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center animate-in zoom-in-50 duration-300">
-                  {cartCount}
+              {effectiveCartCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground animate-in zoom-in-50 duration-300">
+                  {effectiveCartCount > 99 ? "99+" : effectiveCartCount}
                 </span>
               )}
               <span className="sr-only">Bolsa de compras</span>
@@ -323,7 +322,7 @@ export function Header({
                 variant="ghost"
                 size="icon"
                 disabled
-                className="hover:bg-primary/10 transition-colors duration-300"
+                className="transition-all duration-300 hover:bg-primary/10"
               >
                 <User className="h-5 w-5" />
                 <span className="sr-only">Cargando sesion</span>
@@ -334,7 +333,7 @@ export function Header({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="hover:bg-primary/10 transition-colors duration-300"
+                    className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
                   >
                     <User className="h-5 w-5" />
                     <span className="sr-only">Mi cuenta</span>
@@ -371,7 +370,7 @@ export function Header({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hover:bg-primary/10 transition-colors duration-300"
+                  className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
                 >
                   <User className="h-5 w-5" />
                   <span className="sr-only">Iniciar sesion</span>
@@ -382,7 +381,7 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden hover:bg-primary/10 transition-colors duration-300"
+              className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 lg:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (
@@ -398,9 +397,10 @@ export function Header({
         <div
           className={cn(
             "lg:hidden overflow-hidden transition-all duration-500 ease-out",
-            isMobileMenuOpen ? "max-h-[500px] opacity-100 mt-4" : "max-h-0 opacity-0",
+            isMobileMenuOpen ? "mt-4 max-h-[500px] opacity-100" : "max-h-0 opacity-0",
           )}
         >
+          <div className="public-soft-surface rounded-[1.8rem] px-3 py-3">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -473,18 +473,13 @@ export function Header({
             {categoryOptions.map((category, index) => (
               <Link
                 key={category.id}
-                href={`/categorias/${category.id}`}
+                href={getLineaHref(category.id)}
                 className="px-6 py-2 text-sm text-foreground/70 hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-300"
                 style={{
                   animationDelay: `${(navLinks.length + index) * 50}ms`,
                   animation: isMobileMenuOpen ? "slideInFromLeft 0.3s ease-out forwards" : "none",
                 }}
-                onClick={(event) => {
-                  if (onLineSelect) {
-                    event.preventDefault()
-                    handleCategorySelect(category.id)
-                    router.push("/")
-                  }
+                onClick={() => {
                   setIsMobileMenuOpen(false)
                 }}
               >
@@ -492,8 +487,11 @@ export function Header({
               </Link>
             ))}
           </nav>
+          </div>
         </div>
       </div>
+
+      <CartSheet />
 
       <style jsx>{`
         @keyframes slideInFromLeft {

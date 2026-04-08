@@ -17,6 +17,10 @@ export interface ProductApiItem {
   presentation: string
   origin: string
   inStock: boolean
+  stockAvailable?: number
+  stockReserved?: number
+  stockMin?: number
+  allowBackorder?: boolean
   rating?: number
   reviews?: number
   sortOrder?: number
@@ -52,6 +56,10 @@ export function mapApiProduct(product: ProductApiItem): Product {
     presentation: product.presentation,
     origin: product.origin,
     inStock: product.inStock,
+    stockAvailable: product.stockAvailable,
+    stockReserved: product.stockReserved,
+    stockMin: product.stockMin,
+    allowBackorder: product.allowBackorder,
     rating: product.rating,
     reviews: product.reviews,
     sortOrder: product.sortOrder,
