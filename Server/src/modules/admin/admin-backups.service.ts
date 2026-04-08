@@ -52,6 +52,7 @@ export interface DatabaseBackupMetadata {
   localAvailable: boolean;
   remoteAvailable: boolean;
   remoteUrl?: string;
+  remoteIdentifier?: string;
   notes?: string;
   errorMessage?: string;
 }
@@ -71,6 +72,7 @@ export interface CollectionBackupMetadata {
   localAvailable: boolean;
   remoteAvailable: boolean;
   remoteUrl?: string;
+  remoteIdentifier?: string;
   notes?: string;
   errorMessage?: string;
 }
@@ -106,6 +108,7 @@ export interface BackupSettingsResponse {
   retentionDays: number;
   cloudFolder: string;
   cloudinaryConfigured: boolean;
+  r2Configured: boolean;
   nextRunAt?: string;
   lastSuccessfulRunAt?: string;
   lastAttemptAt?: string;
@@ -118,6 +121,7 @@ export interface BackupStatusResponse {
   automaticEnabled: boolean;
   preferredStorage: BackupStorageProvider;
   cloudinaryConfigured: boolean;
+  r2Configured: boolean;
   nextRunAt?: string;
   lastSuccessfulRunAt?: string;
   lastFailureAt?: string;
@@ -220,6 +224,12 @@ export class AdminBackupsService implements OnModuleInit {
     private readonly storageService: AdminBackupStorageService,
   ) {}
 
+  private getRemoteIdentifier(
+    record: Pick<BackupRecordDocument, 'remoteIdentifier' | 'remotePublicId'>,
+  ): string | undefined {
+    return record.remoteIdentifier?.trim() || record.remotePublicId?.trim() || undefined;
+  }
+
   async onModuleInit(): Promise<void> {
     await this.getSettingsDocument();
     await this.syncLegacyBackupsFromDisk();
@@ -294,7 +304,7 @@ export class AdminBackupsService implements OnModuleInit {
     const updated = await this.backupSettingsModel
       .findOneAndUpdate({ key: 'default' }, patch, {
         upsert: true,
-        new: true,
+        returnDocument: 'after',
         setDefaultsOnInsert: true,
         runValidators: true,
       })
@@ -315,6 +325,7 @@ export class AdminBackupsService implements OnModuleInit {
       automaticEnabled: settings.automaticEnabled,
       preferredStorage: settings.preferredStorage,
       cloudinaryConfigured: this.storageService.isCloudinaryConfigured(),
+      r2Configured: this.storageService.isR2Configured(),
       nextRunAt: this.computeNextRunAt(settings)?.toISOString(),
       lastSuccessfulRunAt: settings.lastSuccessfulRunAt?.toISOString(),
       lastFailureAt: settings.lastFailureAt?.toISOString(),
@@ -377,8 +388,16 @@ export class AdminBackupsService implements OnModuleInit {
       };
     }
 
-    if (record.remoteAvailable && record.remoteUrl) {
+    const remoteIdentifier = this.getRemoteIdentifier(record);
+
+    if (
+      record.remoteAvailable &&
+      record.storageProvider !== 'local' &&
+      remoteIdentifier
+    ) {
       const buffer = await this.storageService.downloadRemoteFile(
+        record.storageProvider,
+        remoteIdentifier,
         record.remoteUrl,
       );
       return {
@@ -590,7 +609,8 @@ export class AdminBackupsService implements OnModuleInit {
       localFilePath: persisted.localFilePath,
       remoteAvailable: persisted.remoteAvailable,
       remoteUrl: persisted.remoteUrl,
-      remotePublicId: persisted.remotePublicId,
+      remoteIdentifier: persisted.remoteIdentifier,
+      remotePublicId: persisted.remoteIdentifier,
       notes: persisted.notes,
       createdAt,
     });
@@ -667,7 +687,8 @@ export class AdminBackupsService implements OnModuleInit {
       localFilePath: persisted.localFilePath,
       remoteAvailable: persisted.remoteAvailable,
       remoteUrl: persisted.remoteUrl,
-      remotePublicId: persisted.remotePublicId,
+      remoteIdentifier: persisted.remoteIdentifier,
+      remotePublicId: persisted.remoteIdentifier,
       notes: persisted.notes,
       createdAt,
     });
@@ -710,21 +731,22 @@ export class AdminBackupsService implements OnModuleInit {
     localFilePath?: string;
     remoteAvailable: boolean;
     remoteUrl?: string;
-    remotePublicId?: string;
+    remoteIdentifier?: string;
     notes?: string;
   }> {
     const { backupId, kind, fileName, buffer, settings, collectionName } =
       options;
 
-    const wantsCloud = settings.preferredStorage === 'cloudinary';
-    const cloudConfigured = this.storageService.isCloudinaryConfigured();
-    const allowCloudUpload = wantsCloud && cloudConfigured;
+    const wantsCloudinary = settings.preferredStorage === 'cloudinary';
+    const wantsR2 = settings.preferredStorage === 'r2';
+    const cloudinaryConfigured = this.storageService.isCloudinaryConfigured();
+    const r2Configured = this.storageService.isR2Configured();
 
     let remoteUrl: string | undefined;
-    let remotePublicId: string | undefined;
+    let remoteIdentifier: string | undefined;
     let notes = '';
 
-    if (allowCloudUpload) {
+    if (wantsCloudinary && cloudinaryConfigured) {
       try {
         const remote = await this.storageService.uploadToCloudinary(
           fileName,
@@ -733,22 +755,37 @@ export class AdminBackupsService implements OnModuleInit {
           backupId,
         );
         remoteUrl = remote.secureUrl;
-        remotePublicId = remote.publicId;
+        remoteIdentifier = remote.publicId;
       } catch (error: unknown) {
         notes =
           error instanceof Error
             ? `${error.message} Se conservo la copia local como respaldo alterno.`
             : 'No se pudo subir a Cloudinary. Se conservo la copia local.';
       }
-    } else if (wantsCloud && !cloudConfigured) {
+    } else if (wantsR2 && r2Configured) {
+      try {
+        const objectKey = `${settings.cloudFolder}/${kind}/${fileName}`;
+        const remote = await this.storageService.uploadToR2(objectKey, buffer);
+        remoteUrl = remote.secureUrl || undefined;
+        remoteIdentifier = remote.publicId;
+      } catch (error: unknown) {
+        notes =
+          error instanceof Error
+            ? `${error.message} Se conservo la copia local como respaldo alterno.`
+            : 'No se pudo subir a Cloudflare R2. Se conservo la copia local.';
+      }
+    } else if (wantsCloudinary && !cloudinaryConfigured) {
       notes =
         'Cloudinary no esta configurado. El respaldo se guardo solamente en almacenamiento local.';
+    } else if (wantsR2 && !r2Configured) {
+      notes =
+        'Cloudflare R2 no esta configurado. El respaldo se guardo solamente en almacenamiento local.';
     }
 
     const shouldKeepLocal =
       settings.keepLocalMirror ||
       settings.preferredStorage === 'local' ||
-      !remoteUrl;
+      !remoteIdentifier;
 
     let localFilePath: string | undefined;
     if (shouldKeepLocal) {
@@ -762,12 +799,12 @@ export class AdminBackupsService implements OnModuleInit {
 
     return {
       sizeBytes: buffer.byteLength,
-      storageProvider: remoteUrl ? 'cloudinary' : 'local',
+      storageProvider: remoteIdentifier ? settings.preferredStorage : 'local',
       localAvailable: Boolean(localFilePath),
       localFilePath,
-      remoteAvailable: Boolean(remoteUrl),
+      remoteAvailable: Boolean(remoteIdentifier),
       remoteUrl,
-      remotePublicId,
+      remoteIdentifier,
       notes:
         notes ||
         (collectionName
@@ -789,8 +826,19 @@ export class AdminBackupsService implements OnModuleInit {
       }
     }
 
-    if (!buffer && record.remoteAvailable && record.remoteUrl) {
-      buffer = await this.storageService.downloadRemoteFile(record.remoteUrl);
+    const remoteIdentifier = this.getRemoteIdentifier(record);
+
+    if (
+      !buffer &&
+      record.remoteAvailable &&
+      record.storageProvider !== 'local' &&
+      remoteIdentifier
+    ) {
+      buffer = await this.storageService.downloadRemoteFile(
+        record.storageProvider,
+        remoteIdentifier,
+        record.remoteUrl,
+      );
     }
 
     if (!buffer) {
@@ -976,7 +1024,11 @@ export class AdminBackupsService implements OnModuleInit {
 
     for (const record of expired) {
       await this.storageService.deleteLocalFile(record.localFilePath);
-      await this.storageService.deleteRemoteFile(record.remotePublicId);
+      const remoteIdentifier = this.getRemoteIdentifier(record);
+      await this.storageService.deleteRemoteFile(
+        record.storageProvider === 'local' ? undefined : record.storageProvider,
+        remoteIdentifier,
+      );
 
       await this.backupRecordModel
         .updateOne(
@@ -988,6 +1040,8 @@ export class AdminBackupsService implements OnModuleInit {
               remoteAvailable: false,
               localFilePath: '',
               remoteUrl: '',
+              remoteIdentifier: '',
+              remotePublicId: '',
               notes: `Respaldo purgado automaticamente por politica de retencion (${retentionDays} dias)`,
             },
           },
@@ -1020,6 +1074,7 @@ export class AdminBackupsService implements OnModuleInit {
       retentionDays: settings.retentionDays,
       cloudFolder: settings.cloudFolder,
       cloudinaryConfigured: this.storageService.isCloudinaryConfigured(),
+      r2Configured: this.storageService.isR2Configured(),
       nextRunAt: this.computeNextRunAt(settings)?.toISOString(),
       lastSuccessfulRunAt: settings.lastSuccessfulRunAt?.toISOString(),
       lastAttemptAt: settings.lastAttemptAt?.toISOString(),
@@ -1030,9 +1085,10 @@ export class AdminBackupsService implements OnModuleInit {
   }
 
   private mapRecord(record: BackupRecordDocument): BackupMetadata {
+    const remoteIdentifier = this.getRemoteIdentifier(record);
     const backupPath =
       record.localFilePath ||
-      record.remotePublicId ||
+      remoteIdentifier ||
       'Sin ruta disponible';
 
     if (record.kind === 'database') {
@@ -1056,6 +1112,7 @@ export class AdminBackupsService implements OnModuleInit {
         localAvailable: record.localAvailable,
         remoteAvailable: record.remoteAvailable,
         remoteUrl: record.remoteUrl,
+        remoteIdentifier,
         notes: record.notes,
         errorMessage: record.errorMessage,
       };
@@ -1076,6 +1133,7 @@ export class AdminBackupsService implements OnModuleInit {
       localAvailable: record.localAvailable,
       remoteAvailable: record.remoteAvailable,
       remoteUrl: record.remoteUrl,
+      remoteIdentifier,
       notes: record.notes,
       errorMessage: record.errorMessage,
     };
@@ -1088,7 +1146,7 @@ export class AdminBackupsService implements OnModuleInit {
         { $setOnInsert: { key: 'default' } },
         {
           upsert: true,
-          new: true,
+          returnDocument: 'after',
           setDefaultsOnInsert: true,
         },
       )

@@ -42,6 +42,18 @@ export class Product {
   @Prop({ required: true, trim: true, default: '100% Natural' })
   origin: string;
 
+  @Prop({ min: 0, index: true })
+  stockAvailable?: number;
+
+  @Prop({ min: 0, default: 0 })
+  stockReserved?: number;
+
+  @Prop({ min: 0, default: 0 })
+  stockMin?: number;
+
+  @Prop({ default: false })
+  allowBackorder?: boolean;
+
   @Prop({ default: true })
   inStock: boolean;
 

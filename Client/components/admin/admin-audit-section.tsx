@@ -108,6 +108,25 @@ export function AdminAuditSection() {
     () => logs.filter((log) => !log.success).length,
     [logs],
   )
+  const activeFilterCount = useMemo(() => {
+    let total = 0
+    if (searchInput.trim()) total += 1
+    if (filters.view !== INITIAL_FILTERS.view) total += 1
+    if (filters.method !== "all") total += 1
+    if (filters.action !== "all") total += 1
+    if (filters.collection !== "all") total += 1
+    if (filters.success !== "all") total += 1
+    if (filters.limit !== INITIAL_FILTERS.limit) total += 1
+    return total
+  }, [
+    filters.action,
+    filters.collection,
+    filters.limit,
+    filters.method,
+    filters.success,
+    filters.view,
+    searchInput,
+  ])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -202,29 +221,73 @@ export function AdminAuditSection() {
         </Button>
       </div>
 
-      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="admin-stat-chip">
-          <span className="font-medium">Registros filtrados:</span> {meta.total}
+      <div className="relative z-10 mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Registros visibles
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{meta.total}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Segun la segmentacion actual.</p>
         </div>
-        <div className="admin-stat-chip">
-          <span className="font-medium">Fallos en pagina:</span> {failedInCurrentPage}
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Fallos en pagina
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{failedInCurrentPage}</p>
+          <p className="mt-2 text-sm text-muted-foreground">Eventos con error en la vista actual.</p>
         </div>
-        <div className="admin-stat-chip">
-          <span className="font-medium">Pagina:</span> {meta.page} / {meta.totalPages}
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Navegacion
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {meta.page} / {meta.totalPages}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">{filters.limit} eventos por pagina.</p>
+        </div>
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Filtros activos
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {activeFilterCount}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {filters.view === "important" ? "Vista enfocada en eventos clave." : "Vista completa del registro."}
+          </p>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Input
-          className="min-w-[240px] flex-[2_1_300px]"
-          placeholder="Buscar por usuario, ruta o coleccion"
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
-        />
+      <div className="admin-form-card relative z-10 mt-6">
+        <div className="flex flex-col gap-4 border-b border-border/60 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <ShieldCheck className="h-4 w-4" />
+              Centro de lectura
+            </p>
+            <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+              Filtros y segmentacion
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Busca por usuario o ruta y acota el historial por metodo, accion, coleccion y resultado.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{meta.total} visibles</Badge>
+            <Badge variant="secondary">{activeFilterCount} filtros activos</Badge>
+          </div>
+        </div>
 
-        <div className="min-w-[180px] flex-1">
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.45fr_repeat(5,minmax(0,1fr))]">
+          <Input
+            className="admin-input-surface"
+            placeholder="Buscar por usuario, ruta o coleccion"
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+
           <Select value={filters.view} onValueChange={(value) => setFilter({ view: value as AuditFilters["view"] })}>
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Vista" />
             </SelectTrigger>
             <SelectContent>
@@ -232,11 +295,9 @@ export function AdminAuditSection() {
               <SelectItem value="all">Ver todo</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="min-w-[160px] flex-1">
           <Select value={filters.method} onValueChange={(value) => setFilter({ method: value as AuditFilters["method"] })}>
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Metodo" />
             </SelectTrigger>
             <SelectContent>
@@ -248,11 +309,9 @@ export function AdminAuditSection() {
               <SelectItem value="DELETE">DELETE</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="min-w-[180px] flex-1">
           <Select value={filters.action} onValueChange={(value) => setFilter({ action: value as AuditFilters["action"] })}>
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Accion" />
             </SelectTrigger>
             <SelectContent>
@@ -264,14 +323,12 @@ export function AdminAuditSection() {
               <SelectItem value="other">Otro</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="min-w-[180px] flex-1">
           <Select
             value={filters.collection}
             onValueChange={(value) => setFilter({ collection: value as AuditFilters["collection"] })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Coleccion" />
             </SelectTrigger>
             <SelectContent>
@@ -284,11 +341,9 @@ export function AdminAuditSection() {
               <SelectItem value="sistema">Sistema</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="min-w-[170px] flex-1">
           <Select value={filters.success} onValueChange={(value) => setFilter({ success: value as AuditFilters["success"] })}>
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Resultado" />
             </SelectTrigger>
             <SelectContent>
@@ -297,11 +352,9 @@ export function AdminAuditSection() {
               <SelectItem value="false">Con error</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="min-w-[120px] flex-1">
           <Select value={String(filters.limit)} onValueChange={(value) => setFilter({ limit: Number(value) })}>
-            <SelectTrigger>
+            <SelectTrigger className="admin-input-surface">
               <SelectValue placeholder="Registros" />
             </SelectTrigger>
             <SelectContent>
@@ -323,7 +376,26 @@ export function AdminAuditSection() {
         </div>
       )}
 
-      <div className="relative z-10 mt-6 grid gap-4">
+      <div className="admin-table-shell relative z-10 mt-6">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Bitacora principal
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Eventos del sistema
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Sigue cambios de contenido, catalogo, respaldos y eventos tecnicos del panel.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">Pagina {meta.page}</Badge>
+            <Badge variant="secondary">{failedInCurrentPage} con error</Badge>
+          </div>
+        </div>
+
+        <div className="grid gap-4 p-5">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <div
@@ -359,7 +431,7 @@ export function AdminAuditSection() {
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    {collectionLabel(log.collection)} · {log.method}
+                    {collectionLabel(log.collection)} / {log.method}
                   </p>
                   <p className="text-xs text-muted-foreground">{log.route}</p>
                 </div>
@@ -396,6 +468,7 @@ export function AdminAuditSection() {
             </article>
           ))
         )}
+        </div>
       </div>
 
       <div className="mt-4 flex items-center justify-end gap-2">

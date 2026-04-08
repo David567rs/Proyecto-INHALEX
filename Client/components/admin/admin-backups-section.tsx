@@ -141,11 +141,29 @@ function triggerLabel(trigger: AdminBackupItem["trigger"]): string {
 }
 
 function storageLabel(storage: AdminBackupSettings["preferredStorage"]): string {
-  return storage === "cloudinary" ? "Cloudinary" : "Local"
+  if (storage === "cloudinary") return "Cloudinary"
+  if (storage === "r2") return "Cloudflare R2"
+  return "Local"
+}
+
+function isPreferredRemoteConfigured(settings: AdminBackupSettings | null): boolean {
+  if (!settings) return false
+  if (settings.preferredStorage === "cloudinary") return settings.cloudinaryConfigured
+  if (settings.preferredStorage === "r2") return settings.r2Configured
+  return true
 }
 
 function isBackupReady(item: AdminBackupItem): boolean {
   return item.status === "ready"
+}
+
+function destinationState(settings: AdminBackupSettings | null): { title: string; ready: boolean } {
+  if (!settings) return { title: "Sin definir", ready: false }
+  if (settings.preferredStorage === "local") return { title: "Servidor local", ready: true }
+  if (settings.preferredStorage === "cloudinary") {
+    return { title: "Cloudinary", ready: settings.cloudinaryConfigured }
+  }
+  return { title: "Cloudflare R2", ready: settings.r2Configured }
 }
 
 function LoadingGrid() {
@@ -210,6 +228,8 @@ export function AdminBackupsSection() {
     () => backups.filter((item) => item.status === "ready"),
     [backups],
   )
+
+  const destinationInfo = useMemo(() => destinationState(settings), [settings])
 
   const loadAll = async (withLoadingState = true) => {
     if (withLoadingState) setIsLoading(true)
@@ -303,7 +323,7 @@ export function AdminBackupsSection() {
       return
     }
     if (cloudFolder.length > 120) {
-      setErrorMessage("La carpeta remota no puede exceder 120 caracteres.")
+      setErrorMessage("La ruta base remota no puede exceder 120 caracteres.")
       return
     }
 
@@ -481,14 +501,14 @@ export function AdminBackupsSection() {
       <div className="relative z-10 space-y-6">
         <div className="space-y-3">
           <Badge variant="outline" className="border-primary/30 bg-primary/5 px-3 py-1 text-primary">
-            Centro de recuperacion
+            Continuidad y resguardo
           </Badge>
           <div className="space-y-2">
             <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-              Respaldos y continuidad operacional
+              Respaldos y continuidad del sistema
             </h2>
             <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
-              Controla estrategia, ejecucion y restauracion desde un solo tablero.
+              Controla estrategia, ejecucion, restauracion e historial desde un solo tablero.
             </p>
           </div>
         </div>
@@ -527,30 +547,89 @@ export function AdminBackupsSection() {
           </div>
         </div>
 
+        <div className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
+          <div className="admin-form-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Ruta recomendada
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Como operar este modulo
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Primero define estrategia y destino, despues ejecuta respaldos puntuales cuando
+              haga falta y usa el historial solo para validar, descargar o restaurar.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="admin-stat-chip">
+                <span className="font-medium">1.</span> Estrategia
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">2.</span> Ejecucion
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">3.</span> Historial
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-form-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Estado rapido
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Situacion actual de resguardo
+            </h3>
+            <div className="mt-5 grid gap-3">
+              <div className="admin-stat-chip">
+                <span className="font-medium">Destino:</span> {destinationInfo.title}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Automatico:</span> {draft?.automaticEnabled ? "Activo" : "Pausado"}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Respaldos listos:</span> {status?.totalReady ?? readyBackups.length}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Ultimo exito:</span> {formatDate(settings?.lastSuccessfulRunAt)}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {isLoading ? (
           <LoadingGrid />
         ) : (
           <div className="grid gap-4 xl:grid-cols-4">
             <Card className="group min-h-[11.5rem] border-primary/15 bg-primary/[0.04] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
-              <CardHeader className="gap-1">
-                <CardDescription>Destino activo</CardDescription>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  {settings?.preferredStorage === "cloudinary" ? (
+                <CardHeader className="gap-1">
+                  <CardDescription>Destino activo</CardDescription>
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                  {settings?.preferredStorage === "cloudinary" || settings?.preferredStorage === "r2" ? (
                     <Cloud className="h-5 w-5 text-primary" />
                   ) : (
                     <HardDrive className="h-5 w-5 text-primary" />
                   )}
-                  {settings?.preferredStorage === "cloudinary" ? "Nube prioritaria" : "Almacen local"}
+                  {destinationInfo.title}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
                 <p>
                   {settings?.preferredStorage === "cloudinary"
-                    ? settings?.cloudinaryConfigured
-                      ? "Cloudinary esta listo para recibir nuevos respaldos."
+                    ? settings.cloudinaryConfigured
+                      ? "Cloudinary esta listo para recibir assets de apoyo y respaldos remotos."
                       : "Faltan credenciales de Cloudinary. Se mantendra el respaldo local como respaldo alterno."
-                    : "La estrategia actual guarda los archivos dentro del servidor."}
+                    : settings?.preferredStorage === "r2"
+                      ? settings.r2Configured
+                        ? "Cloudflare R2 esta listo para recibir objetos de respaldo privados."
+                        : "Faltan credenciales de Cloudflare R2. Se mantendra el respaldo local como respaldo alterno."
+                      : "La estrategia actual guarda los archivos dentro del servidor."}
                 </p>
+                <div className="pt-1">
+                  <Badge variant={destinationInfo.ready ? "secondary" : "outline"} className="rounded-full">
+                    {destinationInfo.ready ? "Conectado" : "Pendiente"}
+                  </Badge>
+                </div>
               </CardContent>
             </Card>
 
@@ -788,16 +867,20 @@ export function AdminBackupsSection() {
                             <SelectContent>
                               <SelectItem value="local">Servidor local</SelectItem>
                               <SelectItem value="cloudinary">Cloudinary</SelectItem>
+                              <SelectItem value="r2">Cloudflare R2</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-sm font-medium text-foreground">Carpeta remota</label>
+                          <label className="text-sm font-medium text-foreground">Ruta base remota</label>
                           <Input
                             value={draft.cloudFolder}
                             onChange={(event) => setDraft({ ...draft, cloudFolder: event.target.value })}
                             placeholder="inhalex-respaldos"
                           />
+                          <p className="text-xs text-muted-foreground">
+                            Prefijo para ordenar respaldos completos y de coleccion en el proveedor remoto.
+                          </p>
                         </div>
                       </div>
 
@@ -853,14 +936,18 @@ export function AdminBackupsSection() {
                         </div>
                       </div>
 
-                      {draft.preferredStorage === "cloudinary" && !settings?.cloudinaryConfigured && (
+                      {draft.preferredStorage !== "local" && !isPreferredRemoteConfigured(settings) && (
                         <div className="rounded-[1.5rem] border border-amber-400/40 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200">
                           <p className="inline-flex items-start gap-2 font-medium">
                             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                            Cloudinary aun no esta configurado.
+                            {draft.preferredStorage === "r2"
+                              ? "Cloudflare R2 aun no esta configurado."
+                              : "Cloudinary aun no esta configurado."}
                           </p>
                           <p className="mt-2 text-xs leading-6 text-amber-900/80 dark:text-amber-100/80">
-                            Agrega las variables BACKUP_CLOUDINARY_CLOUD_NAME, BACKUP_CLOUDINARY_API_KEY y BACKUP_CLOUDINARY_API_SECRET en el backend para que los archivos se suban a la nube.
+                            {draft.preferredStorage === "r2"
+                              ? "Agrega las variables BACKUP_R2_ACCOUNT_ID, BACKUP_R2_ACCESS_KEY_ID, BACKUP_R2_SECRET_ACCESS_KEY y BACKUP_R2_BUCKET en el backend para que los archivos se suban a la nube."
+                              : "Agrega las variables BACKUP_CLOUDINARY_CLOUD_NAME, BACKUP_CLOUDINARY_API_KEY y BACKUP_CLOUDINARY_API_SECRET en el backend para que los archivos se suban a la nube."}
                           </p>
                         </div>
                       )}
@@ -1035,10 +1122,18 @@ export function AdminBackupsSection() {
                           rel="noreferrer"
                           className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                         >
-                          Ver archivo remoto
+                          Abrir archivo remoto
                         </a>
                       )}
                     </div>
+                    {selectedBackup?.remoteAvailable &&
+                      !selectedBackup.remoteUrl &&
+                      selectedBackup.remoteIdentifier && (
+                        <div className="mt-3 rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm text-muted-foreground">
+                          <p className="font-medium text-foreground">Objeto remoto privado</p>
+                          <p className="mt-1 break-all">{selectedBackup.remoteIdentifier}</p>
+                        </div>
+                      )}
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -1210,8 +1305,10 @@ export function AdminBackupsSection() {
                             </p>
                           </div>
                           <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3 text-sm">
-                            <p className="font-medium text-foreground">Ruta o identificador</p>
-                            <p className="mt-1 break-all text-muted-foreground">{backup.backupPath}</p>
+                            <p className="font-medium text-foreground">Ubicacion registrada</p>
+                            <p className="mt-1 break-all text-muted-foreground">
+                              {backup.remoteIdentifier || backup.backupPath}
+                            </p>
                           </div>
                           <div className="rounded-2xl border border-border/60 bg-background/80 px-4 py-3 text-sm">
                             <p className="font-medium text-foreground">Cobertura</p>

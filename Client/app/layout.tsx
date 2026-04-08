@@ -1,8 +1,10 @@
 import React from "react"
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Cormorant_Garamond, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth/auth-provider'
+import { CartProvider } from '@/components/cart/cart-provider'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 const inter = Inter({ 
@@ -10,9 +12,10 @@ const inter = Inter({
   variable: '--font-inter'
 });
 
-const playfair = Playfair_Display({ 
+const cormorant = Cormorant_Garamond({ 
   subsets: ["latin"],
-  variable: '--font-playfair'
+  weight: ["400", "500", "600", "700"],
+  variable: '--font-cormorant'
 });
 
 export const metadata: Metadata = {
@@ -41,11 +44,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="es" className={`${inter.variable} ${cormorant.variable}`}>
       <body className="font-sans antialiased">
         <AuthProvider>
-          {children}
-          <Analytics />
+          <CartProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

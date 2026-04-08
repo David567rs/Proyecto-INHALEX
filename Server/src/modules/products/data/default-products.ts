@@ -13,6 +13,9 @@ export interface DefaultProductSeed {
   aromas: string[];
   presentation: string;
   origin: string;
+  stockAvailable?: number;
+  stockMin?: number;
+  allowBackorder?: boolean;
   inStock: boolean;
   rating?: number;
   reviews?: number;
@@ -242,17 +245,17 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     sortOrder: 10,
   },
   {
-    name: 'Cafe',
+    name: 'Café',
     description:
       'Aroma intenso y estimulante que despierta los sentidos y activa la mente.',
     longDescription:
-      'El Cafe es reconocido por su aroma intenso y vigorizante. Nuestro macerado captura la esencia de los granos tostados, ofreciendo propiedades estimulantes para combatir la fatiga.',
+      'El Café es reconocido por su aroma intenso y vigorizante. Nuestro macerado captura la esencia de los granos tostados, ofreciendo propiedades estimulantes para combatir la fatiga.',
     price: 60,
     currency: 'MXN',
     image: '/products/cafe.jpg',
     category: ProductCategory.LINEA_ESTIMULANTE,
     benefits: ['Estimulante', 'Combate fatiga', 'Despierta los sentidos'],
-    aromas: ['cafe', 'tostado', 'intenso', 'estimulante'],
+    aromas: ['café', 'tostado', 'intenso', 'estimulante'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,

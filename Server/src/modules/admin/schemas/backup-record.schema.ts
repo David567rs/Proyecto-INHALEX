@@ -6,7 +6,7 @@ export type BackupRecordDocument = HydratedDocument<BackupRecord>;
 export type BackupKind = 'database' | 'collection';
 export type BackupTrigger = 'manual' | 'automatic';
 export type BackupStatus = 'ready' | 'failed' | 'purged';
-export type BackupStorageProvider = 'local' | 'cloudinary';
+export type BackupStorageProvider = 'local' | 'cloudinary' | 'r2';
 
 @Schema({ _id: false, versionKey: false })
 export class BackupCollectionSnapshot {
@@ -60,7 +60,7 @@ export class BackupRecord {
   @Prop({ min: 0, default: 0 })
   sizeBytes: number;
 
-  @Prop({ type: String, enum: ['local', 'cloudinary'], default: 'local' })
+  @Prop({ type: String, enum: ['local', 'cloudinary', 'r2'], default: 'local' })
   storageProvider: BackupStorageProvider;
 
   @Prop({ default: false })
@@ -74,6 +74,9 @@ export class BackupRecord {
 
   @Prop({ trim: true })
   remoteUrl?: string;
+
+  @Prop({ trim: true })
+  remoteIdentifier?: string;
 
   @Prop({ trim: true })
   remotePublicId?: string;

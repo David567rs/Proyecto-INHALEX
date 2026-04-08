@@ -3,19 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   AlertTriangle,
-  ChevronDown,
   RefreshCw,
   Save,
-  Sparkles,
   Tags,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -75,7 +68,6 @@ export function AdminCategoriesSection() {
   const [draftsById, setDraftsById] = useState<Record<string, CategoryDraft>>({})
   const [newCategory, setNewCategory] = useState<CategoryDraft>(INITIAL_NEW_CATEGORY)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
-  const [isCreateOpen, setIsCreateOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
@@ -379,120 +371,114 @@ export function AdminCategoriesSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
         {canManageCatalog ? (
-          <Collapsible
-            open={isCreateOpen}
-            onOpenChange={setIsCreateOpen}
-            className="admin-form-card overflow-hidden"
-          >
+          <div className="admin-form-card">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-2xl">
                 <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  <Sparkles className="h-4 w-4" />
-                  Centro de categorias
+                  <Tags className="h-4 w-4" />
+                  Nueva categoria
                 </p>
                 <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-                  Crear y organizar lineas del catalogo
+                  Crear una linea nueva del catalogo
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Define nombre, slug, estado y orden.
+                  Define nombre, slug, orden y estado inicial en un solo bloque claro.
                 </p>
               </div>
 
-              <CollapsibleTrigger asChild>
-                <Button variant="outline" type="button" className="sm:self-start">
-                  {isCreateOpen ? "Ocultar formulario" : "Mostrar formulario"}
-                  <ChevronDown
-                    className={cn("ml-2 h-4 w-4 transition-transform", isCreateOpen && "rotate-180")}
-                  />
-                </Button>
-              </CollapsibleTrigger>
+              <Badge variant="secondary" className="sm:self-start">
+                Creacion directa
+              </Badge>
             </div>
 
-            <CollapsibleContent className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
-              <div className="mt-5 grid gap-4">
-                <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_180px_180px]">
-                    <Input
-                      className="admin-input-surface"
-                      placeholder="Nombre de categoria"
-                      value={newCategory.name}
-                      onChange={(event) =>
-                        setNewCategory((prev) => ({ ...prev, name: event.target.value }))
-                      }
-                      disabled={isCreating}
-                    />
-                    <Input
-                      className="admin-input-surface"
-                      placeholder="Slug (opcional)"
-                      value={newCategory.slug}
-                      onChange={(event) =>
-                        setNewCategory((prev) => ({ ...prev, slug: event.target.value }))
-                      }
-                      disabled={isCreating}
-                    />
-                    <Input
-                      className="admin-input-surface"
-                      placeholder="Orden"
-                      type="number"
-                      min={1}
-                      value={newCategory.sortOrder}
-                      onChange={(event) =>
-                        setNewCategory((prev) => ({ ...prev, sortOrder: event.target.value }))
-                      }
-                      disabled={isCreating}
-                    />
-                    <Select
-                      value={newCategory.isActive}
-                      onValueChange={(value) =>
-                        setNewCategory((prev) => ({ ...prev, isActive: value as "true" | "false" }))
-                      }
-                      disabled={isCreating}
-                    >
-                      <SelectTrigger className="admin-input-surface">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Activa</SelectItem>
-                        <SelectItem value="false">Inactiva</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex xl:justify-end">
-                    <Button
-                      type="button"
-                      onClick={() => void createCategory()}
-                      disabled={isCreating}
-                      className="h-12 w-full rounded-full px-5 text-base font-semibold transition-all hover:-translate-y-0.5 xl:min-w-[240px]"
-                    >
-                      <Tags className={`mr-2 h-4 w-4 ${isCreating ? "animate-spin" : ""}`} />
-                      {isCreating ? "Creando..." : "Crear categoria"}
-                    </Button>
-                  </div>
+            <div className="mt-5 grid gap-4">
+              <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1.1fr)_180px_180px]">
+                  <Input
+                    className="admin-input-surface"
+                    placeholder="Nombre de categoria"
+                    value={newCategory.name}
+                    onChange={(event) =>
+                      setNewCategory((prev) => ({ ...prev, name: event.target.value }))
+                    }
+                    disabled={isCreating}
+                  />
+                  <Input
+                    className="admin-input-surface"
+                    placeholder="Slug (opcional)"
+                    value={newCategory.slug}
+                    onChange={(event) =>
+                      setNewCategory((prev) => ({ ...prev, slug: event.target.value }))
+                    }
+                    disabled={isCreating}
+                  />
+                  <Input
+                    className="admin-input-surface"
+                    placeholder="Orden"
+                    type="number"
+                    min={1}
+                    value={newCategory.sortOrder}
+                    onChange={(event) =>
+                      setNewCategory((prev) => ({ ...prev, sortOrder: event.target.value }))
+                    }
+                    disabled={isCreating}
+                  />
+                  <Select
+                    value={newCategory.isActive}
+                    onValueChange={(value) =>
+                      setNewCategory((prev) => ({ ...prev, isActive: value as "true" | "false" }))
+                    }
+                    disabled={isCreating}
+                  >
+                    <SelectTrigger className="admin-input-surface">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Activa</SelectItem>
+                      <SelectItem value="false">Inactiva</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <Textarea
-                  className="admin-input-surface min-h-[92px]"
-                  placeholder="Descripcion (opcional)"
-                  value={newCategory.description}
-                  onChange={(event) =>
-                    setNewCategory((prev) => ({ ...prev, description: event.target.value }))
-                  }
-                  disabled={isCreating}
-                />
-
-                <p className="text-xs text-muted-foreground">
-                  Las categorias se activan o desactivan; no se borran.
-                </p>
+                <div className="flex xl:justify-end">
+                  <Button
+                    type="button"
+                    onClick={() => void createCategory()}
+                    disabled={isCreating}
+                    className="h-12 w-full rounded-full px-5 text-base font-semibold transition-all hover:-translate-y-0.5 xl:min-w-[240px]"
+                  >
+                    <Tags className={`mr-2 h-4 w-4 ${isCreating ? "animate-spin" : ""}`} />
+                    {isCreating ? "Creando..." : "Crear categoria"}
+                  </Button>
+                </div>
               </div>
-            </CollapsibleContent>
-          </Collapsible>
+
+              <Textarea
+                className="admin-input-surface min-h-[92px]"
+                placeholder="Descripcion (opcional)"
+                value={newCategory.description}
+                onChange={(event) =>
+                  setNewCategory((prev) => ({ ...prev, description: event.target.value }))
+                }
+                disabled={isCreating}
+              />
+
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline">No se borran</Badge>
+                <Badge variant="outline">Se ordenan por prioridad</Badge>
+                <span>Las categorias se activan o desactivan segun su disponibilidad.</span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="admin-form-card">
+            <Badge variant="secondary" className="w-fit">
+              Solo lectura
+            </Badge>
             <h3 className="text-xl font-semibold tracking-tight text-foreground">
-              Centro de categorias
+              Modulo de categorias
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Solo administradores pueden crear y editar categorias.
@@ -510,7 +496,7 @@ export function AdminCategoriesSection() {
           <p className="mt-2 text-sm text-muted-foreground">
             {editingCategory
               ? "Resumen de la categoria en foco."
-              : "Al editar una fila, aparece aqui."}
+              : "Al editar una fila, aparece aqui para darte contexto rapido."}
           </p>
 
           {editingCategory ? (
@@ -580,6 +566,23 @@ export function AdminCategoriesSection() {
       )}
 
       <div className="admin-table-shell relative z-10 mt-6">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Listado principal
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Categorias registradas
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Edita nombre, slug, estado, orden y descripcion desde una sola tabla.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline">{categories.length} categorias</Badge>
+            <Badge variant="secondary">{pendingChangesCount} pendientes</Badge>
+          </div>
+        </div>
         <div className="admin-table-scroll">
           <Table>
             <TableHeader>

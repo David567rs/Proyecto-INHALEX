@@ -9,10 +9,8 @@ import {
   Download,
   FileSpreadsheet,
   Filter,
-  Plus,
   RefreshCw,
   Save,
-  Sparkles,
   Upload,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -41,7 +39,6 @@ import {
 import { PRODUCT_CATEGORIES } from "@/lib/products/categories"
 import { getAccessToken } from "@/lib/auth/token-storage"
 import {
-  createAdminProductCategory,
   exportAdminProductsCsv,
   exportAdminProductsTemplateCsv,
   importAdminProductsCsv,
@@ -118,6 +115,10 @@ function statusLabel(status: AdminProduct["status"]): string {
 
 function stockLabel(inStock: "true" | "false"): string {
   return inStock === "true" ? "Disponible" : "Agotado"
+}
+
+function isInventoryManaged(product: AdminProduct): boolean {
+  return typeof product.stockAvailable === "number"
 }
 
 function buildCategoryLabelMap(categories: ProductCategoryOption[]): Record<string, string> {
@@ -286,15 +287,11 @@ export function AdminProductsSection() {
   const [isExportingProductsTemplate, setIsExportingProductsTemplate] = useState(false)
   const [isImportingProductsCsv, setIsImportingProductsCsv] = useState(false)
   const [csvMessage, setCsvMessage] = useState("")
-  const [newCategoryName, setNewCategoryName] = useState("")
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
-  const [createCategoryMessage, setCreateCategoryMessage] = useState("")
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [savingProductById, setSavingProductById] = useState<Record<string, boolean>>({})
   const [rowMessageById, setRowMessageById] = useState<Record<string, string>>({})
   const [filters, setFilters] = useState<ProductFilters>(INITIAL_PRODUCT_FILTERS)
   const [searchInput, setSearchInput] = useState("")
-  const [isActionsOpen, setIsActionsOpen] = useState(true)
   const [isFiltersOpen, setIsFiltersOpen] = useState(true)
   const [meta, setMeta] = useState<ProductListMeta>({
     total: 0,
@@ -561,7 +558,7 @@ export function AdminProductsSection() {
     if (draft.category !== product.category) return true
     if (!Number.isNaN(draftPrice) && draftPrice !== product.price) return true
     if (draft.status !== product.status) return true
-    if (draftInStock !== product.inStock) return true
+    if (!isInventoryManaged(product) && draftInStock !== product.inStock) return true
     if (draftSortOrder !== product.sortOrder) return true
     return false
   }
@@ -624,7 +621,9 @@ export function AdminProductsSection() {
     if (draft.status !== product.status) payload.status = draft.status
 
     const draftInStock = draft.inStock === "true"
-    if (draftInStock !== product.inStock) payload.inStock = draftInStock
+    if (!isInventoryManaged(product) && draftInStock !== product.inStock) {
+      payload.inStock = draftInStock
+    }
 
     if (draft.sortOrder.trim() !== "") {
       const parsedSortOrder = Number(draft.sortOrder)
@@ -706,74 +705,6 @@ export function AdminProductsSection() {
       setSeedProductsMessage(message)
     } finally {
       setIsSeedingProducts(false)
-    }
-  }
-
-  const handleCreateCategory = async () => {
-    const token = getAccessToken()
-    if (!token) {
-      setCreateCategoryMessage("No se encontro token")
-      return
-    }
-
-    const normalizedName = newCategoryName.trim()
-    if (normalizedName.length < 2) {
-      setCreateCategoryMessage("Escribe un nombre de categoria valido")
-      return
-    }
-
-    setIsCreatingCategory(true)
-    setCreateCategoryMessage("")
-
-    try {
-      const createdCategory = await createAdminProductCategory(
-        { name: normalizedName, isActive: true },
-        token,
-      )
-      setCategoryOptions((prev) => {
-        const alreadyExists = prev.some((category) => category.id === createdCategory.slug)
-        if (alreadyExists) return prev
-
-        const next = [
-          ...prev,
-          {
-            id: createdCategory.slug,
-            name: createdCategory.name,
-          },
-        ]
-
-        const [allOption, ...rest] = next
-        rest.sort((a, b) => a.name.localeCompare(b.name, "es-MX"))
-        return allOption ? [allOption, ...rest] : rest
-      })
-      setFilter({ category: createdCategory.slug })
-      if (editingProductId) {
-        setProductDraftsById((prev) => {
-          const productDraft = prev[editingProductId]
-          if (!productDraft) return prev
-          return {
-            ...prev,
-            [editingProductId]: {
-              ...productDraft,
-              category: createdCategory.slug,
-            },
-          }
-        })
-        setRowMessageById((prev) => ({
-          ...prev,
-          [editingProductId]: "Categoria nueva asignada. Falta guardar.",
-        }))
-        setCreateCategoryMessage(`Categoria creada y asignada: ${createdCategory.name}`)
-      } else {
-        setCreateCategoryMessage(`Categoria creada: ${createdCategory.name}`)
-      }
-      setNewCategoryName("")
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "No se pudo crear la categoria"
-      setCreateCategoryMessage(message)
-    } finally {
-      setIsCreatingCategory(false)
     }
   }
 
@@ -911,144 +842,7 @@ export function AdminProductsSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
-        <Collapsible
-          open={isActionsOpen}
-          onOpenChange={setIsActionsOpen}
-          className="admin-form-card overflow-hidden"
-        >
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="max-w-2xl">
-              <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                <Sparkles className="h-4 w-4" />
-                Centro de acciones
-              </p>
-              <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-                Operaciones del catalogo
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Exporta, importa y recarga el catalogo.
-              </p>
-            </div>
-
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" type="button" className="sm:self-start">
-                {isActionsOpen ? "Ocultar acciones" : "Mostrar acciones"}
-                <ChevronDown
-                  className={cn("ml-2 h-4 w-4 transition-transform", isActionsOpen && "rotate-180")}
-                />
-              </Button>
-            </CollapsibleTrigger>
-          </div>
-
-          <CollapsibleContent className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
-            <div className="mt-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-              <div className="admin-section-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Acciones rapidas
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2.5">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="transition-all hover:-translate-y-0.5"
-                    onClick={() => void loadProducts()}
-                    disabled={isLoading}
-                  >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                    Recargar productos
-                  </Button>
-                  {canManageCatalog && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="transition-all hover:-translate-y-0.5"
-                      onClick={() => void handleExportProductsTemplate()}
-                      disabled={isExportingProductsTemplate}
-                    >
-                      <FileSpreadsheet
-                        className={`mr-2 h-4 w-4 ${isExportingProductsTemplate ? "animate-spin" : ""}`}
-                      />
-                      {isExportingProductsTemplate ? "Descargando..." : "Plantilla CSV"}
-                    </Button>
-                  )}
-                  {canManageCatalog && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="transition-all hover:-translate-y-0.5"
-                      onClick={() => void handleExportProductsCsv()}
-                      disabled={isExportingProductsCsv}
-                    >
-                      <Download className={`mr-2 h-4 w-4 ${isExportingProductsCsv ? "animate-spin" : ""}`} />
-                      {isExportingProductsCsv ? "Exportando..." : "Exportar CSV"}
-                    </Button>
-                  )}
-                  {canManageCatalog && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="transition-all hover:-translate-y-0.5"
-                      onClick={() => csvFileInputRef.current?.click()}
-                      disabled={isImportingProductsCsv}
-                    >
-                      <Upload className={`mr-2 h-4 w-4 ${isImportingProductsCsv ? "animate-spin" : ""}`} />
-                      {isImportingProductsCsv ? "Importando..." : "Importar CSV"}
-                    </Button>
-                  )}
-                  {canManageCatalog && (
-                    <Button
-                      type="button"
-                      className="transition-all hover:-translate-y-0.5"
-                      onClick={() => void handleSeedProducts()}
-                      disabled={isSeedingProducts}
-                    >
-                      <Database className={`mr-2 h-4 w-4 ${isSeedingProducts ? "animate-spin" : ""}`} />
-                      {isSeedingProducts ? "Sembrando..." : "Sembrar catalogo"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <div className="admin-section-card p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Atajo de categorias
-                </p>
-                <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                  <Input
-                    className="admin-input-surface"
-                    placeholder="Nueva categoria (ej. Linea relajante)"
-                    value={newCategoryName}
-                    maxLength={80}
-                    onChange={(event) => {
-                      setNewCategoryName(event.target.value)
-                      setCreateCategoryMessage("")
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="sm:w-auto"
-                    onClick={() => void handleCreateCategory()}
-                    disabled={isCreatingCategory}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {isCreatingCategory ? "Creando..." : "Crear"}
-                  </Button>
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {editingProduct
-                    ? `En foco: ${editingProduct.name}. Se asignara al guardar.`
-                    : "Si editas una fila, se asignara al guardar."}
-                </p>
-                {createCategoryMessage && (
-                  <p className="mt-2 text-xs font-medium text-primary">{createCategoryMessage}</p>
-                )}
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-
+      <div className="relative z-10 mt-6">
         <div className="admin-form-card">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1061,7 +855,7 @@ export function AdminProductsSection() {
               <p className="mt-2 text-sm text-muted-foreground">
                 {editingProduct
                   ? "Resumen del producto en foco."
-                  : "Al editar una fila, aparece aqui."}
+                  : "Al editar una fila, aparece aqui. Las categorias se administran desde su modulo dedicado."}
               </p>
             </div>
             {editingProductHasChanges && (
@@ -1400,21 +1194,27 @@ export function AdminProductsSection() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={draft?.inStock ?? (product.inStock ? "true" : "false")}
-                        onValueChange={(value) =>
-                          updateProductDraft(product._id, { inStock: value as "true" | "false" })
-                        }
-                        disabled={isSaving || !canManageCatalog}
-                      >
-                        <SelectTrigger className="admin-input-surface w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">{stockLabel("true")}</SelectItem>
-                          <SelectItem value="false">{stockLabel("false")}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {isInventoryManaged(product) ? (
+                        <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-primary">
+                          Se gestiona en inventario
+                        </div>
+                      ) : (
+                        <Select
+                          value={draft?.inStock ?? (product.inStock ? "true" : "false")}
+                          onValueChange={(value) =>
+                            updateProductDraft(product._id, { inStock: value as "true" | "false" })
+                          }
+                          disabled={isSaving || !canManageCatalog}
+                        >
+                          <SelectTrigger className="admin-input-surface w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">{stockLabel("true")}</SelectItem>
+                            <SelectItem value="false">{stockLabel("false")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Input
@@ -1573,21 +1373,27 @@ export function AdminProductsSection() {
 
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Disponibilidad</p>
-                    <Select
-                      value={currentStock}
-                      onValueChange={(value) =>
-                        updateProductDraft(product._id, { inStock: value as "true" | "false" })
-                      }
-                      disabled={isSaving || !canManageCatalog}
-                    >
-                      <SelectTrigger className="admin-input-surface">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">{stockLabel("true")}</SelectItem>
-                        <SelectItem value="false">{stockLabel("false")}</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {isInventoryManaged(product) ? (
+                      <div className="admin-input-surface flex min-h-10 items-center rounded-md px-3 text-sm text-primary">
+                        Se gestiona en inventario
+                      </div>
+                    ) : (
+                      <Select
+                        value={currentStock}
+                        onValueChange={(value) =>
+                          updateProductDraft(product._id, { inStock: value as "true" | "false" })
+                        }
+                        disabled={isSaving || !canManageCatalog}
+                      >
+                        <SelectTrigger className="admin-input-surface">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="true">{stockLabel("true")}</SelectItem>
+                          <SelectItem value="false">{stockLabel("false")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div className="space-y-1 sm:max-w-[160px]">

@@ -13,6 +13,10 @@ export interface Product {
   presentation: string
   origin: string
   inStock: boolean
+  stockAvailable?: number
+  stockReserved?: number
+  stockMin?: number
+  allowBackorder?: boolean
   rating?: number
   reviews?: number
   sortOrder?: number

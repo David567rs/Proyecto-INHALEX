@@ -95,7 +95,7 @@ export function BenefitsSection() {
             <div
               key={benefit.title}
               className={cn(
-                "group relative bg-card rounded-2xl p-6 lg:p-8 border border-border/50",
+                "public-card-lift group relative rounded-2xl border border-border/50 bg-card p-6 lg:p-8",
                 "hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5",
                 "transition-all duration-500 ease-out",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"

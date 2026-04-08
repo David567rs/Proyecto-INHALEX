@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { AlertTriangle, FileText, RefreshCw, RotateCcw, Save } from "lucide-react"
 import { MarkdownContent } from "@/components/common/markdown-content"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -163,6 +164,8 @@ export function AdminCompanyContentSection() {
     return JSON.stringify(normalizedDraft) !== JSON.stringify(normalizeContent(content))
   }, [content, normalizedDraft])
 
+  const totalValues = useMemo(() => normalizeValuesInput(valuesInput).length, [valuesInput])
+
   const handleSave = async () => {
     const token = getAccessToken()
     if (!token) {
@@ -208,6 +211,9 @@ export function AdminCompanyContentSection() {
     <div className="admin-panel-shell admin-animate-card">
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
+          <Badge variant="secondary" className="w-fit">
+            Contenido institucional
+          </Badge>
           <h2 className="text-2xl font-semibold tracking-tight text-primary">
             Informacion de empresa
           </h2>
@@ -253,12 +259,37 @@ export function AdminCompanyContentSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 flex flex-wrap gap-3">
-        <div className="admin-stat-chip">
-          <span className="font-medium">Ultima actualizacion:</span> {formatDate(content.updatedAt)}
+      <div className="relative z-10 mt-6 grid gap-4 md:grid-cols-3">
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Ultima actualizacion
+          </p>
+          <p className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+            {formatDate(content.updatedAt)}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ultimo guardado en base de datos.
+          </p>
         </div>
-        <div className="admin-stat-chip">
-          <span className="font-medium">Estado:</span> {hasChanges ? "Con cambios pendientes" : "Sin cambios"}
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Estado editorial
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+            {hasChanges ? "Pendiente" : "En orden"}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {hasChanges ? "Hay cambios sin guardar." : "Todo esta sincronizado."}
+          </p>
+        </div>
+        <div className="admin-metric-card">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Bloques editables
+          </p>
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">3</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {totalValues} valores activos definidos.
+          </p>
         </div>
       </div>
 
@@ -280,9 +311,18 @@ export function AdminCompanyContentSection() {
         </div>
       )}
 
-      <div className="relative z-10 mt-6 grid gap-5">
+      <div className="relative z-10 mt-6 grid gap-5 xl:grid-cols-[1.06fr_0.94fr]">
+        <div className="space-y-5">
         <div className="admin-form-card">
-          <h3 className="text-lg font-semibold text-foreground">Politicas de privacidad</h3>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <Badge variant="outline">Legal</Badge>
+              <h3 className="mt-3 text-lg font-semibold text-foreground">Politicas de privacidad</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Este bloque alimenta la pagina publica de privacidad y el tratamiento de datos.
+              </p>
+            </div>
+          </div>
           <div className="mt-4 grid gap-3">
             <Input
               className="admin-input-surface"
@@ -317,7 +357,15 @@ export function AdminCompanyContentSection() {
         </div>
 
         <div className="admin-form-card">
-          <h3 className="text-lg font-semibold text-foreground">Terminos y condiciones</h3>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <Badge variant="outline">Legal</Badge>
+              <h3 className="mt-3 text-lg font-semibold text-foreground">Terminos y condiciones</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Define las condiciones comerciales y legales visibles para el cliente.
+              </p>
+            </div>
+          </div>
           <div className="mt-4 grid gap-3">
             <Input
               className="admin-input-surface"
@@ -352,7 +400,15 @@ export function AdminCompanyContentSection() {
         </div>
 
         <div className="admin-form-card">
-          <h3 className="text-lg font-semibold text-foreground">Mision, vision y valores</h3>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <Badge variant="outline">Marca</Badge>
+              <h3 className="mt-3 text-lg font-semibold text-foreground">Mision, vision y valores</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sirve para el bloque institucional de la marca y el discurso editorial del sitio.
+              </p>
+            </div>
+          </div>
           <div className="mt-4 grid gap-3">
             <MarkdownEditorField
               value={draft.about.mission}
@@ -393,6 +449,67 @@ export function AdminCompanyContentSection() {
                 placeholder={"Innovacion\nCalidad\nBienestar"}
                 disabled={isLoading || isSaving || !canManageContent}
               />
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div className="space-y-5 xl:sticky xl:top-24 xl:self-start">
+          <div className="admin-form-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Estado editorial
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              {hasChanges ? "Cambios listos para revisar" : "Contenido sincronizado"}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Desde aqui puedes validar rapidamente si hace falta guardar, recargar desde base o
+              restaurar la plantilla sugerida.
+            </p>
+
+            <div className="mt-5 grid gap-3">
+              <div className="admin-stat-chip">
+                <span className="font-medium">Ultimo guardado:</span> {formatDate(content.updatedAt)}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Cambios pendientes:</span> {hasChanges ? "Si" : "No"}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Valores registrados:</span> {totalValues}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">Permiso:</span> {canManageContent ? "Edicion completa" : "Solo lectura"}
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-form-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Guia rapida
+            </p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+              Buenas practicas de edicion
+            </h3>
+
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">Usa titulos cortos</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                  Facilitan lectura en paginas legales y bloques institucionales.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">Aprovecha Markdown</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                  Puedes usar listas, subtitulos, enlaces y tablas para ordenar mejor el texto.
+                </p>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+                <p className="text-sm font-medium text-foreground">Edita por bloques</p>
+                <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                  Cambia una seccion, revisa la vista previa y luego guarda para mantener control.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CompanyContentModule } from './modules/company-content/company-content.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { OrdersModule } from './modules/orders/orders.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AuditModule } from './modules/audit/audit.module';
     AuthModule,
     AdminModule,
     ProductsModule,
+    OrdersModule,
     CompanyContentModule,
     AuditModule,
   ],

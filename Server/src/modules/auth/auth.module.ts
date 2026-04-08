@@ -30,6 +30,6 @@ import { AuthSecurityService } from './auth-security.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthSecurityService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}
