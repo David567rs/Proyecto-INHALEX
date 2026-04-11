@@ -14,6 +14,8 @@
     "start:debug": "node --inspect-brk -r ts-node/register -r tsconfig-paths/register src/main.ts",
     "start:prod": "node -r newrelic dist/main",
     "seed:products": "ts-node -r tsconfig-paths/register src/scripts/seed-products.ts",
+    "fix:seeded-stock": "ts-node -r tsconfig-paths/register src/scripts/reset-seeded-product-stock.ts",
+    "ventas:reconstruir": "ts-node -r tsconfig-paths/register src/scripts/rebuild-sales-aggregates.ts",
     "migrate:collections:es": "ts-node -r tsconfig-paths/register src/scripts/rename-collections.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",

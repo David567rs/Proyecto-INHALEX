@@ -7,6 +7,7 @@ import {
   ProductInventoryMovementSchema,
 } from '../products/schemas/product-inventory-movement.schema';
 import { UsersModule } from '../users/users.module';
+import { SalesModule } from '../sales/sales.module';
 import { AdminOrdersController } from './admin-orders.controller';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -16,6 +17,7 @@ import { Order, OrderSchema } from './schemas/order.schema';
   imports: [
     AuthModule,
     UsersModule,
+    SalesModule,
     MongooseModule.forFeature([
       { name: Product.name, schema: ProductSchema },
       {

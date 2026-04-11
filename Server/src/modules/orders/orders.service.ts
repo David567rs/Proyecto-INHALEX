@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -18,6 +19,7 @@ import {
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { UserStatus } from '../users/enums/user-status.enum';
 import { UsersService } from '../users/users.service';
+import { SalesService } from '../sales/sales.service';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { CreateOrderDraftDto } from './dto/create-order-draft.dto';
 import { ListAdminOrdersQueryDto } from './dto/list-admin-orders-query.dto';
@@ -171,6 +173,8 @@ interface AppliedInventoryMutation {
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
@@ -180,6 +184,7 @@ export class OrdersService {
     private readonly orderModel: Model<OrderDocument>,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly salesService: SalesService,
   ) {}
 
   async previewDraft(
@@ -193,7 +198,9 @@ export class OrdersService {
     createOrderDraftDto: CreateOrderDraftDto,
     authorization?: string,
   ): Promise<CreatedDraftOrderResponse> {
-    const preview = await this.previewDraft({ items: createOrderDraftDto.items });
+    const preview = await this.previewDraft({
+      items: createOrderDraftDto.items,
+    });
 
     if (!preview.items.length) {
       throw new BadRequestException(
@@ -261,7 +268,8 @@ export class OrdersService {
     const orderReference = this.buildConfirmedReference();
     const actor = {
       userId: linkedUser?.userId,
-      email: linkedUser?.email ?? confirmOrderDto.customerEmail.trim().toLowerCase(),
+      email:
+        linkedUser?.email ?? confirmOrderDto.customerEmail.trim().toLowerCase(),
     };
     const reservedMutations: AppliedInventoryMutation[] = [];
 
@@ -325,7 +333,11 @@ export class OrdersService {
       };
     } catch (error) {
       if (reservedMutations.length > 0) {
-        await this.rollbackReservedInventory(reservedMutations, orderReference, actor);
+        await this.rollbackReservedInventory(
+          reservedMutations,
+          orderReference,
+          actor,
+        );
       }
       throw error;
     }
@@ -351,10 +363,14 @@ export class OrdersService {
         { $match: filters },
         { $group: { _id: '$status', count: { $sum: 1 } } },
       ]),
-      this.orderModel.countDocuments({ ...filters, needsManualReview: true }).exec(),
+      this.orderModel
+        .countDocuments({ ...filters, needsManualReview: true })
+        .exec(),
     ]);
 
-    const countsByStatus = new Map(statusCounts.map((item) => [item._id, item.count]));
+    const countsByStatus = new Map(
+      statusCounts.map((item) => [item._id, item.count]),
+    );
 
     return {
       items: orders.map((order) => this.mapAdminOrderListItem(order)),
@@ -391,13 +407,19 @@ export class OrdersService {
 
     switch (targetStatus) {
       case OrderStatus.CONFIRMED:
-        return this.confirmReviewedOrder(order, updateOrderStatusDto.note, actor);
+        return this.confirmReviewedOrder(
+          order,
+          updateOrderStatusDto.note,
+          actor,
+        );
       case OrderStatus.CANCELLED:
         return this.cancelOrder(order, updateOrderStatusDto.note, actor);
       case OrderStatus.COMPLETED:
         return this.completeOrder(order, updateOrderStatusDto.note, actor);
       default:
-        throw new BadRequestException('Este cambio de estado no esta permitido');
+        throw new BadRequestException(
+          'Este cambio de estado no esta permitido',
+        );
     }
   }
 
@@ -581,6 +603,8 @@ export class OrdersService {
         );
       }
 
+      await this.recordCompletedOrderSales(updatedOrder);
+
       return this.mapAdminOrderDetail(updatedOrder);
     } catch (error) {
       if (completedMutations.length > 0) {
@@ -591,6 +615,17 @@ export class OrdersService {
         );
       }
       throw error;
+    }
+  }
+
+  private async recordCompletedOrderSales(order: OrderDocument): Promise<void> {
+    try {
+      await this.salesService.recordCompletedOrder(order);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `El pedido ${order.reference} fue completado, pero no se pudo registrar en ventas_agregadas: ${message}`,
+      );
     }
   }
 
@@ -610,7 +645,9 @@ export class OrdersService {
       )
       .exec();
 
-    const productsById = new Map(products.map((product) => [product.id, product]));
+    const productsById = new Map(
+      products.map((product) => [product.id, product]),
+    );
     const issues: DraftOrderIssue[] = [];
     const previewItems: OrderPreviewItem[] = [];
 
@@ -667,7 +704,9 @@ export class OrdersService {
 
     for (const item of items) {
       if (!Types.ObjectId.isValid(item.productId)) {
-        throw new BadRequestException('Uno de los productos enviados es invalido');
+        throw new BadRequestException(
+          'Uno de los productos enviados es invalido',
+        );
       }
 
       quantityById.set(
@@ -934,10 +973,7 @@ export class OrdersService {
         OrderStatus.CONFIRMED,
         OrderStatus.CANCELLED,
       ],
-      [OrderStatus.CONFIRMED]: [
-        OrderStatus.CANCELLED,
-        OrderStatus.COMPLETED,
-      ],
+      [OrderStatus.CONFIRMED]: [OrderStatus.CANCELLED, OrderStatus.COMPLETED],
       [OrderStatus.CANCELLED]: [],
       [OrderStatus.COMPLETED]: [],
     };
@@ -970,9 +1006,7 @@ export class OrdersService {
     };
   }
 
-  private mapAdminOrderDetail(
-    order: OrderDocument,
-  ): AdminOrderDetailResponse {
+  private mapAdminOrderDetail(order: OrderDocument): AdminOrderDetailResponse {
     return {
       ...this.mapAdminOrderListItem(order),
       channel: order.channel,
@@ -1035,10 +1069,16 @@ export class OrdersService {
           {
             $set: {
               stockAvailable: {
-                $subtract: [{ $ifNull: ['$stockAvailable', 0] }, item.reservedQuantity],
+                $subtract: [
+                  { $ifNull: ['$stockAvailable', 0] },
+                  item.reservedQuantity,
+                ],
               },
               stockReserved: {
-                $add: [{ $ifNull: ['$stockReserved', 0] }, item.reservedQuantity],
+                $add: [
+                  { $ifNull: ['$stockReserved', 0] },
+                  item.reservedQuantity,
+                ],
               },
               inStock: {
                 $gt: [
@@ -1094,12 +1134,17 @@ export class OrdersService {
   ): Promise<void> {
     for (const item of [...reservedMutations].reverse()) {
       try {
-        await this.releaseInventoryQuantity(item.productId, item.productName, item.quantity, {
-          type: InventoryMovementType.RELEASE,
-          orderReference,
-          note: `Rollback de reserva por fallo al confirmar el pedido ${orderReference}.`,
-          actor,
-        });
+        await this.releaseInventoryQuantity(
+          item.productId,
+          item.productName,
+          item.quantity,
+          {
+            type: InventoryMovementType.RELEASE,
+            orderReference,
+            note: `Rollback de reserva por fallo al confirmar el pedido ${orderReference}.`,
+            actor,
+          },
+        );
       } catch {
         // Best effort rollback to avoid masking original error.
       }
@@ -1113,11 +1158,16 @@ export class OrdersService {
   ): Promise<void> {
     for (const item of [...releasedMutations].reverse()) {
       try {
-        await this.reAddReservation(item.productId, item.productName, item.quantity, {
-          orderReference,
-          note: `Rollback de liberacion para conservar la reserva del pedido ${orderReference}.`,
-          actor,
-        });
+        await this.reAddReservation(
+          item.productId,
+          item.productName,
+          item.quantity,
+          {
+            orderReference,
+            note: `Rollback de liberacion para conservar la reserva del pedido ${orderReference}.`,
+            actor,
+          },
+        );
       } catch {
         // Best effort rollback to avoid masking original error.
       }
@@ -1131,11 +1181,16 @@ export class OrdersService {
   ): Promise<void> {
     for (const item of [...committedMutations].reverse()) {
       try {
-        await this.reAddReservation(item.productId, item.productName, item.quantity, {
-          orderReference,
-          note: `Rollback de cierre para restaurar la reserva del pedido ${orderReference}.`,
-          actor,
-        });
+        await this.reAddReservation(
+          item.productId,
+          item.productName,
+          item.quantity,
+          {
+            orderReference,
+            note: `Rollback de cierre para restaurar la reserva del pedido ${orderReference}.`,
+            actor,
+          },
+        );
       } catch {
         // Best effort rollback to avoid masking original error.
       }
@@ -1301,10 +1356,7 @@ export class OrdersService {
               inStock: {
                 $gt: [
                   {
-                    $subtract: [
-                      { $ifNull: ['$stockAvailable', 0] },
-                      quantity,
-                    ],
+                    $subtract: [{ $ifNull: ['$stockAvailable', 0] }, quantity],
                   },
                   0,
                 ],

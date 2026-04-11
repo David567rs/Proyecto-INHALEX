@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   RefreshCw,
   Save,
   ShieldCheck,
   Users,
-} from "lucide-react"
-import { useAuth } from "@/components/auth/auth-provider"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -25,177 +25,199 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { getAccessToken } from "@/lib/auth/token-storage"
-import { listAdminUsers, updateAdminUser } from "@/lib/admin/admin-api"
-import type { AuthUser } from "@/lib/auth/types"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/table";
+import { getAccessToken } from "@/lib/auth/token-storage";
+import { listAdminUsers, updateAdminUser } from "@/lib/admin/admin-api";
+import type { AuthUser } from "@/lib/auth/types";
+import { cn } from "@/lib/utils";
 
 interface UserDraft {
-  role: AuthUser["role"]
-  status: AuthUser["status"]
+  role: AuthUser["role"];
+  status: AuthUser["status"];
 }
 
 function formatDate(value?: string): string {
-  if (!value) return "-"
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "-"
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat("es-MX", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(date)
+  }).format(date);
 }
 
 function roleLabel(role: AuthUser["role"]): string {
-  return role === "admin" ? "Administrador" : "Usuario"
+  return role === "admin" ? "Administrador" : "Usuario";
 }
 
 function userStatusLabel(status: AuthUser["status"]): string {
-  return status === "active" ? "Activo" : "Inactivo"
+  return status === "active" ? "Activo" : "Inactivo";
 }
 
 export function AdminUsersSection() {
-  const { user } = useAuth()
-  const [users, setUsers] = useState<AuthUser[]>([])
-  const [draftsById, setDraftsById] = useState<Record<string, UserDraft>>({})
-  const [editingUserId, setEditingUserId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState("")
-  const [savingByUserId, setSavingByUserId] = useState<Record<string, boolean>>({})
-  const [rowMessageByUserId, setRowMessageByUserId] = useState<Record<string, string>>({})
+  const { user } = useAuth();
+  const [users, setUsers] = useState<AuthUser[]>([]);
+  const [draftsById, setDraftsById] = useState<Record<string, UserDraft>>({});
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [savingByUserId, setSavingByUserId] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [rowMessageByUserId, setRowMessageByUserId] = useState<
+    Record<string, string>
+  >({});
 
   const hasChanges = useCallback(
     (currentUser: AuthUser): boolean => {
-      const draft = draftsById[currentUser._id]
-      if (!draft) return false
-      return draft.role !== currentUser.role || draft.status !== currentUser.status
+      const draft = draftsById[currentUser._id];
+      if (!draft) return false;
+      return (
+        draft.role !== currentUser.role || draft.status !== currentUser.status
+      );
     },
     [draftsById],
-  )
+  );
 
   const totalAdmins = useMemo(
     () => users.filter((currentUser) => currentUser.role === "admin").length,
     [users],
-  )
+  );
   const totalActive = useMemo(
     () => users.filter((currentUser) => currentUser.status === "active").length,
     [users],
-  )
+  );
   const totalInactive = useMemo(
-    () => users.filter((currentUser) => currentUser.status === "inactive").length,
+    () =>
+      users.filter((currentUser) => currentUser.status === "inactive").length,
     [users],
-  )
+  );
   const pendingChangesCount = useMemo(
     () => users.filter((currentUser) => hasChanges(currentUser)).length,
     [hasChanges, users],
-  )
+  );
   const editingUser = useMemo(
-    () => users.find((currentUser) => currentUser._id === editingUserId) ?? null,
+    () =>
+      users.find((currentUser) => currentUser._id === editingUserId) ?? null,
     [editingUserId, users],
-  )
+  );
 
   const loadUsers = useCallback(async () => {
-    setIsLoading(true)
-    setErrorMessage("")
+    setIsLoading(true);
+    setErrorMessage("");
 
-    const token = getAccessToken()
+    const token = getAccessToken();
     if (!token) {
-      setUsers([])
-      setErrorMessage("No se encontro token de acceso")
-      setIsLoading(false)
-      return
+      setUsers([]);
+      setErrorMessage("No se encontro token de acceso");
+      setIsLoading(false);
+      return;
     }
 
     try {
-      const response = await listAdminUsers(token)
-      setUsers(response)
+      const response = await listAdminUsers(token);
+      setUsers(response);
       setDraftsById(
         response.reduce<Record<string, UserDraft>>((acc, currentUser) => {
           acc[currentUser._id] = {
             role: currentUser.role,
             status: currentUser.status,
-          }
-          return acc
+          };
+          return acc;
         }, {}),
-      )
+      );
       setEditingUserId((prev) =>
-        prev && response.some((currentUser) => currentUser._id === prev) ? prev : null,
-      )
-      setRowMessageByUserId({})
+        prev && response.some((currentUser) => currentUser._id === prev)
+          ? prev
+          : null,
+      );
+      setRowMessageByUserId({});
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "No se pudieron cargar los usuarios"
-      setErrorMessage(message)
-      setUsers([])
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cargar los usuarios";
+      setErrorMessage(message);
+      setUsers([]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (user?.role === "admin") {
-      void loadUsers()
+      void loadUsers();
     }
-  }, [loadUsers, user?.role])
+  }, [loadUsers, user?.role]);
 
   const updateDraft = (userId: string, draft: Partial<UserDraft>) => {
-    setEditingUserId(userId)
+    setEditingUserId(userId);
     setDraftsById((prev) => {
-      const previous = prev[userId]
-      if (!previous) return prev
+      const previous = prev[userId];
+      if (!previous) return prev;
       return {
         ...prev,
         [userId]: {
           ...previous,
           ...draft,
         },
-      }
-    })
+      };
+    });
 
     setRowMessageByUserId((prev) => ({
       ...prev,
       [userId]: "",
-    }))
-  }
+    }));
+  };
 
   const saveUser = async (currentUser: AuthUser) => {
-    const token = getAccessToken()
+    const token = getAccessToken();
     if (!token) {
       setRowMessageByUserId((prev) => ({
         ...prev,
         [currentUser._id]: "No se encontro token",
-      }))
-      return
+      }));
+      return;
     }
 
-    const draft = draftsById[currentUser._id]
-    if (!draft) return
+    const draft = draftsById[currentUser._id];
+    if (!draft) return;
 
-    const payload: Partial<UserDraft> = {}
-    if (draft.role !== currentUser.role) payload.role = draft.role
-    if (draft.status !== currentUser.status) payload.status = draft.status
+    const payload: Partial<UserDraft> = {};
+    if (draft.role !== currentUser.role) payload.role = draft.role;
+    if (draft.status !== currentUser.status) payload.status = draft.status;
 
     if (Object.keys(payload).length === 0) {
       setRowMessageByUserId((prev) => ({
         ...prev,
         [currentUser._id]: "No hay cambios",
-      }))
-      return
+      }));
+      return;
     }
+
+    const accepted = window.confirm(
+      `Vas a actualizar permisos o estado de "${currentUser.name}". Deseas continuar?`,
+    );
+
+    if (!accepted) return;
 
     setSavingByUserId((prev) => ({
       ...prev,
       [currentUser._id]: true,
-    }))
+    }));
 
     try {
-      const updatedUser = await updateAdminUser(currentUser._id, payload, token)
+      const updatedUser = await updateAdminUser(
+        currentUser._id,
+        payload,
+        token,
+      );
 
       setUsers((prev) =>
         prev.map((existingUser) =>
           existingUser._id === updatedUser._id ? updatedUser : existingUser,
         ),
-      )
+      );
 
       setDraftsById((prev) => ({
         ...prev,
@@ -203,35 +225,36 @@ export function AdminUsersSection() {
           role: updatedUser.role,
           status: updatedUser.status,
         },
-      }))
+      }));
 
       setRowMessageByUserId((prev) => ({
         ...prev,
         [currentUser._id]: "Guardado",
-      }))
+      }));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "No se pudo actualizar el usuario"
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar el usuario";
       setRowMessageByUserId((prev) => ({
         ...prev,
         [currentUser._id]: message,
-      }))
+      }));
     } finally {
       setSavingByUserId((prev) => ({
         ...prev,
         [currentUser._id]: false,
-      }))
+      }));
     }
-  }
+  };
 
   return (
     <div className="admin-panel-shell admin-animate-card">
       <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-primary">Usuarios</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Gestion conectada a <code>GET/PATCH /api/admin/users</code>.
-          </p>
+          <h2 className="text-2xl font-semibold tracking-tight text-primary">
+            Usuarios
+          </h2>
         </div>
 
         <Button
@@ -241,17 +264,19 @@ export function AdminUsersSection() {
           onClick={() => void loadUsers()}
           disabled={isLoading}
         >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          <RefreshCw
+            className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+          />
           Recargar usuarios
         </Button>
       </div>
 
-      <div className="relative z-10 mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="relative z-10 mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <div className="admin-metric-card">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Total de cuentas
           </p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
             {users.length}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -263,7 +288,7 @@ export function AdminUsersSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Administradores
           </p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
             {totalAdmins}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -275,7 +300,7 @@ export function AdminUsersSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Estado operativo
           </p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
             {totalActive}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -287,74 +312,80 @@ export function AdminUsersSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Cambios pendientes
           </p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
             {pendingChangesCount}
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Filas sin guardar.
+            Usuarios sin guardar.
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 mt-6 grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
+      <div className="relative z-10 mt-4 grid gap-3 xl:grid-cols-[0.96fr_1.04fr]">
         <div className="admin-form-card">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <ShieldCheck className="h-4 w-4" />
-            Controles del modulo
+            Permisos y acceso
           </p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
+          <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
             Roles y estados del panel
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Gestiona acceso operativo sin tocar informacion comercial del usuario.
+            Gestiona acceso operativo sin tocar informacion comercial del
+            usuario.
           </p>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <div className="admin-stat-chip">
-              <span className="font-medium">Tu rol:</span> {user?.role ? roleLabel(user.role) : "-"}
+              <span className="font-medium">Tu rol:</span>{" "}
+              {user?.role ? roleLabel(user.role) : "-"}
             </div>
             <div className="admin-stat-chip">
               <span className="font-medium">Tu estado:</span>{" "}
               {user?.status ? userStatusLabel(user.status) : "-"}
             </div>
             <div className="admin-stat-chip">
-              <span className="font-medium">Seguridad:</span> solo admin puede editar
+              <span className="font-medium">Seguridad:</span> solo admin puede
+              editar
             </div>
             <div className="admin-stat-chip">
-              <span className="font-medium">Flujo:</span> cambios por fila
+              <span className="font-medium">Guardado:</span> por usuario
             </div>
           </div>
 
           <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.05] px-4 py-3 text-sm text-muted-foreground">
-            Usa este modulo para ajustar permisos y estado de acceso. Los cambios se aplican
-            usuario por usuario para evitar errores masivos.
+            Usa este apartado para ajustar permisos y estado de acceso. Los
+            cambios se aplican usuario por usuario para evitar errores masivos.
           </div>
         </div>
 
         <div className="admin-form-card">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Estado de edicion
+            Usuario en edicion
           </p>
-          <h3 className="mt-3 text-xl font-semibold tracking-tight text-foreground">
-            {editingUser ? editingUser.name : "Sin usuario en foco"}
+          <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+            {editingUser ? editingUser.name : "Sin usuario seleccionado"}
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
             {editingUser
-              ? "Resumen del usuario en foco."
-              : "Al editar una fila, aparece aqui para darte contexto inmediato."}
+              ? "Resumen del usuario seleccionado."
+              : "Al editar un usuario, aparece aqui para darte contexto inmediato."}
           </p>
 
           {editingUser ? (
-            <div className="mt-5 grid gap-3">
+            <div className="mt-4 grid gap-2">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="admin-stat-chip">
-                  <span className="font-medium">Correo:</span> {editingUser.email}
+                  <span className="font-medium">Correo:</span>{" "}
+                  {editingUser.email}
                 </div>
                 <div className="admin-stat-chip">
-                  <span className="font-medium">Creado:</span> {formatDate(editingUser.createdAt)}
+                  <span className="font-medium">Creado:</span>{" "}
+                  {formatDate(editingUser.createdAt)}
                 </div>
                 <div className="admin-stat-chip">
-                  <span className="font-medium">Rol:</span> {roleLabel(editingUser.role)}
+                  <span className="font-medium">Rol:</span>{" "}
+                  {roleLabel(editingUser.role)}
                 </div>
                 <div className="admin-stat-chip">
                   <span className="font-medium">Estado:</span>{" "}
@@ -375,7 +406,7 @@ export function AdminUsersSection() {
                   size="sm"
                   onClick={() => setEditingUserId(null)}
                 >
-                  Limpiar foco
+                  Limpiar seleccion
                 </Button>
               </div>
             </div>
@@ -385,9 +416,11 @@ export function AdminUsersSection() {
                 <ShieldCheck className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Todavia no hay un usuario en edicion</p>
+                <p className="font-medium text-foreground">
+                  Todavia no hay un usuario en edicion
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Al editar una fila, veras su resumen.
+                  Al editar un usuario, veras su resumen.
                 </p>
               </div>
             </div>
@@ -396,7 +429,7 @@ export function AdminUsersSection() {
       </div>
 
       {errorMessage && (
-        <div className="relative z-10 mt-6 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="relative z-10 mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <p className="inline-flex items-start gap-2">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{errorMessage}</span>
@@ -404,17 +437,18 @@ export function AdminUsersSection() {
         </div>
       )}
 
-      <div className="admin-table-shell relative z-10 mt-6">
-        <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="admin-table-shell relative z-10 mt-5">
+        <div className="flex flex-col gap-3 border-b border-border/60 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Listado principal
             </p>
-            <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+            <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
               Cuentas registradas
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Revisa correos, define rol y actualiza estado operativo desde una sola tabla.
+              Revisa correos, define rol y actualiza estado operativo desde una
+              sola tabla.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -431,13 +465,18 @@ export function AdminUsersSection() {
                 <TableHead className="admin-table-head-cell">Rol</TableHead>
                 <TableHead className="admin-table-head-cell">Estado</TableHead>
                 <TableHead className="admin-table-head-cell">Creado</TableHead>
-                <TableHead className="admin-table-head-cell">Acciones</TableHead>
+                <TableHead className="admin-table-head-cell">
+                  Acciones
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="admin-table-body-compact">
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={`user-skeleton-${index}`} className="animate-pulse bg-background/40">
+                  <TableRow
+                    key={`user-skeleton-${index}`}
+                    className="animate-pulse bg-background/40"
+                  >
                     <TableCell>
                       <div className="h-4 w-36 rounded bg-secondary/60" />
                     </TableCell>
@@ -460,24 +499,31 @@ export function AdminUsersSection() {
                 ))
               ) : users.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={6}
+                    className="py-8 text-center text-muted-foreground"
+                  >
                     <div className="admin-empty-state">
                       <div className="rounded-full bg-primary/10 p-3 text-primary">
                         <Users className="h-5 w-5" />
                       </div>
-                      <p className="font-medium text-foreground">No hay usuarios para mostrar</p>
-                      <p className="text-xs">Los usuarios registrados apareceran aqui.</p>
+                      <p className="font-medium text-foreground">
+                        No hay usuarios para mostrar
+                      </p>
+                      <p className="text-xs">
+                        Los usuarios registrados apareceran aqui.
+                      </p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 users.map((currentUser, index) => {
-                  const draft = draftsById[currentUser._id]
-                  const isSaving = Boolean(savingByUserId[currentUser._id])
-                  const rowMessage = rowMessageByUserId[currentUser._id]
-                  const hasPendingChanges = hasChanges(currentUser)
-                  const currentRole = draft?.role ?? currentUser.role
-                  const currentStatus = draft?.status ?? currentUser.status
+                  const draft = draftsById[currentUser._id];
+                  const isSaving = Boolean(savingByUserId[currentUser._id]);
+                  const rowMessage = rowMessageByUserId[currentUser._id];
+                  const hasPendingChanges = hasChanges(currentUser);
+                  const currentRole = draft?.role ?? currentUser.role;
+                  const currentStatus = draft?.status ?? currentUser.status;
 
                   return (
                     <TableRow
@@ -490,7 +536,9 @@ export function AdminUsersSection() {
                     >
                       <TableCell>
                         <div className="space-y-1">
-                          <p className="font-medium text-foreground">{currentUser.name}</p>
+                          <p className="font-medium text-foreground">
+                            {currentUser.name}
+                          </p>
                           {hasPendingChanges && (
                             <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                               Cambio pendiente
@@ -505,7 +553,9 @@ export function AdminUsersSection() {
                         <Select
                           value={currentRole}
                           onValueChange={(value) =>
-                            updateDraft(currentUser._id, { role: value as AuthUser["role"] })
+                            updateDraft(currentUser._id, {
+                              role: value as AuthUser["role"],
+                            })
                           }
                           disabled={isSaving}
                         >
@@ -513,8 +563,12 @@ export function AdminUsersSection() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="user">{roleLabel("user")}</SelectItem>
-                            <SelectItem value="admin">{roleLabel("admin")}</SelectItem>
+                            <SelectItem value="user">
+                              {roleLabel("user")}
+                            </SelectItem>
+                            <SelectItem value="admin">
+                              {roleLabel("admin")}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -523,7 +577,9 @@ export function AdminUsersSection() {
                         <Select
                           value={currentStatus}
                           onValueChange={(value) =>
-                            updateDraft(currentUser._id, { status: value as AuthUser["status"] })
+                            updateDraft(currentUser._id, {
+                              status: value as AuthUser["status"],
+                            })
                           }
                           disabled={isSaving}
                         >
@@ -531,8 +587,12 @@ export function AdminUsersSection() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="active">{userStatusLabel("active")}</SelectItem>
-                            <SelectItem value="inactive">{userStatusLabel("inactive")}</SelectItem>
+                            <SelectItem value="active">
+                              {userStatusLabel("active")}
+                            </SelectItem>
+                            <SelectItem value="inactive">
+                              {userStatusLabel("inactive")}
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </TableCell>
@@ -551,11 +611,15 @@ export function AdminUsersSection() {
                             <Save className="mr-1 h-4 w-4" />
                             {isSaving ? "Guardando..." : "Guardar"}
                           </Button>
-                          {rowMessage && <span className="text-xs text-muted-foreground">{rowMessage}</span>}
+                          {rowMessage && (
+                            <span className="text-xs text-muted-foreground">
+                              {rowMessage}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
-                  )
+                  );
                 })
               )}
             </TableBody>
@@ -563,5 +627,5 @@ export function AdminUsersSection() {
         </div>
       </div>
     </div>
-  )
+  );
 }

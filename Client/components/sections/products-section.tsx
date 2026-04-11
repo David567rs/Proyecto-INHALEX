@@ -135,7 +135,7 @@ export function ProductsSection({
           <span className="inline-block px-4 py-1.5 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
             Catalogo
           </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-foreground mb-4 text-balance">
+          <h2 className="public-display-heading mb-4 text-3xl text-foreground text-balance sm:text-4xl lg:text-5xl">
             Nuestros Productos
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">

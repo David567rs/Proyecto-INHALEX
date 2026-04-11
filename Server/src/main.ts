@@ -3,15 +3,25 @@ import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
+function resolveCorsOrigin(): boolean | string[] {
+  const corsOrigin = process.env.CORS_ORIGIN;
+
+  if (corsOrigin) {
+    return corsOrigin
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+  }
+
+  return process.env.NODE_ENV === 'production' ? false : true;
+}
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({
-    origin: corsOrigin
-      ? corsOrigin.split(',').map((origin) => origin.trim())
-      : true,
+    origin: resolveCorsOrigin(),
     credentials: true,
   });
 

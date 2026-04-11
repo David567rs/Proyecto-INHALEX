@@ -7,6 +7,7 @@ export type AuditLogDocument = HydratedDocument<AuditLogEntity>;
   timestamps: true,
   versionKey: false,
   collection: 'auditoria_acciones',
+  suppressReservedKeysWarning: true,
 })
 export class AuditLogEntity {
   @Prop({ trim: true, index: true })
@@ -65,4 +66,3 @@ export const AuditLogSchema = SchemaFactory.createForClass(AuditLogEntity);
 
 AuditLogSchema.index({ createdAt: -1, collection: 1 });
 AuditLogSchema.index({ actorEmail: 1, createdAt: -1 });
-

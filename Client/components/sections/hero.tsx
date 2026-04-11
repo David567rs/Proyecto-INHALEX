@@ -66,7 +66,7 @@ export function Hero() {
             </div>
 
             <div className="space-y-5">
-              <h1 className="max-w-[11ch] font-serif text-5xl leading-[0.95] text-balance text-foreground sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
+              <h1 className="public-display-heading max-w-[11ch] text-5xl leading-[0.95] text-balance text-foreground sm:text-6xl lg:text-7xl xl:text-[5.5rem]">
                 <span className="block">El Respiro</span>
                 <span className="block">Que</span>
                 <span className="relative inline-block text-primary">

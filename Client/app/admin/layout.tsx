@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import type { ReactNode } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import type { ReactNode } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import {
+  BarChart3,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
@@ -15,6 +16,7 @@ import {
   LayoutDashboard,
   Layers3,
   LogOut,
+  Package,
   PackageCheck,
   ShieldCheck,
   ShoppingBag,
@@ -22,32 +24,32 @@ import {
   UserCircle2,
   Users,
   type LucideIcon,
-} from "lucide-react"
-import { ProtectedPage } from "@/components/auth/protected-page"
-import { useAuth } from "@/components/auth/auth-provider"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { ProtectedPage } from "@/components/auth/protected-page";
+import { useAuth } from "@/components/auth/auth-provider";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface AdminLayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface AdminNavLink {
-  href: string
-  label: string
-  description: string
-  icon: LucideIcon
-  isActive: (pathname: string) => boolean
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  isActive: (pathname: string) => boolean;
 }
 
 const RESUMEN_LINK: AdminNavLink = {
@@ -56,7 +58,7 @@ const RESUMEN_LINK: AdminNavLink = {
   description: "Vista general",
   icon: LayoutDashboard,
   isActive: (pathname) => pathname === "/admin",
-}
+};
 
 const USUARIOS_LINK: AdminNavLink = {
   href: "/admin/usuarios",
@@ -64,7 +66,7 @@ const USUARIOS_LINK: AdminNavLink = {
   description: "Roles y accesos",
   icon: Users,
   isActive: (pathname) => pathname.startsWith("/admin/usuarios"),
-}
+};
 
 const PEDIDOS_LINK: AdminNavLink = {
   href: "/admin/pedidos",
@@ -72,7 +74,15 @@ const PEDIDOS_LINK: AdminNavLink = {
   description: "Revision y estados",
   icon: ShoppingBag,
   isActive: (pathname) => pathname.startsWith("/admin/pedidos"),
-}
+};
+
+const VENTAS_LINK: AdminNavLink = {
+  href: "/admin/ventas",
+  label: "Ventas",
+  description: "Reportes y graficas",
+  icon: BarChart3,
+  isActive: (pathname) => pathname.startsWith("/admin/ventas"),
+};
 
 const CONTENIDO_LINK: AdminNavLink = {
   href: "/admin/contenido",
@@ -80,7 +90,7 @@ const CONTENIDO_LINK: AdminNavLink = {
   description: "Paginas y politicas",
   icon: FileText,
   isActive: (pathname) => pathname.startsWith("/admin/contenido"),
-}
+};
 
 const AUDITORIA_LINK: AdminNavLink = {
   href: "/admin/auditoria",
@@ -88,7 +98,7 @@ const AUDITORIA_LINK: AdminNavLink = {
   description: "Tiempo real y auditoria",
   icon: History,
   isActive: (pathname) => pathname.startsWith("/admin/auditoria"),
-}
+};
 
 const RESPALDOS_LINK: AdminNavLink = {
   href: "/admin/respaldos",
@@ -96,14 +106,14 @@ const RESPALDOS_LINK: AdminNavLink = {
   description: "Base y colecciones",
   icon: DatabaseBackup,
   isActive: (pathname) => pathname.startsWith("/admin/respaldos"),
-}
+};
 
 const CATALOGO_LINKS: AdminNavLink[] = [
   {
     href: "/admin/productos",
     label: "Productos",
     description: "Catalogo y precios",
-    icon: ShoppingBag,
+    icon: Package,
     isActive: (pathname) => pathname.startsWith("/admin/productos"),
   },
   {
@@ -120,25 +130,36 @@ const CATALOGO_LINKS: AdminNavLink[] = [
     icon: PackageCheck,
     isActive: (pathname) => pathname.startsWith("/admin/catalogo/inventario"),
   },
-]
+];
 
-const DESKTOP_PRIMARY_LINKS: AdminNavLink[] = [RESUMEN_LINK, USUARIOS_LINK, PEDIDOS_LINK]
-const DESKTOP_SECONDARY_LINKS: AdminNavLink[] = [CONTENIDO_LINK, AUDITORIA_LINK, RESPALDOS_LINK]
+const DESKTOP_PRIMARY_LINKS: AdminNavLink[] = [
+  RESUMEN_LINK,
+  USUARIOS_LINK,
+  PEDIDOS_LINK,
+  VENTAS_LINK,
+];
+const DESKTOP_SECONDARY_LINKS: AdminNavLink[] = [
+  CONTENIDO_LINK,
+  AUDITORIA_LINK,
+  RESPALDOS_LINK,
+];
 const MOBILE_LINKS: AdminNavLink[] = [
   RESUMEN_LINK,
   USUARIOS_LINK,
   PEDIDOS_LINK,
+  VENTAS_LINK,
   ...CATALOGO_LINKS,
   CONTENIDO_LINK,
   AUDITORIA_LINK,
   RESPALDOS_LINK,
-]
-const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed"
+];
+const SIDEBAR_COLLAPSED_STORAGE_KEY = "admin-sidebar-collapsed";
 
 function isCatalogActive(pathname: string): boolean {
   return (
-    pathname.startsWith("/admin/productos") || pathname.startsWith("/admin/catalogo")
-  )
+    pathname.startsWith("/admin/productos") ||
+    pathname.startsWith("/admin/catalogo")
+  );
 }
 
 function SidebarLink({
@@ -147,12 +168,12 @@ function SidebarLink({
   compact = false,
   collapsed = false,
 }: {
-  link: AdminNavLink
-  pathname: string
-  compact?: boolean
-  collapsed?: boolean
+  link: AdminNavLink;
+  pathname: string;
+  compact?: boolean;
+  collapsed?: boolean;
 }) {
-  const active = link.isActive(pathname)
+  const active = link.isActive(pathname);
 
   const linkContent = (
     <Link
@@ -169,12 +190,24 @@ function SidebarLink({
           : "border-transparent hover:border-border/70 hover:bg-secondary/40",
       )}
     >
-      <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-2")}>
-        <link.icon className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+      <div
+        className={cn(
+          "flex items-center",
+          collapsed ? "justify-center" : "gap-2",
+        )}
+      >
+        <link.icon
+          className={cn("shrink-0", compact ? "h-3.5 w-3.5" : "h-4 w-4")}
+        />
         {collapsed ? (
           <span className="sr-only">{link.label}</span>
         ) : (
-          <span className={cn("font-semibold", compact ? "text-xs" : "text-xs xl:text-sm")}>
+          <span
+            className={cn(
+              "font-semibold",
+              compact ? "text-xs" : "text-xs xl:text-sm",
+            )}
+          >
             {link.label}
           </span>
         )}
@@ -190,10 +223,10 @@ function SidebarLink({
         </p>
       )}
     </Link>
-  )
+  );
 
   if (!collapsed) {
-    return linkContent
+    return linkContent;
   }
 
   return (
@@ -203,40 +236,42 @@ function SidebarLink({
         {link.label}
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user, logout } = useAuth()
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
 
-  const [isCatalogOpen, setIsCatalogOpen] = useState(isCatalogActive(pathname))
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const visiblePrimaryLinks = DESKTOP_PRIMARY_LINKS
-  const visibleCatalogLinks = CATALOGO_LINKS
-  const visibleSecondaryLinks = DESKTOP_SECONDARY_LINKS
-  const visibleMobileLinks = MOBILE_LINKS
+  const [isCatalogOpen, setIsCatalogOpen] = useState(isCatalogActive(pathname));
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const visiblePrimaryLinks = DESKTOP_PRIMARY_LINKS;
+  const visibleCatalogLinks = CATALOGO_LINKS;
+  const visibleSecondaryLinks = DESKTOP_SECONDARY_LINKS;
+  const visibleMobileLinks = MOBILE_LINKS;
 
   useEffect(() => {
     if (isCatalogActive(pathname)) {
-      setIsCatalogOpen(true)
+      setIsCatalogOpen(true);
     }
-  }, [pathname])
+  }, [pathname]);
 
   useEffect(() => {
-    const persistedValue = window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY)
+    const persistedValue = window.localStorage.getItem(
+      SIDEBAR_COLLAPSED_STORAGE_KEY,
+    );
     if (persistedValue === "true") {
-      setIsSidebarCollapsed(true)
+      setIsSidebarCollapsed(true);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(
       SIDEBAR_COLLAPSED_STORAGE_KEY,
       isSidebarCollapsed ? "true" : "false",
-    )
-  }, [isSidebarCollapsed])
+    );
+  }, [isSidebarCollapsed]);
 
   const currentModule = useMemo(
     () =>
@@ -244,15 +279,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       visibleMobileLinks[0] ??
       RESUMEN_LINK,
     [pathname, visibleMobileLinks],
-  )
+  );
 
   const handleLogout = () => {
-    logout()
-    router.push("/auth/login")
-  }
+    logout();
+    router.push("/auth/login");
+  };
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="admin-font-shell relative min-h-screen bg-background">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
         <div className="absolute top-1/3 -left-24 h-64 w-64 rounded-full bg-emerald-400/10 blur-3xl" />
@@ -260,13 +295,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       <ProtectedPage requireAdmin>
-        <div className="container mx-auto px-3 py-6 sm:px-4 lg:h-[calc(100dvh-2.5rem)] lg:overflow-hidden lg:py-5">
+        <div className="container mx-auto px-3 py-4 sm:px-4 lg:h-[calc(100dvh-1.75rem)] lg:overflow-hidden lg:py-4">
           <div
             className={cn(
-              "grid gap-5 lg:h-full lg:min-h-0 lg:items-start",
+              "grid gap-3 lg:h-full lg:min-h-0 lg:items-start",
               isSidebarCollapsed
                 ? "lg:grid-cols-[88px_1fr]"
-                : "lg:grid-cols-[248px_1fr] xl:grid-cols-[272px_1fr]",
+                : "lg:grid-cols-[220px_1fr] xl:grid-cols-[236px_1fr]",
             )}
           >
             <aside className="space-y-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
@@ -296,14 +331,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </Tooltip>
               </div>
 
-              <div className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
+              <div className="space-y-2.5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-2">
                 {!isSidebarCollapsed && (
-                  <div className="admin-section-card p-4 xl:p-5">
+                  <div className="admin-section-card p-3">
                     <p className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                       <ShieldCheck className="h-4 w-4" />
                       Administracion
                     </p>
-                    <h1 className="mt-3 text-lg font-semibold tracking-tight text-foreground xl:text-xl">
+                    <h1 className="mt-2 text-base font-semibold tracking-tight text-foreground xl:text-lg">
                       Panel INHALEX
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -337,11 +372,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     ) : (
                       <>
                         {visiblePrimaryLinks.map((link) => (
-                          <SidebarLink key={link.href} link={link} pathname={pathname} />
+                          <SidebarLink
+                            key={link.href}
+                            link={link}
+                            pathname={pathname}
+                          />
                         ))}
 
                         {visibleCatalogLinks.length > 0 && (
-                          <Collapsible open={isCatalogOpen} onOpenChange={setIsCatalogOpen}>
+                          <Collapsible
+                            open={isCatalogOpen}
+                            onOpenChange={setIsCatalogOpen}
+                          >
                             <CollapsibleTrigger
                               className={cn(
                                 "flex w-full items-center justify-between rounded-xl border px-2.5 py-2.5 text-left transition-all xl:px-3 xl:py-3",
@@ -353,7 +395,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                               <div className="flex items-center gap-2">
                                 <Layers3 className="h-4 w-4 shrink-0" />
                                 <div>
-                                  <p className="text-xs font-semibold xl:text-sm">Catalogo</p>
+                                  <p className="text-xs font-semibold xl:text-sm">
+                                    Catalogo
+                                  </p>
                                   <p
                                     className={cn(
                                       "hidden text-xs 2xl:block",
@@ -390,7 +434,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         )}
 
                         {visibleSecondaryLinks.map((link) => (
-                          <SidebarLink key={link.href} link={link} pathname={pathname} />
+                          <SidebarLink
+                            key={link.href}
+                            link={link}
+                            pathname={pathname}
+                          />
                         ))}
                       </>
                     )}
@@ -408,7 +456,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       Accesos
                     </p>
                   )}
-                  <div className={cn("grid gap-2", isSidebarCollapsed && "place-items-center")}>
+                  <div
+                    className={cn(
+                      "grid gap-2",
+                      isSidebarCollapsed && "place-items-center",
+                    )}
+                  >
                     {isSidebarCollapsed ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -429,7 +482,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <Button variant="outline" className="justify-start" asChild>
+                      <Button
+                        variant="outline"
+                        className="justify-start"
+                        asChild
+                      >
                         <Link href="/">
                           <ExternalLink className="h-4 w-4" />
                           Ver sitio publico
@@ -457,7 +514,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <Button variant="outline" className="justify-start" asChild>
+                      <Button
+                        variant="outline"
+                        className="justify-start"
+                        asChild
+                      >
                         <Link href="/cuenta">
                           <UserCircle2 className="h-4 w-4" />
                           Mi cuenta
@@ -483,7 +544,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         </TooltipContent>
                       </Tooltip>
                     ) : (
-                      <Button variant="destructive" className="justify-start" onClick={handleLogout}>
+                      <Button
+                        variant="destructive"
+                        className="justify-start"
+                        onClick={handleLogout}
+                      >
                         <LogOut className="h-4 w-4" />
                         Cerrar sesion
                       </Button>
@@ -493,34 +558,36 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
             </aside>
 
-            <section className="space-y-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+            <section className="space-y-3 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
               <header className="sticky top-3 z-20 shrink-0 lg:top-0">
-                <div className="admin-section-card px-5 py-4 backdrop-blur-xl supports-[backdrop-filter]:bg-card/82">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Modulo activo
-                </p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-                  {currentModule.label}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">{currentModule.description}</p>
+                <div className="admin-section-card px-4 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-card/82">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Modulo activo
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight text-foreground">
+                    {currentModule.label}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {currentModule.description}
+                  </p>
 
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-                  {visibleMobileLinks.map((module) => (
-                    <Link
-                      key={`mobile-${module.href}`}
-                      href={module.href}
-                      className={cn(
-                        "inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-all",
-                        module.isActive(pathname)
-                          ? "border-primary/20 bg-primary text-primary-foreground"
-                          : "border-input bg-background/70",
-                      )}
-                    >
-                      <module.icon className="h-4 w-4" />
-                      {module.label}
-                    </Link>
-                  ))}
-                </div>
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+                    {visibleMobileLinks.map((module) => (
+                      <Link
+                        key={`mobile-${module.href}`}
+                        href={module.href}
+                        className={cn(
+                          "inline-flex h-9 items-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-all",
+                          module.isActive(pathname)
+                            ? "border-primary/20 bg-primary text-primary-foreground"
+                            : "border-input bg-background/70",
+                        )}
+                      >
+                        <module.icon className="h-4 w-4" />
+                        {module.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </header>
 
@@ -532,5 +599,5 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </ProtectedPage>
     </div>
-  )
+  );
 }

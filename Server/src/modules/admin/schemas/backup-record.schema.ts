@@ -8,7 +8,11 @@ export type BackupTrigger = 'manual' | 'automatic';
 export type BackupStatus = 'ready' | 'failed' | 'purged';
 export type BackupStorageProvider = 'local' | 'cloudinary' | 'r2';
 
-@Schema({ _id: false, versionKey: false })
+@Schema({
+  _id: false,
+  versionKey: false,
+  suppressReservedKeysWarning: true,
+})
 export class BackupCollectionSnapshot {
   @Prop({ required: true, trim: true })
   collection: string;
@@ -25,6 +29,7 @@ export const BackupCollectionSnapshotSchema = SchemaFactory.createForClass(
   timestamps: true,
   versionKey: false,
   collection: 'respaldos_generados',
+  suppressReservedKeysWarning: true,
 })
 export class BackupRecord {
   @Prop({ required: true, unique: true, index: true })
@@ -93,4 +98,3 @@ export class BackupRecord {
 }
 
 export const BackupRecordSchema = SchemaFactory.createForClass(BackupRecord);
-
