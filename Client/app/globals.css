@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -76,9 +76,9 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
-  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
+  --font-serif: var(--font-manrope), "Manrope", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback";
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -192,8 +192,17 @@
     z-index: 40;
     pointer-events: none;
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.06) 24%, transparent 48%),
-      radial-gradient(circle at top center, rgba(22, 163, 74, 0.08), transparent 30%);
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.46),
+        rgba(255, 255, 255, 0.06) 24%,
+        transparent 48%
+      ),
+      radial-gradient(
+        circle at top center,
+        rgba(22, 163, 74, 0.08),
+        transparent 30%
+      );
     transform-origin: center top;
     animation: page-wash 620ms ease-out both;
   }
@@ -241,12 +250,24 @@
     @apply inline-flex items-center rounded-full border border-primary/10 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary shadow-[0_10px_24px_-22px_rgba(16,112,58,0.35)];
   }
 
+  .public-display-heading {
+    @apply font-serif;
+    font-weight: 700;
+    letter-spacing: 0;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+  }
+
   .public-skeleton-surface {
     @apply rounded-[2rem] border border-emerald-100/80 bg-white/88 shadow-[0_26px_70px_-48px_rgba(15,84,43,0.22)] backdrop-blur-sm;
   }
 
+  .admin-font-shell {
+    @apply font-sans;
+  }
+
   .admin-panel-shell {
-    @apply relative overflow-hidden rounded-[2rem] border border-border/60 bg-card/90 p-6 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur;
+    @apply relative overflow-hidden rounded-lg border border-border/60 bg-card/90 p-4 shadow-[0_16px_56px_-42px_rgba(15,23,42,0.42)] backdrop-blur lg:p-5;
   }
 
   .admin-panel-shell::before {
@@ -255,18 +276,26 @@
     inset: 0;
     pointer-events: none;
     background:
-      radial-gradient(circle at top left, rgba(22, 163, 74, 0.14), transparent 34%),
-      radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent 32%),
+      radial-gradient(
+        circle at top left,
+        rgba(22, 163, 74, 0.14),
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at top right,
+        rgba(56, 189, 248, 0.1),
+        transparent 32%
+      ),
       linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%);
   }
 
   .admin-panel-shell::after {
     content: "";
     position: absolute;
-    top: -3.5rem;
-    right: -3rem;
-    width: 16rem;
-    height: 16rem;
+    top: -4rem;
+    right: -4rem;
+    width: 13rem;
+    height: 13rem;
     border-radius: 9999px;
     pointer-events: none;
     background: rgba(22, 163, 74, 0.1);
@@ -275,26 +304,38 @@
   }
 
   .admin-section-card {
-    @apply rounded-2xl border border-border/60 bg-card/88 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+    @apply rounded-lg border border-border/60 bg-card/88 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-px hover:border-primary/20 hover:shadow-[0_14px_36px_-28px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      transparent 46%
+    );
   }
 
   .admin-metric-card {
-    @apply flex min-h-[11.5rem] flex-col justify-between rounded-2xl border border-border/60 bg-card/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+    @apply flex min-h-[6.5rem] flex-col justify-between rounded-lg border border-border/60 bg-card/88 p-3.5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-px hover:border-primary/20 hover:shadow-[0_14px_36px_-28px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      transparent 46%
+    );
   }
 
   .admin-stat-chip {
-    @apply rounded-xl border border-border/60 bg-secondary/25 px-4 py-3.5 text-sm leading-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-secondary/35;
+    @apply rounded-md border border-border/60 bg-secondary/25 px-3 py-2 text-[13px] leading-5 transition-all duration-300 hover:-translate-y-px hover:border-primary/20 hover:bg-secondary/35;
   }
 
   .admin-table-shell {
-    @apply overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+    @apply overflow-hidden rounded-lg border border-border/60 bg-card/80 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-px hover:border-primary/20 hover:shadow-[0_14px_36px_-28px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      transparent 46%
+    );
   }
 
   .admin-table-scroll {
-    @apply relative max-h-[38rem] overflow-auto;
+    @apply relative max-h-[32rem] overflow-auto;
   }
 
   .admin-table-head-row {
@@ -302,24 +343,28 @@
   }
 
   .admin-table-head-cell {
-    @apply h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+    @apply h-9 px-2.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground;
   }
 
   .admin-table-body-compact {
-    @apply [&_td]:px-3 [&_td]:py-2.5 [&_td]:align-top;
+    @apply [&_td]:px-2.5 [&_td]:py-2 [&_td]:align-top;
   }
 
   .admin-empty-state {
-    @apply mx-auto flex w-full max-w-sm flex-col items-center gap-3 rounded-2xl border border-dashed border-border/70 bg-secondary/20 px-6 py-8 text-center shadow-sm backdrop-blur-sm;
+    @apply mx-auto flex w-full max-w-sm flex-col items-center gap-2 rounded-lg border border-dashed border-border/70 bg-secondary/20 px-4 py-5 text-center shadow-sm backdrop-blur-sm;
   }
 
   .admin-skeleton-card {
-    @apply rounded-xl border border-border/60 bg-card/80 p-4 animate-pulse;
+    @apply rounded-lg border border-border/60 bg-card/80 p-3 animate-pulse;
   }
 
   .admin-form-card {
-    @apply rounded-2xl border border-border/60 bg-card/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_18px_45px_-32px_rgba(22,163,74,0.35)];
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+    @apply rounded-lg border border-border/60 bg-card/88 p-4 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-px hover:border-primary/20 hover:shadow-[0_14px_36px_-28px_rgba(22,163,74,0.35)];
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.035),
+      transparent 46%
+    );
   }
 
   .admin-input-surface {
@@ -331,8 +376,25 @@
   }
 
   .admin-toolbar-surface {
-    @apply rounded-[1.6rem] border border-border/60 bg-background/80 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.28)] backdrop-blur-xl;
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1));
+    @apply rounded-lg border border-border/60 bg-background/80 shadow-[0_14px_36px_-30px_rgba(15,23,42,0.28)] backdrop-blur-xl;
+    background-image: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.42),
+      rgba(255, 255, 255, 0.1)
+    );
+  }
+
+  .admin-panel-shell [data-slot="card"] {
+    @apply gap-4 rounded-lg py-4 shadow-sm;
+  }
+
+  .admin-panel-shell [data-slot="card-header"] {
+    @apply gap-1.5 px-4;
+  }
+
+  .admin-panel-shell [data-slot="card-content"],
+  .admin-panel-shell [data-slot="card-footer"] {
+    @apply px-4;
   }
 
   .admin-animate-card {

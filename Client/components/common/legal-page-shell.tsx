@@ -40,7 +40,7 @@ export function LegalPageShell({
             <div className="mx-auto max-w-5xl">
               <div className="page-fade-up">
                 <span className="public-section-badge">{badge}</span>
-                <h1 className="mt-5 max-w-4xl font-serif text-4xl font-bold leading-[0.98] text-foreground sm:text-5xl lg:text-6xl">
+                <h1 className="public-display-heading mt-5 max-w-4xl text-4xl leading-[0.98] text-foreground sm:text-5xl lg:text-6xl">
                   {title}
                 </h1>
                 <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">

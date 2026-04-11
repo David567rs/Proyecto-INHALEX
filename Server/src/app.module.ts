@@ -11,12 +11,15 @@ import { ProductsModule } from './modules/products/products.module';
 import { CompanyContentModule } from './modules/company-content/company-content.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { SalesModule } from './modules/sales/sales.module';
+import { validateEnv } from './config/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
+      validate: validateEnv,
     }),
     ScheduleModule.forRoot(),
     MongooseModule.forRootAsync({
@@ -32,6 +35,7 @@ import { OrdersModule } from './modules/orders/orders.module';
     AdminModule,
     ProductsModule,
     OrdersModule,
+    SalesModule,
     CompanyContentModule,
     AuditModule,
   ],

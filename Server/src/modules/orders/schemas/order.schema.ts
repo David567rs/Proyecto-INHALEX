@@ -55,7 +55,7 @@ export class OrderItemSnapshot {
   @Prop({ required: true, min: 0 })
   subtotal: number;
 
-  @Prop({ required: true, enum: OrderItemFulfillment })
+  @Prop({ type: String, required: true, enum: OrderItemFulfillment })
   fulfillment: OrderItemFulfillment;
 
   @Prop({ type: Number, default: null })
@@ -85,7 +85,7 @@ export class OrderIssueSnapshot {
   @Prop({ required: true, trim: true })
   code: string;
 
-  @Prop({ required: true, enum: OrderIssueSeverity })
+  @Prop({ type: String, required: true, enum: OrderIssueSeverity })
   severity: OrderIssueSeverity;
 
   @Prop({ trim: true })
@@ -119,12 +119,13 @@ export class OrderCustomerSnapshot {
   notes?: string;
 }
 
-export const OrderCustomerSnapshotSchema =
-  SchemaFactory.createForClass(OrderCustomerSnapshot);
+export const OrderCustomerSnapshotSchema = SchemaFactory.createForClass(
+  OrderCustomerSnapshot,
+);
 
 @Schema({ _id: false, versionKey: false })
 export class OrderStatusNoteSnapshot {
-  @Prop({ required: true, enum: OrderStatus })
+  @Prop({ type: String, required: true, enum: OrderStatus })
   status: OrderStatus;
 
   @Prop({ required: true, trim: true, maxlength: 500 })
@@ -140,15 +141,22 @@ export class OrderStatusNoteSnapshot {
   createdAt: Date;
 }
 
-export const OrderStatusNoteSnapshotSchema =
-  SchemaFactory.createForClass(OrderStatusNoteSnapshot);
+export const OrderStatusNoteSnapshotSchema = SchemaFactory.createForClass(
+  OrderStatusNoteSnapshot,
+);
 
 @Schema({ timestamps: true, versionKey: false, collection: 'pedidos' })
 export class Order {
   @Prop({ required: true, unique: true, trim: true, index: true })
   reference: string;
 
-  @Prop({ required: true, enum: OrderStatus, default: OrderStatus.DRAFT, index: true })
+  @Prop({
+    type: String,
+    required: true,
+    enum: OrderStatus,
+    default: OrderStatus.DRAFT,
+    index: true,
+  })
   status: OrderStatus;
 
   @Prop({ required: true, trim: true, uppercase: true, default: 'MXN' })

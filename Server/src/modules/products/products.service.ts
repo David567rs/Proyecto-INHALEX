@@ -154,7 +154,9 @@ export class ProductsService {
     return this.list(query, true);
   }
 
-  async listAdmin(query: ListProductsQueryDto): Promise<PaginatedProductsResponse> {
+  async listAdmin(
+    query: ListProductsQueryDto,
+  ): Promise<PaginatedProductsResponse> {
     return this.list(query, false);
   }
 
@@ -205,12 +207,19 @@ export class ProductsService {
   async listInventoryMovements(
     productId: string,
     query: ListInventoryMovementsQueryDto,
-  ): Promise<{ items: InventoryMovementResponse[]; total: number; limit: number }> {
+  ): Promise<{
+    items: InventoryMovementResponse[];
+    total: number;
+    limit: number;
+  }> {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException('Invalid product id');
     }
 
-    const product = await this.productModel.findById(productId).select('_id').exec();
+    const product = await this.productModel
+      .findById(productId)
+      .select('_id')
+      .exec();
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -236,7 +245,10 @@ export class ProductsService {
     productId: string,
     adjustProductInventoryDto: AdjustProductInventoryDto,
     actor: JwtPayload,
-  ): Promise<{ product: ProductDocument; movement: InventoryMovementResponse }> {
+  ): Promise<{
+    product: ProductDocument;
+    movement: InventoryMovementResponse;
+  }> {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException('Invalid product id');
     }
@@ -323,7 +335,9 @@ export class ProductsService {
     }
 
     if (nextAvailable < 0 || nextReserved < 0) {
-      throw new BadRequestException('El inventario no puede quedar en numeros negativos');
+      throw new BadRequestException(
+        'El inventario no puede quedar en numeros negativos',
+      );
     }
 
     const movementType =
@@ -494,7 +508,9 @@ export class ProductsService {
       } catch (error: unknown) {
         failed += 1;
         const message =
-          error instanceof Error ? error.message : 'No se pudo actualizar la fila';
+          error instanceof Error
+            ? error.message
+            : 'No se pudo actualizar la fila';
         errors.push({
           row: rowNumber,
           idOrSlug,
@@ -525,7 +541,9 @@ export class ProductsService {
       ]),
     ]);
 
-    const countByCategory = new Map(counts.map((item) => [item._id, item.count]));
+    const countByCategory = new Map(
+      counts.map((item) => [item._id, item.count]),
+    );
 
     return categories.map((category) =>
       this.mapAdminCategory(category, countByCategory.get(category.slug) ?? 0),
@@ -646,7 +664,9 @@ export class ProductsService {
       throw new BadRequestException('Invalid category id');
     }
 
-    const category = await this.productCategoryModel.findById(categoryId).exec();
+    const category = await this.productCategoryModel
+      .findById(categoryId)
+      .exec();
     if (!category) {
       throw new NotFoundException('Category not found');
     }
@@ -669,12 +689,17 @@ export class ProductsService {
   async listPublicCategories(): Promise<PublicCategoryItem[]> {
     await this.ensureDefaultCategories();
 
-    const counts = await this.productModel.aggregate<{ _id: string; count: number }>([
+    const counts = await this.productModel.aggregate<{
+      _id: string;
+      count: number;
+    }>([
       { $match: { status: ProductStatus.ACTIVE } },
       { $group: { _id: '$category', count: { $sum: 1 } } },
     ]);
 
-    const countByCategory = new Map(counts.map((item) => [item._id, item.count]));
+    const countByCategory = new Map(
+      counts.map((item) => [item._id, item.count]),
+    );
 
     const categories = await this.productCategoryModel
       .find({ isActive: true })
@@ -731,7 +756,10 @@ export class ProductsService {
       await this.ensureUniqueSlug(nextSlug, existingProduct.id);
     }
 
-    const updatePayload: UpdateProductDto & { slug: string; currency?: string } = {
+    const updatePayload: UpdateProductDto & {
+      slug: string;
+      currency?: string;
+    } = {
       ...updateProductDto,
       slug: nextSlug,
     };
@@ -741,7 +769,9 @@ export class ProductsService {
     }
 
     if (updateProductDto.benefits !== undefined) {
-      updatePayload.benefits = this.normalizeStringArray(updateProductDto.benefits);
+      updatePayload.benefits = this.normalizeStringArray(
+        updateProductDto.benefits,
+      );
     }
 
     if (updateProductDto.aromas !== undefined) {
@@ -780,6 +810,7 @@ export class ProductsService {
 
     for (const seedProduct of DEFAULT_PRODUCTS) {
       const slug = this.buildSlug(seedProduct.name);
+      const stockAvailable = seedProduct.stockAvailable ?? 0;
       const payload = {
         ...seedProduct,
         slug,
@@ -787,14 +818,17 @@ export class ProductsService {
         currency: (seedProduct.currency ?? 'MXN').toUpperCase(),
         benefits: this.normalizeStringArray(seedProduct.benefits),
         aromas: this.normalizeStringArray(seedProduct.aromas),
-        stockAvailable:
-          seedProduct.stockAvailable ?? (seedProduct.inStock ? 24 : 0),
+        inStock: stockAvailable > 0,
+        stockAvailable,
         stockReserved: 0,
         stockMin: seedProduct.stockMin ?? 6,
-        allowBackorder: seedProduct.allowBackorder ?? true,
+        allowBackorder: seedProduct.allowBackorder ?? false,
       };
 
-      const existing = await this.productModel.findOne({ slug }).select('_id').exec();
+      const existing = await this.productModel
+        .findOne({ slug })
+        .select('_id')
+        .exec();
 
       if (!existing) {
         await this.productModel.create(payload);
@@ -988,8 +1022,14 @@ export class ProductsService {
     return slug;
   }
 
-  private async ensureUniqueSlug(slug: string, excludeId?: string): Promise<void> {
-    const existing = await this.productModel.findOne({ slug }).select('_id').exec();
+  private async ensureUniqueSlug(
+    slug: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.productModel
+      .findOne({ slug })
+      .select('_id')
+      .exec();
 
     if (!existing) {
       return;
@@ -1040,7 +1080,9 @@ export class ProductsService {
     return null;
   }
 
-  private buildUpdatePayloadFromCsvRow(row: ImportProductsCsvRowDto): UpdateProductDto {
+  private buildUpdatePayloadFromCsvRow(
+    row: ImportProductsCsvRowDto,
+  ): UpdateProductDto {
     const payload: UpdateProductDto = {};
 
     if (row.nombre?.trim()) {
@@ -1110,10 +1152,18 @@ export class ProductsService {
 
   private parseCsvStatus(raw: string): ProductStatus {
     const normalized = raw.trim().toLowerCase();
-    if (normalized === 'active' || normalized === 'activo') {
+    if (
+      normalized === 'active' ||
+      normalized === 'activo' ||
+      normalized === 'activado'
+    ) {
       return ProductStatus.ACTIVE;
     }
-    if (normalized === 'draft' || normalized === 'borrador') {
+    if (
+      normalized === 'draft' ||
+      normalized === 'borrador' ||
+      normalized === 'desactivado'
+    ) {
       return ProductStatus.DRAFT;
     }
     if (normalized === 'archived' || normalized === 'archivado') {
@@ -1148,15 +1198,18 @@ export class ProductsService {
     return {
       tracked: typeof product.stockAvailable === 'number',
       available:
-        typeof product.stockAvailable === 'number' && Number.isFinite(product.stockAvailable)
+        typeof product.stockAvailable === 'number' &&
+        Number.isFinite(product.stockAvailable)
           ? Math.max(0, Math.floor(product.stockAvailable))
           : 0,
       reserved:
-        typeof product.stockReserved === 'number' && Number.isFinite(product.stockReserved)
+        typeof product.stockReserved === 'number' &&
+        Number.isFinite(product.stockReserved)
           ? Math.max(0, Math.floor(product.stockReserved))
           : 0,
       min:
-        typeof product.stockMin === 'number' && Number.isFinite(product.stockMin)
+        typeof product.stockMin === 'number' &&
+        Number.isFinite(product.stockMin)
           ? Math.max(0, Math.floor(product.stockMin))
           : 0,
       allowBackorder: Boolean(product.allowBackorder),

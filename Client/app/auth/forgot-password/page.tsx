@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                   <Mail className="w-8 h-8 text-primary" />
                 </div>
-                <h1 className="text-2xl font-serif font-bold text-foreground mb-2">
+                <h1 className="mb-2 text-2xl font-bold text-foreground">
                   Correo enviado
                 </h1>
                 <p className="text-sm text-muted-foreground mb-6">

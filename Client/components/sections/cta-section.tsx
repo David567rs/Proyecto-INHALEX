@@ -56,7 +56,7 @@ export function CTASection() {
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           )}
         >
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-primary-foreground mb-6 text-balance">
+          <h2 className="public-display-heading mb-6 text-3xl text-balance text-primary-foreground sm:text-4xl lg:text-5xl">
             Respira Mejor, Vive Mejor
           </h2>
           <p className="text-lg lg:text-xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto text-pretty leading-relaxed">
