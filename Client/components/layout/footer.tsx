@@ -188,7 +188,7 @@ export function Footer() {
             {new Date().getFullYear()} INHALEX. Todos los derechos reservados.
           </p>
           <p className="text-sm text-muted-foreground">
-            Diseno natural, limpio y pensado para explorar con calma.
+            Diseño natural, limpio y pensado para explorar con calma.
           </p>
         </div>
       </div>

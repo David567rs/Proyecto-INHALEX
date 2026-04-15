@@ -16,6 +16,10 @@ import {
   SalesDataPointDto,
   SalesMetricsDto,
 } from './dto/sales-history.dto';
+import {
+  DepletionForecastDto,
+  GetDepletionForecastQueryDto,
+} from './dto/sales-depletion-forecast.dto';
 
 @Controller('sales')
 @UseGuards(JwtAuthGuard)
@@ -60,5 +64,14 @@ export class SalesController {
     @Query() query: GetSalesOverviewDto,
   ): Promise<any> {
     return this.salesService.getSalesOverview(query);
+  }
+
+  @Get('forecast/:productId')
+  @HttpCode(HttpStatus.OK)
+  async getDepletionForecast(
+    @Param('productId') productId: string,
+    @Query() query: GetDepletionForecastQueryDto,
+  ): Promise<DepletionForecastDto> {
+    return this.salesService.getDepletionForecast(productId, query);
   }
 }

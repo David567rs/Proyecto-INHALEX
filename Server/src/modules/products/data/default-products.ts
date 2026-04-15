@@ -13,6 +13,10 @@ export interface DefaultProductSeed {
   aromas: string[];
   presentation: string;
   origin: string;
+  rawMaterialName?: string;
+  rawMaterialInitialStockMl?: number;
+  rawMaterialConsumptionPerBatchMl?: number;
+  rawMaterialBatchYieldUnits?: number;
   stockAvailable?: number;
   stockMin?: number;
   allowBackorder?: boolean;
@@ -146,7 +150,12 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     aromas: ['lavanda', 'floral', 'calmante', 'suave'],
     presentation: '10ml',
     origin: '100% Natural',
+    rawMaterialName: 'Compuesto de lavanda',
+    rawMaterialInitialStockMl: 750,
+    rawMaterialConsumptionPerBatchMl: 250,
+    rawMaterialBatchYieldUnits: 70,
     inStock: true,
+    stockMin: 20,
     rating: 4.8,
     reviews: 187,
     status: ProductStatus.ACTIVE,

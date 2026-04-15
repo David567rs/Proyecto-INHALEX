@@ -25,6 +25,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -65,6 +73,12 @@ type BackupSettingsDraft = {
   keepLocalMirror: boolean;
   retentionDays: string;
   cloudFolder: string;
+};
+
+type ManualBackupSuccessState = {
+  item: AdminBackupItem;
+  title: string;
+  description: string;
 };
 
 function formatDate(value?: string): string {
@@ -164,6 +178,51 @@ function isBackupReady(item: AdminBackupItem): boolean {
   return item.status === "ready";
 }
 
+function backupFileLabel(item: AdminBackupItem): string {
+  if (item.kind === "database") return item.bundleFileName ?? `${item.id}.json`;
+  return item.fileName;
+}
+
+function backupCoverageLabel(item: AdminBackupItem): string {
+  if (item.kind === "database") {
+    return `${item.totalCollections} colecciones y ${item.totalDocuments} documentos`;
+  }
+  return `${item.collection} | ${item.count} documentos`;
+}
+
+function backupAvailabilityLabel(item: AdminBackupItem): string {
+  if (item.localAvailable && item.remoteAvailable) {
+    return "Disponible en servidor y nube";
+  }
+  if (item.remoteAvailable) {
+    return "Disponible en destino remoto";
+  }
+  if (item.localAvailable) {
+    return "Disponible en servidor local";
+  }
+  return "Pendiente de disponibilidad";
+}
+
+function buildManualBackupSuccessState(
+  item: AdminBackupItem,
+): ManualBackupSuccessState {
+  if (item.kind === "database") {
+    return {
+      item,
+      title: "Respaldo completo generado",
+      description:
+        "La copia general del sistema ya quedo registrada y lista para restauracion, descarga controlada o validacion desde el historial.",
+    };
+  }
+
+  return {
+    item,
+    title: "Respaldo puntual generado",
+    description:
+      "La coleccion seleccionada ya quedo protegida y disponible para recuperacion sin afectar el resto de la operacion.",
+  };
+}
+
 function destinationState(settings: AdminBackupSettings | null): {
   title: string;
   ready: boolean;
@@ -216,6 +275,8 @@ export function AdminBackupsSection() {
   >({});
   const [errorMessage, setErrorMessage] = useState("");
   const [resultMessage, setResultMessage] = useState("");
+  const [manualBackupSuccess, setManualBackupSuccess] =
+    useState<ManualBackupSuccessState | null>(null);
 
   const sortedCollections = useMemo(
     () =>
@@ -425,6 +486,7 @@ export function AdminBackupsSection() {
       setResultMessage(
         `Respaldo completo generado con ${created.totalCollections} colecciones.`,
       );
+      setManualBackupSuccess(buildManualBackupSuccessState(created));
       await loadAll(false);
       setSelectedBackupId(created.id);
     } catch (error) {
@@ -462,6 +524,7 @@ export function AdminBackupsSection() {
       setResultMessage(
         `Respaldo de ${created.collection} generado correctamente.`,
       );
+      setManualBackupSuccess(buildManualBackupSuccessState(created));
       await loadAll(false);
       setSelectedBackupId(created.id);
     } catch (error) {
@@ -580,9 +643,110 @@ export function AdminBackupsSection() {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card/95 p-4 lg:p-4 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(22,163,74,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]" />
-      <div className="relative z-10 space-y-4">
+    <>
+      <Dialog
+        open={Boolean(manualBackupSuccess)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManualBackupSuccess(null);
+          }
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="overflow-hidden border-primary/15 p-0 shadow-[0_35px_120px_-45px_rgba(15,23,42,0.52)] sm:max-w-[min(560px,calc(100vw-2rem))]"
+        >
+          {manualBackupSuccess ? (
+            <div className="bg-background">
+              <div className="relative overflow-hidden border-b border-border/60 bg-[radial-gradient(circle_at_top,rgba(22,163,74,0.12),transparent_48%),linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,0.98))] px-6 py-8 text-center">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_32%),radial-gradient(circle_at_top_right,rgba(22,163,74,0.1),transparent_30%)]" />
+                <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-primary/12 animate-ping" />
+                  <span className="absolute inset-[10px] rounded-full border border-primary/15 bg-background/95 shadow-[0_18px_40px_-26px_rgba(22,163,74,0.55)]" />
+                  <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <CheckCircle2 className="h-9 w-9" />
+                  </span>
+                </div>
+
+                <DialogHeader className="relative mt-5 items-center gap-3 text-center">
+                  <div className="inline-flex rounded-full border border-primary/15 bg-primary/[0.05] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+                    Resguardo confirmado
+                  </div>
+                  <DialogTitle className="text-3xl font-semibold tracking-tight text-foreground">
+                    {manualBackupSuccess.title}
+                  </DialogTitle>
+                  <DialogDescription className="max-w-[38rem] text-sm leading-6 text-muted-foreground">
+                    {manualBackupSuccess.description}
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+
+              <div className="space-y-4 px-6 py-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-border/60 bg-secondary/20 px-4 py-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Tipo
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-foreground">
+                      {manualBackupSuccess.item.kind === "database"
+                        ? "Base completa"
+                        : "Coleccion individual"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-secondary/20 px-4 py-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Destino
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-foreground">
+                      {storageLabel(manualBackupSuccess.item.storageProvider)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-background px-4 py-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Cobertura
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-foreground">
+                      {backupCoverageLabel(manualBackupSuccess.item)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-background px-4 py-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Archivo / ID
+                    </p>
+                    <p className="mt-2 break-all text-sm leading-6 text-foreground">
+                      {backupFileLabel(manualBackupSuccess.item)}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {manualBackupSuccess.item.id}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-primary/15 bg-primary/[0.05] px-4 py-3.5">
+                  <p className="text-sm leading-6 text-foreground">
+                    {backupAvailabilityLabel(manualBackupSuccess.item)}. Creado
+                    el {formatDate(manualBackupSuccess.item.createdAt)}.
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="border-t border-border/60 bg-background px-6 py-4 sm:justify-center">
+                <Button
+                  type="button"
+                  className="min-w-36 rounded-full shadow-[0_18px_50px_-24px_rgba(22,163,74,0.7)]"
+                  onClick={() => setManualBackupSuccess(null)}
+                >
+                  Entendido
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <div className="relative overflow-hidden rounded-lg border border-border/60 bg-card/95 p-4 lg:p-4 shadow-[0_20px_80px_-50px_rgba(15,23,42,0.45)] backdrop-blur">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(22,163,74,0.14),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_35%)]" />
+        <div className="relative z-10 space-y-4">
         <div className="space-y-3">
           <Badge
             variant="outline"
@@ -1661,7 +1825,8 @@ export function AdminBackupsSection() {
             </div>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

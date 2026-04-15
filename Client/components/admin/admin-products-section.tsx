@@ -11,17 +11,33 @@ import {
 } from "react";
 import {
   AlertTriangle,
-  ChevronDown,
+  Archive,
   Database,
   Download,
+  Eye,
   FileSpreadsheet,
   Filter,
+  CheckCheck,
+  PackageCheck,
+  PencilLine,
   RefreshCw,
-  Save,
   Upload,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAuth } from "@/components/auth/auth-provider";
+import { AdminProductEditDialog } from "@/components/admin/admin-product-edit-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
@@ -43,7 +59,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PRODUCT_CATEGORIES } from "@/lib/products/categories";
 import { getAccessToken } from "@/lib/auth/token-storage";
 import {
   exportAdminProductsCsv,
@@ -52,21 +67,20 @@ import {
   listAdminProductCategories,
   listAdminProducts,
   seedAdminProducts,
-  updateAdminProduct,
-  type AdminProductCategory,
   type AdminProduct,
+  type AdminProductCategory,
+  updateAdminProduct,
 } from "@/lib/admin/admin-api";
+import {
+  getAvailableUnits,
+  getInventoryHealth,
+  getMinimumStock,
+  getReservedUnits,
+  hasTrackedInventory,
+} from "@/lib/admin/product-inventory";
+import { PRODUCT_CATEGORIES } from "@/lib/products/categories";
 import type { ProductCategoryOption } from "@/lib/products/categories";
-import { useAuth } from "@/components/auth/auth-provider";
 import { cn } from "@/lib/utils";
-
-interface ProductDraft {
-  category: string;
-  price: string;
-  status: AdminProduct["status"];
-  inStock: "true" | "false";
-  sortOrder: string;
-}
 
 interface ProductListMeta {
   total: number;
@@ -84,6 +98,8 @@ interface ProductFilters {
   limit: number;
 }
 
+type BulkStatusAction = Extract<AdminProduct["status"], "active" | "draft" | "archived">;
+
 const INITIAL_PRODUCT_FILTERS: ProductFilters = {
   search: "",
   category: "all",
@@ -93,14 +109,48 @@ const INITIAL_PRODUCT_FILTERS: ProductFilters = {
   limit: 10,
 };
 
-function formatDate(value?: string): string {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return new Intl.DateTimeFormat("es-MX", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+const PRODUCT_STATUS_LABELS: Record<AdminProduct["status"], string> = {
+  draft: "Desactivado",
+  active: "Activado",
+  archived: "Archivado",
+};
+
+function getBulkActionCopy(action: BulkStatusAction, count: number) {
+  const plural = count === 1 ? "producto seleccionado" : "productos seleccionados";
+
+  switch (action) {
+    case "active":
+      return {
+        actionLabel: "Activar",
+        title: `Activar ${plural}`,
+        description:
+          "Los productos volveran a estar disponibles comercialmente. El inventario no se modifica.",
+        resultLabel: "activados",
+      };
+    case "draft":
+      return {
+        actionLabel: "Desactivar",
+        title: `Desactivar ${plural}`,
+        description:
+          "Los productos dejaran de mostrarse como activos, pero conservan su inventario e historial.",
+        resultLabel: "desactivados",
+      };
+    case "archived":
+      return {
+        actionLabel: "Archivar",
+        title: `Archivar ${plural}`,
+        description:
+          "Solo se archivaran los productos que no tengan stock reservado ni pedidos abiertos.",
+        resultLabel: "archivados",
+      };
+    default:
+      return {
+        actionLabel: "Actualizar",
+        title: `Actualizar ${plural}`,
+        description: "Se aplicara el cambio seleccionado.",
+        resultLabel: "actualizados",
+      };
+  }
 }
 
 function formatPrice(value: number, currency: string): string {
@@ -108,24 +158,6 @@ function formatPrice(value: number, currency: string): string {
     style: "currency",
     currency: currency || "MXN",
   }).format(value);
-}
-
-const PRODUCT_STATUS_LABELS: Record<AdminProduct["status"], string> = {
-  draft: "Desactivado",
-  active: "Activado",
-  archived: "Archivado",
-};
-
-function statusLabel(status: AdminProduct["status"]): string {
-  return PRODUCT_STATUS_LABELS[status];
-}
-
-function stockLabel(inStock: "true" | "false"): string {
-  return inStock === "true" ? "Disponible" : "Agotado";
-}
-
-function isInventoryManaged(product: AdminProduct): boolean {
-  return typeof product.stockAvailable === "number";
 }
 
 function buildCategoryLabelMap(
@@ -141,22 +173,12 @@ function buildCategoryOptions(
   categories: AdminProductCategory[],
 ): ProductCategoryOption[] {
   return [
-    { id: "all", name: "Todas" },
+    { id: "all", name: "Todas las categorias" },
     ...categories.map((category) => ({
       id: category.slug,
       name: category.name,
     })),
   ];
-}
-
-function buildProductDraft(product: AdminProduct): ProductDraft {
-  return {
-    category: product.category,
-    price: String(product.price),
-    status: product.status,
-    inStock: product.inStock ? "true" : "false",
-    sortOrder: product.sortOrder !== undefined ? String(product.sortOrder) : "",
-  };
 }
 
 function detectCsvDelimiter(raw: string): "," | ";" {
@@ -284,30 +306,22 @@ function parseCsvObjects(raw: string): Array<Record<string, string>> {
   return rows;
 }
 
+// SECTION: component
 export function AdminProductsSection() {
   const { user } = useAuth();
   const csvFileInputRef = useRef<HTMLInputElement | null>(null);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categoryOptions, setCategoryOptions] =
     useState<ProductCategoryOption[]>(PRODUCT_CATEGORIES);
-  const [productDraftsById, setProductDraftsById] = useState<
-    Record<string, ProductDraft>
-  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isSeedingProducts, setIsSeedingProducts] = useState(false);
   const [seedProductsMessage, setSeedProductsMessage] = useState("");
+  const [isSeedingProducts, setIsSeedingProducts] = useState(false);
   const [isExportingProductsCsv, setIsExportingProductsCsv] = useState(false);
   const [isExportingProductsTemplate, setIsExportingProductsTemplate] =
     useState(false);
   const [isImportingProductsCsv, setIsImportingProductsCsv] = useState(false);
   const [csvMessage, setCsvMessage] = useState("");
-  const [savingProductById, setSavingProductById] = useState<
-    Record<string, boolean>
-  >({});
-  const [rowMessageById, setRowMessageById] = useState<Record<string, string>>(
-    {},
-  );
   const [filters, setFilters] = useState<ProductFilters>(
     INITIAL_PRODUCT_FILTERS,
   );
@@ -319,19 +333,60 @@ export function AdminProductsSection() {
     limit: 10,
     totalPages: 1,
   });
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [bulkMessage, setBulkMessage] = useState("");
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] =
+    useState<BulkStatusAction | null>(null);
+
   const canManageCatalog = user?.role === "admin";
 
   const totalActiveProductsInPage = useMemo(
     () => products.filter((product) => product.status === "active").length,
     [products],
   );
-  const totalDraftProductsInPage = useMemo(
-    () => products.filter((product) => product.status === "draft").length,
+  const totalAvailableUnitsInPage = useMemo(
+    () =>
+      products.reduce(
+        (total, product) => total + getAvailableUnits(product),
+        0,
+      ),
     [products],
   );
-  const totalOutOfStockProductsInPage = useMemo(
-    () => products.filter((product) => !product.inStock).length,
+  const productsWithoutTrackedInventoryInPage = useMemo(
+    () => products.filter((product) => !hasTrackedInventory(product)).length,
     [products],
+  );
+  const productsOutOfStockInPage = useMemo(
+    () =>
+      products.filter(
+        (product) =>
+          hasTrackedInventory(product) && getAvailableUnits(product) === 0,
+      ).length,
+    [products],
+  );
+  const productsLowStockInPage = useMemo(
+    () =>
+      products.filter((product) => {
+        if (!hasTrackedInventory(product)) return false;
+        const minimum = getMinimumStock(product);
+        const available = getAvailableUnits(product);
+        return minimum > 0 && available > 0 && available <= minimum;
+      }).length,
+    [products],
+  );
+  const stockAttentionCount = useMemo(
+    () =>
+      productsWithoutTrackedInventoryInPage +
+      productsOutOfStockInPage +
+      productsLowStockInPage,
+    [
+      productsLowStockInPage,
+      productsOutOfStockInPage,
+      productsWithoutTrackedInventoryInPage,
+    ],
   );
   const activeFilterCount = useMemo(() => {
     let total = 0;
@@ -356,6 +411,49 @@ export function AdminProductsSection() {
   const categoryLabelById = useMemo(
     () => buildCategoryLabelMap(categoryOptions),
     [categoryOptions],
+  );
+  const editingProduct = useMemo(
+    () =>
+      products.find((product) => product._id === editingProductId) ?? null,
+    [editingProductId, products],
+  );
+  const selectedProductIdSet = useMemo(
+    () => new Set(selectedProductIds),
+    [selectedProductIds],
+  );
+  const selectedProducts = useMemo(
+    () => products.filter((product) => selectedProductIdSet.has(product._id)),
+    [products, selectedProductIdSet],
+  );
+  const selectedCount = selectedProducts.length;
+  const areAllVisibleSelected = useMemo(
+    () =>
+      products.length > 0 &&
+      products.every((product) => selectedProductIdSet.has(product._id)),
+    [products, selectedProductIdSet],
+  );
+  const hasPartialSelection =
+    selectedCount > 0 && selectedCount < products.length;
+  const stockAttentionProducts = useMemo(
+    () =>
+      products
+        .map((product) => {
+          const inventoryHealth = getInventoryHealth(product);
+          let priority = 3;
+
+          if (!hasTrackedInventory(product)) priority = 0;
+          else if (getAvailableUnits(product) === 0) priority = 1;
+          else if (inventoryHealth.label === "Stock bajo") priority = 2;
+
+          return {
+            product,
+            inventoryHealth,
+            priority,
+          };
+        })
+        .filter((entry) => entry.inventoryHealth.label !== "Saludable")
+        .sort((left, right) => left.priority - right.priority),
+    [products],
   );
 
   useEffect(() => {
@@ -395,7 +493,7 @@ export function AdminProductsSection() {
     const token = getAccessToken();
     if (!token) {
       setProducts([]);
-      setErrorMessage("No se encontro token de acceso");
+      setErrorMessage("No se encontró token de acceso.");
       setIsLoading(false);
       return;
     }
@@ -420,7 +518,6 @@ export function AdminProductsSection() {
           ? dynamicCategoryOptions
           : PRODUCT_CATEGORIES,
       );
-
       setProducts(response.items);
       setMeta({
         total: response.total,
@@ -428,18 +525,11 @@ export function AdminProductsSection() {
         limit: response.limit,
         totalPages: response.totalPages,
       });
-      setProductDraftsById(
-        response.items.reduce<Record<string, ProductDraft>>((acc, product) => {
-          acc[product._id] = buildProductDraft(product);
-          return acc;
-        }, {}),
-      );
-      setRowMessageById({});
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudieron cargar los productos";
+          : "No se pudieron cargar los productos.";
       setErrorMessage(message);
       setProducts([]);
     } finally {
@@ -450,6 +540,22 @@ export function AdminProductsSection() {
   useEffect(() => {
     void loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    if (!isEditDialogOpen || !editingProductId) return;
+    if (products.some((product) => product._id === editingProductId)) return;
+
+    setIsEditDialogOpen(false);
+    setEditingProductId(null);
+  }, [editingProductId, isEditDialogOpen, products]);
+
+  useEffect(() => {
+    setSelectedProductIds((current) =>
+      current.filter((productId) =>
+        products.some((product) => product._id === productId),
+      ),
+    );
+  }, [products]);
 
   const triggerBlobDownload = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob);
@@ -465,7 +571,7 @@ export function AdminProductsSection() {
   const handleExportProductsCsv = async () => {
     const token = getAccessToken();
     if (!token) {
-      setCsvMessage("No se encontro token");
+      setCsvMessage("No se encontró token.");
       return;
     }
 
@@ -481,12 +587,12 @@ export function AdminProductsSection() {
           filters.inStock === "all" ? undefined : filters.inStock === "true",
       });
       triggerBlobDownload(exported.blob, exported.fileName);
-      setCsvMessage("Lista de productos descargada correctamente.");
+      setCsvMessage("La lista de productos se descargó correctamente.");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo descargar la lista de productos";
+          : "No se pudo descargar la lista de productos.";
       setCsvMessage(message);
     } finally {
       setIsExportingProductsCsv(false);
@@ -496,7 +602,7 @@ export function AdminProductsSection() {
   const handleExportProductsTemplate = async () => {
     const token = getAccessToken();
     if (!token) {
-      setCsvMessage("No se encontro token");
+      setCsvMessage("No se encontró token.");
       return;
     }
 
@@ -507,13 +613,13 @@ export function AdminProductsSection() {
       const exported = await exportAdminProductsTemplateCsv(token);
       triggerBlobDownload(exported.blob, exported.fileName);
       setCsvMessage(
-        "Plantilla descargada. Puedes abrirla en Excel y editar varios productos a la vez.",
+        "La plantilla se descargó. Puedes editarla en Excel y reimportarla.",
       );
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo descargar la plantilla";
+          : "No se pudo descargar la plantilla.";
       setCsvMessage(message);
     } finally {
       setIsExportingProductsTemplate(false);
@@ -527,7 +633,7 @@ export function AdminProductsSection() {
     if (!file) return;
 
     const accepted = window.confirm(
-      `Vas a subir "${file.name}". Esto puede actualizar productos existentes. Revisa que el archivo sea el correcto antes de continuar.`,
+      `Vas a subir "${file.name}". Esto puede actualizar productos existentes. Revisa el archivo antes de continuar.`,
     );
 
     if (!accepted) {
@@ -537,7 +643,7 @@ export function AdminProductsSection() {
 
     const token = getAccessToken();
     if (!token) {
-      setCsvMessage("No se encontro token");
+      setCsvMessage("No se encontró token.");
       event.target.value = "";
       return;
     }
@@ -550,15 +656,16 @@ export function AdminProductsSection() {
       const rows = parseCsvObjects(fileContent);
 
       if (rows.length === 0) {
-        setCsvMessage("El archivo no tiene productos validos para importar.");
+        setCsvMessage("El archivo no tiene productos válidos para importar.");
         return;
       }
 
       const result = await importAdminProductsCsv(rows, token);
       const firstError = result.errors[0];
       const errorHint = firstError
-        ? ` Primer error: renglon ${firstError.row} (${firstError.idOrSlug}) - ${firstError.message}.`
+        ? ` Primer error: renglón ${firstError.row} (${firstError.idOrSlug}) - ${firstError.message}.`
         : "";
+
       setCsvMessage(
         `Carga completada. Actualizados: ${result.updated}, omitidos: ${result.skipped}, con error: ${result.failed}.${errorHint}`,
       );
@@ -567,7 +674,7 @@ export function AdminProductsSection() {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo subir la lista de productos";
+          : "No se pudo subir la lista de productos.";
       setCsvMessage(message);
     } finally {
       setIsImportingProductsCsv(false);
@@ -575,201 +682,15 @@ export function AdminProductsSection() {
     }
   };
 
-  const updateProductDraft = (
-    productId: string,
-    draft: Partial<ProductDraft>,
-  ) => {
-    setProductDraftsById((prev) => {
-      const previous = prev[productId];
-      if (!previous) return prev;
-      return {
-        ...prev,
-        [productId]: {
-          ...previous,
-          ...draft,
-        },
-      };
-    });
-
-    setRowMessageById((prev) => ({
-      ...prev,
-      [productId]: "",
-    }));
-  };
-
-  const hasChanges = (product: AdminProduct): boolean => {
-    const draft = productDraftsById[product._id];
-    if (!draft) return false;
-
-    const draftPrice = Number(draft.price);
-    const draftInStock = draft.inStock === "true";
-    const draftSortOrder =
-      draft.sortOrder.trim() === ""
-        ? product.sortOrder
-        : Number(draft.sortOrder);
-
-    if (draft.category !== product.category) return true;
-    if (!Number.isNaN(draftPrice) && draftPrice !== product.price) return true;
-    if (draft.status !== product.status) return true;
-    if (!isInventoryManaged(product) && draftInStock !== product.inStock)
-      return true;
-    if (draftSortOrder !== product.sortOrder) return true;
-    return false;
-  };
-
-  const pendingChangesCount = useMemo(
-    () => products.filter((product) => hasChanges(product)).length,
-    [productDraftsById, products],
-  );
-
-  const saveProduct = async (product: AdminProduct) => {
-    const token = getAccessToken();
-    if (!token) {
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "No se encontro token",
-      }));
-      return;
-    }
-
-    const draft = productDraftsById[product._id];
-    if (!draft) return;
-
-    const payload: {
-      category?: string;
-      price?: number;
-      status?: AdminProduct["status"];
-      inStock?: boolean;
-      sortOrder?: number;
-    } = {};
-
-    if (draft.category.trim() === "") {
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "Categoria invalida",
-      }));
-      return;
-    }
-
-    if (draft.category !== product.category) payload.category = draft.category;
-
-    if (draft.price.trim() === "") {
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "Precio invalido",
-      }));
-      return;
-    }
-
-    const parsedPrice = Number(draft.price);
-    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "Precio invalido",
-      }));
-      return;
-    }
-
-    if (parsedPrice !== product.price) payload.price = parsedPrice;
-    if (draft.status !== product.status) payload.status = draft.status;
-
-    const draftInStock = draft.inStock === "true";
-    if (!isInventoryManaged(product) && draftInStock !== product.inStock) {
-      payload.inStock = draftInStock;
-    }
-
-    if (draft.sortOrder.trim() !== "") {
-      const parsedSortOrder = Number(draft.sortOrder);
-      if (Number.isNaN(parsedSortOrder) || parsedSortOrder < 1) {
-        setRowMessageById((prev) => ({
-          ...prev,
-          [product._id]: "Orden invalido",
-        }));
-        return;
-      }
-      if (parsedSortOrder !== product.sortOrder)
-        payload.sortOrder = parsedSortOrder;
-    }
-
-    if (Object.keys(payload).length === 0) {
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "No hay cambios",
-      }));
-      return;
-    }
-
-    if (payload.status === "archived") {
-      const accepted = window.confirm(
-        `Vas a archivar "${product.name}". No se mostrara como producto activo en el catalogo. Deseas continuar?`,
-      );
-
-      if (!accepted) return;
-    }
-
-    if (payload.status === "draft") {
-      const accepted = window.confirm(
-        `Vas a desactivar "${product.name}". El producto dejara de mostrarse como activado. Deseas continuar?`,
-      );
-
-      if (!accepted) return;
-    }
-
-    setSavingProductById((prev) => ({
-      ...prev,
-      [product._id]: true,
-    }));
-
-    try {
-      const updatedProduct = await updateAdminProduct(
-        product._id,
-        payload,
-        token,
-      );
-
-      setProducts((prev) =>
-        prev.map((currentProduct) =>
-          currentProduct._id === updatedProduct._id
-            ? updatedProduct
-            : currentProduct,
-        ),
-      );
-
-      setProductDraftsById((prev) => ({
-        ...prev,
-        [product._id]: buildProductDraft(updatedProduct),
-      }));
-
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: "Guardado",
-      }));
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo actualizar el producto";
-      setRowMessageById((prev) => ({
-        ...prev,
-        [product._id]: message,
-      }));
-    } finally {
-      setSavingProductById((prev) => ({
-        ...prev,
-        [product._id]: false,
-      }));
-    }
-  };
-
   const handleSeedProducts = async () => {
     const token = getAccessToken();
     if (!token) {
-      setSeedProductsMessage("No se encontro token");
+      setSeedProductsMessage("No se encontró token.");
       return;
     }
 
     const accepted = window.confirm(
-      "Vas a cargar el catalogo base. Esto puede crear productos faltantes y actualizar los productos base existentes. Los productos sin stock definido quedaran en 0. Deseas continuar?",
+      "Vas a cargar el catálogo base. Esto puede crear productos faltantes y actualizar los existentes. Los productos sin stock definido quedarán en 0. ¿Deseas continuar?",
     );
 
     if (!accepted) return;
@@ -780,19 +701,154 @@ export function AdminProductsSection() {
     try {
       const response = await seedAdminProducts(token);
       setSeedProductsMessage(
-        `Catalogo base cargado. Nuevos: ${response.created}, actualizados: ${response.updated}.`,
+        `Catálogo base cargado. Nuevos: ${response.created}, actualizados: ${response.updated}.`,
       );
       await loadProducts();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "No se pudo cargar el catalogo base";
+          : "No se pudo cargar el catálogo base.";
       setSeedProductsMessage(message);
     } finally {
       setIsSeedingProducts(false);
     }
   };
+
+  const handleProductSaved = useCallback(async () => {
+    await loadProducts();
+  }, [loadProducts]);
+
+  const openEditDialog = (productId: string) => {
+    setEditingProductId(productId);
+    setIsEditDialogOpen(true);
+  };
+
+  const toggleProductSelection = useCallback(
+    (productId: string, checked: boolean | "indeterminate") => {
+      setSelectedProductIds((current) => {
+        if (checked) {
+          return current.includes(productId) ? current : [...current, productId];
+        }
+
+        return current.filter((value) => value !== productId);
+      });
+    },
+    [],
+  );
+
+  const toggleVisibleSelection = useCallback(
+    (checked: boolean | "indeterminate") => {
+      if (!checked) {
+        setSelectedProductIds([]);
+        return;
+      }
+
+      setSelectedProductIds(products.map((product) => product._id));
+    },
+    [products],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedProductIds([]);
+  }, []);
+
+  const requestBulkAction = (action: BulkStatusAction) => {
+    if (!selectedCount || isBulkUpdating) return;
+    setPendingBulkAction(action);
+  };
+
+  const handleBulkStatusUpdate = useCallback(async () => {
+    if (!pendingBulkAction) return;
+
+    const token = getAccessToken();
+    if (!token) {
+      setBulkMessage("No se encontro token.");
+      setPendingBulkAction(null);
+      return;
+    }
+
+    const selectedTargets = selectedProducts.filter(
+      (product) => product.status !== pendingBulkAction,
+    );
+    const skipped = selectedProducts.length - selectedTargets.length;
+
+    if (selectedTargets.length === 0) {
+      setBulkMessage("La seleccion ya tiene ese estado.");
+      setPendingBulkAction(null);
+      return;
+    }
+
+    const copy = getBulkActionCopy(pendingBulkAction, selectedProducts.length);
+    setIsBulkUpdating(true);
+    setBulkMessage("");
+
+    try {
+      const results = await Promise.allSettled(
+        selectedTargets.map(async (product) => {
+          const updated = await updateAdminProduct(
+            product._id,
+            { status: pendingBulkAction },
+            token,
+          );
+
+          return {
+            product,
+            updated,
+          };
+        }),
+      );
+
+      let updatedCount = 0;
+      const failed: string[] = [];
+
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          updatedCount += 1;
+          continue;
+        }
+
+        const reason =
+          result.reason instanceof Error
+            ? result.reason.message
+            : "No se pudo aplicar el cambio.";
+        failed.push(reason);
+      }
+
+      await loadProducts();
+      clearSelection();
+
+      const messageParts = [
+        `${updatedCount} ${copy.resultLabel} correctamente.`,
+      ];
+
+      if (skipped > 0) {
+        messageParts.push(`${skipped} ya estaban en ese estado.`);
+      }
+
+      if (failed.length > 0) {
+        messageParts.push(
+          `${failed.length} no se actualizaron. Primer detalle: ${failed[0]}`,
+        );
+      }
+
+      setBulkMessage(messageParts.join(" "));
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo aplicar la accion masiva.";
+      setBulkMessage(message);
+    } finally {
+      setIsBulkUpdating(false);
+      setPendingBulkAction(null);
+    }
+  }, [clearSelection, loadProducts, pendingBulkAction, selectedProducts]);
+
+  const infoMessage = bulkMessage || seedProductsMessage || csvMessage;
+  const pendingBulkCopy = pendingBulkAction
+    ? getBulkActionCopy(pendingBulkAction, selectedCount)
+    : null;
 
   return (
     <div className="admin-panel-shell admin-animate-card">
@@ -822,52 +878,143 @@ export function AdminProductsSection() {
             Resultados con los filtros actuales.
           </p>
         </div>
+
         <div className="admin-metric-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Activados en pagina
+            Activados en página
           </p>
           <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
             {totalActiveProductsInPage}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {totalDraftProductsInPage} desactivados,{" "}
-            {totalOutOfStockProductsInPage} sin stock.
+            Productos listos para operar comercialmente.
           </p>
         </div>
+
         <div className="admin-metric-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Cambios pendientes
+            Piezas disponibles
           </p>
           <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-            {pendingChangesCount}
+            {totalAvailableUnitsInPage}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Cambios sin guardar.
+            {products.reduce(
+              (total, product) => total + getReservedUnits(product),
+              0,
+            )}{" "}
+            reservadas en los productos visibles.
           </p>
         </div>
+
         <div className="admin-metric-card">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Pagina
+            Atención de stock
           </p>
           <p className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-            {meta.page} / {meta.totalPages}
+            {stockAttentionCount}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {filters.limit} por pagina.
+            {productsWithoutTrackedInventoryInPage} sin inventario,{" "}
+            {productsOutOfStockInPage} sin existencias y{" "}
+            {productsLowStockInPage} con stock bajo.
           </p>
         </div>
       </div>
+
+      {stockAttentionProducts.length > 0 ? (
+        <div className="admin-section-card relative z-10 mt-4 overflow-hidden border-amber-200/80 bg-amber-50/60 px-4 py-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="max-w-3xl">
+              <p className="inline-flex items-center gap-2 rounded-full border border-amber-300/70 bg-white/80 px-3 py-1 text-xs font-semibold text-amber-800">
+                <AlertTriangle className="h-4 w-4" />
+                Atencion inmediata
+              </p>
+              <h3 className="mt-3 text-base font-semibold text-foreground">
+                Hay productos que requieren revision operativa
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Esta franja te ayuda a detectar rapido productos sin inventario,
+                sin existencias o con stock bajo en la pagina actual.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 xl:justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setFilter({ inStock: "false" })}
+              >
+                Revisar sin stock comercial
+              </Button>
+              <Button type="button" size="sm" variant="outline" asChild>
+                <Link href="/admin/catalogo/inventario">
+                  <PackageCheck className="mr-2 h-4 w-4" />
+                  Abrir inventario
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {stockAttentionProducts.slice(0, 6).map(({ product, inventoryHealth }) => (
+              <div
+                key={`stock-alert-${product._id}`}
+                className="rounded-lg border border-white/80 bg-white/85 p-3 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {product.name}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {categoryLabelById[product.category] ?? product.category}
+                    </p>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={cn("rounded-full", inventoryHealth.className)}
+                  >
+                    {inventoryHealth.label}
+                  </Badge>
+                </div>
+
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                  {inventoryHealth.helper}
+                </p>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link
+                      href={`/admin/catalogo/inventario?producto=${product._id}`}
+                    >
+                      Ver inventario
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    onClick={() => openEditDialog(product._id)}
+                  >
+                    Editar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="admin-toolbar-surface relative z-20 mt-4 px-4 py-4 lg:sticky lg:top-0">
         <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
           <div className="flex flex-col gap-1 text-sm text-muted-foreground">
             <span className="font-medium text-foreground">
-              Acciones del catalogo
+              Gestión del catálogo
             </span>
             <span className="text-xs">
-              {pendingChangesCount === 0
-                ? "Sin cambios pendientes"
-                : `${pendingChangesCount} cambios pendientes`}
+              Edita datos comerciales, exporta la lista o carga cambios masivos.
             </span>
           </div>
 
@@ -885,7 +1032,7 @@ export function AdminProductsSection() {
               />
               Recargar productos
             </Button>
-            {canManageCatalog && (
+            {canManageCatalog ? (
               <Button
                 type="button"
                 variant="outline"
@@ -901,8 +1048,8 @@ export function AdminProductsSection() {
                   ? "Descargando..."
                   : "Plantilla para Excel"}
               </Button>
-            )}
-            {canManageCatalog && (
+            ) : null}
+            {canManageCatalog ? (
               <Button
                 type="button"
                 variant="outline"
@@ -916,8 +1063,8 @@ export function AdminProductsSection() {
                 />
                 {isExportingProductsCsv ? "Descargando..." : "Descargar lista"}
               </Button>
-            )}
-            {canManageCatalog && (
+            ) : null}
+            {canManageCatalog ? (
               <Button
                 type="button"
                 variant="outline"
@@ -931,8 +1078,8 @@ export function AdminProductsSection() {
                 />
                 {isImportingProductsCsv ? "Subiendo..." : "Subir lista"}
               </Button>
-            )}
-            {canManageCatalog && (
+            ) : null}
+            {canManageCatalog ? (
               <Button
                 type="button"
                 size="sm"
@@ -943,12 +1090,100 @@ export function AdminProductsSection() {
                 <Database
                   className={`mr-2 h-4 w-4 ${isSeedingProducts ? "animate-spin" : ""}`}
                 />
-                {isSeedingProducts ? "Cargando..." : "Cargar catalogo base"}
+                {isSeedingProducts ? "Cargando..." : "Cargar catálogo base"}
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
+
+      {canManageCatalog ? (
+        <div className="admin-section-card relative z-10 mt-4 px-4 py-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">
+                Acciones por lote
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Selecciona productos de la pagina actual para activar,
+                desactivar o archivar con confirmacion.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2 xl:justify-end">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => toggleVisibleSelection(true)}
+                disabled={isLoading || products.length === 0}
+              >
+                <CheckCheck className="mr-2 h-4 w-4" />
+                Seleccionar visibles
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={clearSelection}
+                disabled={selectedCount === 0}
+              >
+                Limpiar seleccion
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => requestBulkAction("active")}
+                disabled={selectedCount === 0 || isBulkUpdating}
+              >
+                Activar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => requestBulkAction("draft")}
+                disabled={selectedCount === 0 || isBulkUpdating}
+              >
+                Desactivar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => requestBulkAction("archived")}
+                disabled={selectedCount === 0 || isBulkUpdating}
+              >
+                <Archive className="mr-2 h-4 w-4" />
+                Archivar
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <Badge variant="secondary">
+              {selectedCount} seleccionados
+            </Badge>
+            <span>
+              Las acciones masivas solo aplican a los productos visibles en esta
+              pagina.
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {errorMessage ? (
+        <div className="admin-section-card relative z-10 mt-4 rounded-xl border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      {!errorMessage && infoMessage ? (
+        <div className="admin-section-card relative z-10 mt-4 rounded-xl border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
+          {infoMessage}
+        </div>
+      ) : null}
 
       <Collapsible
         open={isFiltersOpen}
@@ -979,24 +1214,18 @@ export function AdminProductsSection() {
             <CollapsibleTrigger asChild>
               <Button variant="outline" type="button" size="sm">
                 {isFiltersOpen ? "Ocultar filtros" : "Mostrar filtros"}
-                <ChevronDown
-                  className={cn(
-                    "ml-2 h-4 w-4 transition-transform",
-                    isFiltersOpen && "rotate-180",
-                  )}
-                />
               </Button>
             </CollapsibleTrigger>
           </div>
         </div>
 
-        <CollapsibleContent className="data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-2">
-          <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-[1.5fr_repeat(4,minmax(0,1fr))]">
+        <CollapsibleContent className="mt-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,0.68fr))]">
             <Input
-              className="admin-input-surface"
-              placeholder="Buscar por nombre o descripcion"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Buscar por nombre o descripción"
+              className="admin-input-surface"
             />
 
             <Select
@@ -1004,11 +1233,10 @@ export function AdminProductsSection() {
               onValueChange={(value) => setFilter({ category: value })}
             >
               <SelectTrigger className="admin-input-surface">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las categorias</SelectItem>
-                {productCategoryOptions.map((category) => (
+                {categoryOptions.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
@@ -1019,7 +1247,9 @@ export function AdminProductsSection() {
             <Select
               value={filters.status}
               onValueChange={(value) =>
-                setFilter({ status: value as ProductFilters["status"] })
+                setFilter({
+                  status: value as ProductFilters["status"],
+                })
               }
             >
               <SelectTrigger className="admin-input-surface">
@@ -1027,143 +1257,96 @@ export function AdminProductsSection() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="draft">{statusLabel("draft")}</SelectItem>
-                <SelectItem value="active">{statusLabel("active")}</SelectItem>
-                <SelectItem value="archived">
-                  {statusLabel("archived")}
-                </SelectItem>
+                <SelectItem value="active">Solo activados</SelectItem>
+                <SelectItem value="draft">Solo desactivados</SelectItem>
+                <SelectItem value="archived">Solo archivados</SelectItem>
               </SelectContent>
             </Select>
 
             <Select
               value={filters.inStock}
               onValueChange={(value) =>
-                setFilter({ inStock: value as ProductFilters["inStock"] })
+                setFilter({
+                  inStock: value as ProductFilters["inStock"],
+                })
               }
             >
               <SelectTrigger className="admin-input-surface">
                 <SelectValue placeholder="Disponibilidad" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Cualquier disponibilidad</SelectItem>
-                <SelectItem value="true">{stockLabel("true")}</SelectItem>
-                <SelectItem value="false">{stockLabel("false")}</SelectItem>
+                <SelectItem value="all">Todas las disponibilidades</SelectItem>
+                <SelectItem value="true">Con stock comercial</SelectItem>
+                <SelectItem value="false">Sin stock comercial</SelectItem>
               </SelectContent>
             </Select>
 
             <Select
               value={String(filters.limit)}
-              onValueChange={(value) => setFilter({ limit: Number(value) })}
+              onValueChange={(value) =>
+                setFilter({
+                  limit: Number(value),
+                })
+              }
             >
               <SelectTrigger className="admin-input-surface">
-                <SelectValue placeholder="Registros" />
+                <SelectValue placeholder="Por página" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10">10 por pagina</SelectItem>
-                <SelectItem value="20">20 por pagina</SelectItem>
-                <SelectItem value="50">50 por pagina</SelectItem>
-                <SelectItem value="100">100 por pagina</SelectItem>
+                {[10, 20, 30, 50].map((value) => (
+                  <SelectItem key={value} value={String(value)}>
+                    {value} por página
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </CollapsibleContent>
       </Collapsible>
 
-      {errorMessage && (
-        <div className="relative z-10 mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <p className="inline-flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </p>
-        </div>
-      )}
-
-      {seedProductsMessage && (
-        <div className="admin-section-card relative z-10 mt-4 rounded-xl bg-secondary/30 px-4 py-3 text-sm text-foreground">
-          <p className="inline-flex items-start gap-2">
-            <Database className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>{seedProductsMessage}</span>
-          </p>
-        </div>
-      )}
-
-      {csvMessage && (
-        <div className="admin-section-card relative z-10 mt-4 rounded-xl bg-secondary/30 px-4 py-3 text-sm text-foreground">
-          <p className="inline-flex items-start gap-2">
-            <FileSpreadsheet className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            <span>{csvMessage}</span>
-          </p>
-        </div>
-      )}
-
-      <div className="admin-table-shell relative z-10 mt-5 hidden 2xl:block">
+      <div className="admin-table-shell relative z-10 mt-5 hidden xl:block">
         <div className="admin-table-scroll">
           <Table>
             <TableHeader>
               <TableRow className="admin-table-head-row">
-                <TableHead className="admin-table-head-cell">
-                  Producto
-                </TableHead>
-                <TableHead className="admin-table-head-cell">
-                  Categoria
-                </TableHead>
+                {canManageCatalog ? (
+                  <TableHead className="admin-table-head-cell w-12">
+                    <Checkbox
+                      aria-label="Seleccionar productos visibles"
+                      checked={
+                        areAllVisibleSelected
+                          ? true
+                          : hasPartialSelection
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={toggleVisibleSelection}
+                    />
+                  </TableHead>
+                ) : null}
+                <TableHead className="admin-table-head-cell">Producto</TableHead>
+                <TableHead className="admin-table-head-cell">Categoría</TableHead>
                 <TableHead className="admin-table-head-cell">Precio</TableHead>
+                <TableHead className="admin-table-head-cell">
+                  Piezas disponibles
+                </TableHead>
                 <TableHead className="admin-table-head-cell">Estado</TableHead>
-                <TableHead className="admin-table-head-cell">
-                  Disponibilidad
-                </TableHead>
-                <TableHead className="admin-table-head-cell">Orden</TableHead>
-                <TableHead className="admin-table-head-cell">
-                  Actualizado
-                </TableHead>
-                <TableHead className="admin-table-head-cell">
-                  Acciones
-                </TableHead>
+                <TableHead className="admin-table-head-cell">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="admin-table-body-compact">
               {isLoading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow
-                    key={`product-skeleton-${index}`}
-                    className="animate-pulse bg-background/40"
-                  >
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="h-4 w-36 rounded bg-secondary/60" />
-                        <div className="h-3 w-24 rounded bg-secondary/50" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-28 rounded bg-secondary/60" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="h-9 w-28 rounded-md bg-secondary/60" />
-                        <div className="h-3 w-20 rounded bg-secondary/50" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-9 w-32 rounded-md bg-secondary/60" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-9 w-32 rounded-md bg-secondary/60" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-9 w-20 rounded-md bg-secondary/60" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-40 rounded bg-secondary/60" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-9 w-32 rounded-md bg-secondary/60" />
+                Array.from({ length: 6 }).map((_, index) => (
+                  <TableRow key={`product-table-skeleton-${index}`}>
+                    <TableCell colSpan={canManageCatalog ? 7 : 6}>
+                      <div className="admin-skeleton-card h-12" />
                     </TableCell>
                   </TableRow>
                 ))
               ) : products.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={canManageCatalog ? 7 : 6}
                     className="py-8 text-center text-muted-foreground"
                   >
                     <div className="admin-empty-state">
@@ -1174,179 +1357,118 @@ export function AdminProductsSection() {
                         No hay productos para mostrar
                       </p>
                       <p className="text-xs">
-                        Ajusta filtros o carga el catalogo base.
+                        Ajusta filtros o carga el catálogo base.
                       </p>
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 products.map((product, index) => {
-                  const draft = productDraftsById[product._id];
-                  const isSaving = Boolean(savingProductById[product._id]);
-                  const rowMessage = rowMessageById[product._id];
-                  const hasPendingChanges = hasChanges(product);
-                  const selectedCategory = draft?.category ?? product.category;
-                  const selectedCategoryExists = productCategoryOptions.some(
-                    (category) => category.id === selectedCategory,
-                  );
-
+                  const inventoryHealth = getInventoryHealth(product);
                   return (
                     <TableRow
                       key={product._id}
                       className={cn(
                         "transition-colors hover:bg-secondary/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500",
-                        hasPendingChanges && "bg-primary/[0.035]",
+                        selectedProductIdSet.has(product._id) &&
+                          "bg-primary/5 ring-1 ring-primary/10",
                       )}
                       style={{ animationDelay: `${index * 35}ms` }}
                     >
+                      {canManageCatalog ? (
+                        <TableCell>
+                          <Checkbox
+                            aria-label={`Seleccionar ${product.name}`}
+                            checked={selectedProductIdSet.has(product._id)}
+                            onCheckedChange={(checked) =>
+                              toggleProductSelection(product._id, checked)
+                            }
+                          />
+                        </TableCell>
+                      ) : null}
                       <TableCell className="font-medium">
                         <div className="flex flex-col">
                           <span>{product.name}</span>
-                          {hasPendingChanges && (
-                            <span className="mt-1 inline-flex w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                              Cambio pendiente
-                            </span>
-                          )}
+                          <span className="mt-1 text-xs text-muted-foreground">
+                            {product.presentation ?? "-"}
+                          </span>
                         </div>
                       </TableCell>
+
+                      <TableCell className="text-sm text-muted-foreground">
+                        {categoryLabelById[product.category] ?? product.category}
+                      </TableCell>
+
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {formatPrice(product.price, product.currency)}
+                      </TableCell>
+
                       <TableCell>
-                        <Select
-                          value={selectedCategory}
-                          onValueChange={(value) =>
-                            updateProductDraft(product._id, { category: value })
-                          }
-                          disabled={isSaving || !canManageCatalog}
-                        >
-                          <SelectTrigger className="admin-input-surface min-w-40">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {!selectedCategoryExists && (
-                              <SelectItem value={selectedCategory}>
-                                {categoryLabelById[selectedCategory] ??
-                                  selectedCategory}
-                              </SelectItem>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-foreground">
+                            {hasTrackedInventory(product)
+                              ? `${getAvailableUnits(product)} piezas`
+                              : "Sin carga"}
+                          </span>
+                          <span className="mt-1 text-xs text-muted-foreground">
+                            {hasTrackedInventory(product)
+                              ? `${getReservedUnits(product)} reservadas`
+                              : "Se inicializa en inventario"}
+                          </span>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "rounded-full",
+                              product.status === "active" &&
+                                "border-emerald-200 bg-emerald-50 text-emerald-700",
+                              product.status === "draft" &&
+                                "border-amber-200 bg-amber-50 text-amber-700",
+                              product.status === "archived" &&
+                                "border-slate-200 bg-slate-100 text-slate-700",
                             )}
-                            {productCategoryOptions.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          className="admin-input-surface w-24"
-                          value={draft?.price ?? String(product.price)}
-                          disabled={isSaving || !canManageCatalog}
-                          onChange={(event) =>
-                            updateProductDraft(product._id, {
-                              price: event.target.value,
-                            })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={draft?.status ?? product.status}
-                          onValueChange={(value) =>
-                            updateProductDraft(product._id, {
-                              status: value as AdminProduct["status"],
-                            })
-                          }
-                          disabled={isSaving || !canManageCatalog}
-                        >
-                          <SelectTrigger className="admin-input-surface w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="draft">
-                              {statusLabel("draft")}
-                            </SelectItem>
-                            <SelectItem value="active">
-                              {statusLabel("active")}
-                            </SelectItem>
-                            <SelectItem value="archived">
-                              {statusLabel("archived")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        {isInventoryManaged(product) ? (
-                          <div className="rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-primary">
-                            Se gestiona en inventario
-                          </div>
-                        ) : (
-                          <Select
-                            value={
-                              draft?.inStock ??
-                              (product.inStock ? "true" : "false")
-                            }
-                            onValueChange={(value) =>
-                              updateProductDraft(product._id, {
-                                inStock: value as "true" | "false",
-                              })
-                            }
-                            disabled={isSaving || !canManageCatalog}
                           >
-                            <SelectTrigger className="admin-input-surface w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="true">
-                                {stockLabel("true")}
-                              </SelectItem>
-                              <SelectItem value="false">
-                                {stockLabel("false")}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
+                            {PRODUCT_STATUS_LABELS[product.status]}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className={cn("rounded-full", inventoryHealth.className)}
+                          >
+                            {inventoryHealth.label}
+                          </Badge>
+                        </div>
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min={1}
-                          className="admin-input-surface w-20"
-                          value={draft?.sortOrder ?? ""}
-                          disabled={isSaving || !canManageCatalog}
-                          onChange={(event) =>
-                            updateProductDraft(product._id, {
-                              sortOrder: event.target.value,
-                            })
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>{formatDate(product.updatedAt)}</TableCell>
+
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             type="button"
+                            variant="outline"
                             className="transition-all hover:-translate-y-0.5"
-                            onClick={() => void saveProduct(product)}
-                            disabled={
-                              !canManageCatalog ||
-                              !hasChanges(product) ||
-                              isSaving
-                            }
+                            onClick={() => openEditDialog(product._id)}
                           >
-                            <Save className="mr-1 h-4 w-4" />
-                            {isSaving ? "Guardando..." : "Guardar"}
+                            <PencilLine className="mr-1 h-4 w-4" />
+                            Editar
+                          </Button>
+                          <Button variant="outline" size="sm" asChild>
+                            <Link
+                              href={`/admin/catalogo/inventario?producto=${product._id}`}
+                            >
+                              <PackageCheck className="mr-1 h-4 w-4" />
+                              Inventario
+                            </Link>
                           </Button>
                           <Button variant="link" size="sm" asChild>
-                            <Link href={`/productos/${product.slug}`}>Ver</Link>
+                            <Link href={`/productos/${product.slug}`} target="_blank">
+                              <Eye className="mr-1 h-4 w-4" />
+                              Ver
+                            </Link>
                           </Button>
-                          {rowMessage && (
-                            <span className="text-xs text-muted-foreground">
-                              {rowMessage}
-                            </span>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1358,7 +1480,7 @@ export function AdminProductsSection() {
         </div>
       </div>
 
-      <div className="relative z-10 mt-4 grid gap-3 2xl:hidden">
+      <div className="relative z-10 mt-4 grid gap-3 xl:hidden">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <div
@@ -1368,7 +1490,6 @@ export function AdminProductsSection() {
               <div className="h-5 w-48 rounded bg-secondary/60" />
               <div className="mt-2 h-4 w-32 rounded bg-secondary/50" />
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="h-10 rounded bg-secondary/60" />
                 <div className="h-10 rounded bg-secondary/60" />
                 <div className="h-10 rounded bg-secondary/60" />
                 <div className="h-10 rounded bg-secondary/60" />
@@ -1384,168 +1505,98 @@ export function AdminProductsSection() {
               No hay productos para mostrar
             </p>
             <p className="text-xs text-muted-foreground">
-              Ajusta filtros o carga el catalogo base.
+              Ajusta filtros o carga el catálogo base.
             </p>
           </div>
         ) : (
           products.map((product, index) => {
-            const draft = productDraftsById[product._id];
-            const isSaving = Boolean(savingProductById[product._id]);
-            const rowMessage = rowMessageById[product._id];
-            const selectedCategory = draft?.category ?? product.category;
-            const selectedCategoryExists = productCategoryOptions.some(
-              (category) => category.id === selectedCategory,
-            );
-            const currentStatus = draft?.status ?? product.status;
-            const currentStock =
-              draft?.inStock ?? (product.inStock ? "true" : "false");
+            const inventoryHealth = getInventoryHealth(product);
 
             return (
               <div
                 key={product._id}
                 className={cn(
                   "admin-section-card p-4 transition-colors hover:bg-secondary/10 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-500",
-                  hasChanges(product) && "bg-primary/[0.035]",
+                  selectedProductIdSet.has(product._id) &&
+                    "bg-primary/5 ring-1 ring-primary/10",
                 )}
                 style={{ animationDelay: `${index * 35}ms` }}
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium text-foreground">
-                      {product.name}
+                    <p className="font-medium text-foreground">{product.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {product.presentation ?? "-"}
                     </p>
-                    {hasChanges(product) && (
-                      <span className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                        Cambio pendiente
-                      </span>
-                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Actualizado: {formatDate(product.updatedAt)}
-                  </p>
+                  <div className="flex items-start gap-2">
+                    {canManageCatalog ? (
+                      <Checkbox
+                        aria-label={`Seleccionar ${product.name}`}
+                        checked={selectedProductIdSet.has(product._id)}
+                        onCheckedChange={(checked) =>
+                          toggleProductSelection(product._id, checked)
+                        }
+                      />
+                    ) : null}
+                    <div className="flex flex-wrap justify-end gap-2">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "rounded-full",
+                        product.status === "active" &&
+                          "border-emerald-200 bg-emerald-50 text-emerald-700",
+                        product.status === "draft" &&
+                          "border-amber-200 bg-amber-50 text-amber-700",
+                        product.status === "archived" &&
+                          "border-slate-200 bg-slate-100 text-slate-700",
+                      )}
+                    >
+                      {PRODUCT_STATUS_LABELS[product.status]}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn("rounded-full", inventoryHealth.className)}
+                    >
+                      {inventoryHealth.label}
+                    </Badge>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Categoria</p>
-                    <Select
-                      value={selectedCategory}
-                      onValueChange={(value) =>
-                        updateProductDraft(product._id, { category: value })
-                      }
-                      disabled={isSaving || !canManageCatalog}
-                    >
-                      <SelectTrigger className="admin-input-surface">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {!selectedCategoryExists && (
-                          <SelectItem value={selectedCategory}>
-                            {categoryLabelById[selectedCategory] ??
-                              selectedCategory}
-                          </SelectItem>
-                        )}
-                        {productCategoryOptions.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <p className="text-xs text-muted-foreground">Categoría</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {categoryLabelById[product.category] ?? product.category}
+                    </p>
                   </div>
 
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Precio</p>
-                    <Input
-                      className="admin-input-surface"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={draft?.price ?? String(product.price)}
-                      disabled={isSaving || !canManageCatalog}
-                      onChange={(event) =>
-                        updateProductDraft(product._id, {
-                          price: event.target.value,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Estado</p>
-                    <Select
-                      value={currentStatus}
-                      onValueChange={(value) =>
-                        updateProductDraft(product._id, {
-                          status: value as AdminProduct["status"],
-                        })
-                      }
-                      disabled={isSaving || !canManageCatalog}
-                    >
-                      <SelectTrigger className="admin-input-surface">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="draft">
-                          {statusLabel("draft")}
-                        </SelectItem>
-                        <SelectItem value="active">
-                          {statusLabel("active")}
-                        </SelectItem>
-                        <SelectItem value="archived">
-                          {statusLabel("archived")}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <p className="text-sm font-medium text-foreground">
+                      {formatPrice(product.price, product.currency)}
+                    </p>
                   </div>
 
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">
-                      Disponibilidad
+                      Piezas disponibles
                     </p>
-                    {isInventoryManaged(product) ? (
-                      <div className="admin-input-surface flex min-h-10 items-center rounded-md px-3 text-sm text-primary">
-                        Se gestiona en inventario
-                      </div>
-                    ) : (
-                      <Select
-                        value={currentStock}
-                        onValueChange={(value) =>
-                          updateProductDraft(product._id, {
-                            inStock: value as "true" | "false",
-                          })
-                        }
-                        disabled={isSaving || !canManageCatalog}
-                      >
-                        <SelectTrigger className="admin-input-surface">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="true">
-                            {stockLabel("true")}
-                          </SelectItem>
-                          <SelectItem value="false">
-                            {stockLabel("false")}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
+                    <p className="text-sm font-medium text-foreground">
+                      {hasTrackedInventory(product)
+                        ? `${getAvailableUnits(product)} libres`
+                        : "Sin carga"}
+                    </p>
                   </div>
 
-                  <div className="space-y-1 sm:max-w-[160px]">
-                    <p className="text-xs text-muted-foreground">Orden</p>
-                    <Input
-                      className="admin-input-surface"
-                      type="number"
-                      min={1}
-                      value={draft?.sortOrder ?? ""}
-                      disabled={isSaving || !canManageCatalog}
-                      onChange={(event) =>
-                        updateProductDraft(product._id, {
-                          sortOrder: event.target.value,
-                        })
-                      }
-                    />
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Reservadas</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {hasTrackedInventory(product)
+                        ? getReservedUnits(product)
+                        : "Sin carga"}
+                    </p>
                   </div>
                 </div>
 
@@ -1553,23 +1604,27 @@ export function AdminProductsSection() {
                   <Button
                     size="sm"
                     type="button"
+                    variant="outline"
                     className="transition-all hover:-translate-y-0.5"
-                    onClick={() => void saveProduct(product)}
-                    disabled={
-                      !canManageCatalog || !hasChanges(product) || isSaving
-                    }
+                    onClick={() => openEditDialog(product._id)}
                   >
-                    <Save className="mr-1 h-4 w-4" />
-                    {isSaving ? "Guardando..." : "Guardar"}
+                    <PencilLine className="mr-1 h-4 w-4" />
+                    Editar
+                  </Button>
+                  <Button variant="outline" size="sm" asChild>
+                    <Link
+                      href={`/admin/catalogo/inventario?producto=${product._id}`}
+                    >
+                      <PackageCheck className="mr-1 h-4 w-4" />
+                      Inventario
+                    </Link>
                   </Button>
                   <Button variant="link" size="sm" asChild className="px-0">
-                    <Link href={`/productos/${product.slug}`}>Ver</Link>
+                    <Link href={`/productos/${product.slug}`} target="_blank">
+                      <Eye className="mr-1 h-4 w-4" />
+                      Ver
+                    </Link>
                   </Button>
-                  {rowMessage && (
-                    <span className="text-xs text-muted-foreground">
-                      {rowMessage}
-                    </span>
-                  )}
                 </div>
               </div>
             );
@@ -1587,8 +1642,8 @@ export function AdminProductsSection() {
         >
           Anterior
         </Button>
-        <span className="text-sm text-muted-foreground px-2">
-          Pagina {meta.page} de {meta.totalPages}
+        <span className="px-2 text-sm text-muted-foreground">
+          Página {meta.page} de {meta.totalPages}
         </span>
         <Button
           type="button"
@@ -1600,6 +1655,61 @@ export function AdminProductsSection() {
           Siguiente
         </Button>
       </div>
+
+      <AdminProductEditDialog
+        product={editingProduct}
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingProductId(null);
+          }
+        }}
+        categories={productCategoryOptions}
+        categoryLabelById={categoryLabelById}
+        canManageCatalog={canManageCatalog}
+        onProductSaved={handleProductSaved}
+      />
+
+      <AlertDialog
+        open={pendingBulkAction !== null}
+        onOpenChange={(open) => {
+          if (!open && !isBulkUpdating) {
+            setPendingBulkAction(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingBulkCopy?.title ?? "Confirmar accion"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingBulkCopy?.description ??
+                "Se aplicara el cambio seleccionado a la seleccion actual."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border border-border/70 bg-secondary/20 px-4 py-3 text-sm text-muted-foreground">
+            {selectedCount} productos seleccionados en esta pagina.
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkUpdating}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void handleBulkStatusUpdate();
+              }}
+              disabled={isBulkUpdating}
+            >
+              {isBulkUpdating
+                ? "Aplicando..."
+                : pendingBulkCopy?.actionLabel ?? "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
