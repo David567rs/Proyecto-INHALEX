@@ -27,7 +27,7 @@ export default async function AboutPage() {
                 Sobre INHALEX
               </span>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold text-foreground mb-4 text-balance">
-                Mision, vision y valores
+                Misión, visión y valores
               </h1>
               <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed text-pretty">
                 Esta informacion es administrable desde el panel de administracion para mantener
@@ -42,14 +42,14 @@ export default async function AboutPage() {
             <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
               <article className="bg-card rounded-3xl border border-border/60 p-6 lg:p-8 shadow-lg">
                 <div className="inline-flex px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                  Mision
+                  Misión
                 </div>
                 <MarkdownContent className="mt-5" content={companyContent.about.mission} />
               </article>
 
               <article className="bg-card rounded-3xl border border-border/60 p-6 lg:p-8 shadow-lg">
                 <div className="inline-flex px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                  Vision
+                  Visión
                 </div>
                 <MarkdownContent className="mt-5" content={companyContent.about.vision} />
               </article>
@@ -66,7 +66,7 @@ export default async function AboutPage() {
                   Valores de la empresa
                 </span>
                 <h2 className="mt-4 text-3xl sm:text-4xl font-serif font-bold text-foreground">
-                  Principios que guian nuestro trabajo
+                  Principios que guían nuestro trabajo
                 </h2>
               </div>
 

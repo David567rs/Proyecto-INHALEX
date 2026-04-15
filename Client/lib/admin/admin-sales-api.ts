@@ -38,6 +38,62 @@ export interface SalesOverview {
   }>;
 }
 
+export interface DepletionChartPoint {
+  date: string
+  label: string
+  stockMl: number
+  units: number
+  kind: "actual" | "current" | "projection"
+}
+
+export interface DepletionForecast {
+  product: {
+    id: string
+    name: string
+    category: string
+    image?: string
+    presentation?: string
+  }
+  configuration: {
+    rawMaterialName?: string
+    initialStockMl?: number
+    consumptionPerBatchMl?: number
+    batchYieldUnits?: number
+    criticalUnits?: number
+    consumptionPerPieceMl?: number
+  }
+  analysis: {
+    model: "exponential"
+    startDate?: string
+    endDate?: string
+    observedDays: number
+    totalSalesUnits: number
+    accumulatedConsumptionMl: number
+    averageDailyUnits: number
+    projectedDailyUnits: number
+    projectedDailyConsumptionMl: number
+    exponentialRateK: number
+    growthRate: number
+    trend: "growth" | "decline" | "stable"
+  }
+  forecast: {
+    estimatedCurrentStockMl?: number
+    criticalLevelMl?: number
+    remainingUntilCriticalMl?: number
+    estimatedDaysToCritical?: number | null
+    remainingDaysToCritical?: number | null
+    estimatedCriticalDate?: string | null
+    status: "ready" | "warning" | "critical" | "no_sales" | "not_configured"
+  }
+  chart: {
+    initialStockMl?: number
+    criticalLevelMl?: number
+    actualPoints: DepletionChartPoint[]
+    projectedPoint?: DepletionChartPoint | null
+  }
+  missingFields: string[]
+}
+
 export type SalesPeriodType = "daily" | "weekly" | "monthly";
 
 // API Client para ventas — usa el mismo apiRequest que el resto del proyecto
@@ -114,5 +170,24 @@ export class AdminSalesAPI {
       `/sales/overview?${params}`,
       { method: "GET", token },
     );
+  }
+
+  static async getDepletionForecast(
+    productId: string,
+    options?: {
+      startDate?: string
+      endDate?: string
+    },
+  ): Promise<DepletionForecast> {
+    const token = await this.getToken()
+    const params = new URLSearchParams({
+      ...(options?.startDate && { startDate: options.startDate }),
+      ...(options?.endDate && { endDate: options.endDate }),
+    })
+    const suffix = params.toString() ? `?${params}` : ""
+    return apiRequest<DepletionForecast>(`/sales/forecast/${productId}${suffix}`, {
+      method: "GET",
+      token,
+    })
   }
 }

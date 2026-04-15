@@ -2,6 +2,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -10,6 +11,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProductStatus } from '../enums/product-status.enum';
 
 export class UpdateProductDto {
@@ -37,8 +39,10 @@ export class UpdateProductDto {
   longDescription?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
+  @Max(1000000)
   price?: number;
 
   @IsOptional()
@@ -75,8 +79,38 @@ export class UpdateProductDto {
   origin?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  rawMaterialName?: string;
+
+  @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
+  @Max(100000000)
+  rawMaterialInitialStockMl?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100000000)
+  rawMaterialConsumptionPerBatchMl?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsNumber()
+  @Min(1)
+  @Max(1000000)
+  rawMaterialBatchYieldUnits?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @IsNumber()
+  @Min(0)
+  @Max(100000)
   stockMin?: number;
 
   @IsOptional()
@@ -92,18 +126,24 @@ export class UpdateProductDto {
   status?: ProductStatus;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   @Max(5)
   rating?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   @IsNumber()
   @Min(0)
   reviews?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   @IsNumber()
   @Min(1)
+  @Max(100000)
   sortOrder?: number;
 }

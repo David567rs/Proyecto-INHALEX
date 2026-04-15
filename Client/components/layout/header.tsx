@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -64,9 +64,11 @@ export function Header({
   const { user, isAuthenticated, isLoading: isAuthLoading, logout } = useAuth()
   const { itemCount, isSheetOpen, setSheetOpen } = useCart()
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [localSearchQuery, setLocalSearchQuery] = useState("")
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const lastScrollYRef = useRef(0)
 
   const effectiveSearchQuery = searchQuery ?? localSearchQuery
   const hasQuery = effectiveSearchQuery.trim().length > 0
@@ -114,12 +116,33 @@ export function Header({
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      const currentScrollY = window.scrollY
+      const previousScrollY = lastScrollYRef.current
+      const isMovingDown = currentScrollY > previousScrollY
+
+      setIsScrolled(currentScrollY > 20)
+
+      if (currentScrollY <= 24) {
+        setIsHeaderVisible(true)
+      } else if (isMovingDown && currentScrollY > 140) {
+        setIsHeaderVisible(false)
+      } else if (!isMovingDown) {
+        setIsHeaderVisible(true)
+      }
+
+      lastScrollYRef.current = currentScrollY
     }
 
+    handleScroll()
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  useEffect(() => {
+    if (isMobileMenuOpen || isSearchOpen || isSheetOpen) {
+      setIsHeaderVisible(true)
+    }
+  }, [isMobileMenuOpen, isSearchOpen, isSheetOpen])
 
   const handleLogout = () => {
     logout()
@@ -138,19 +161,34 @@ export function Header({
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+        isHeaderVisible
+          ? "translate-y-0 opacity-100"
+          : "-translate-y-[calc(100%+1rem)] opacity-0",
         isScrolled
-          ? "border-b border-white/50 bg-card/88 py-2 shadow-[0_18px_44px_-32px_rgba(15,84,43,0.28)] backdrop-blur-2xl"
+          ? "border-b border-white/50 bg-card/88 py-1.5 shadow-[0_18px_44px_-32px_rgba(15,84,43,0.28)] backdrop-blur-2xl"
           : "bg-transparent py-4",
       )}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between gap-4">
+        <div
+          className={cn(
+            "flex items-center justify-between transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            isScrolled ? "gap-3" : "gap-4",
+          )}
+        >
           <Link
             href="/"
             className="flex shrink-0 items-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:scale-[1.02]"
           >
-            <div className="relative aspect-[3.18/1] w-[11.5rem] sm:w-[12.75rem] md:w-[15.25rem]">
+            <div
+              className={cn(
+                "relative aspect-[3.18/1] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                isScrolled
+                  ? "w-[10rem] sm:w-[11rem] md:w-[13rem]"
+                  : "w-[11.5rem] sm:w-[12.75rem] md:w-[15.25rem]",
+              )}
+            >
               <Image
                 src="/images/NuevoLogo.png"
                 alt="INHALEX - El Respiro Que Alivia"
@@ -162,7 +200,12 @@ export function Header({
             </div>
           </Link>
 
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
+          <div
+            className={cn(
+              "hidden md:flex flex-1 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              isScrolled ? "mx-5 max-w-sm" : "mx-8 max-w-md",
+            )}
+          >
             <div className="relative w-full group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
@@ -243,10 +286,18 @@ export function Header({
             </div>
           </div>
 
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav
+            className={cn(
+              "hidden lg:flex items-center transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              isScrolled ? "gap-0.5" : "gap-1",
+            )}
+          >
               <Link
               href="/"
-              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
+              className={cn(
+                "group relative rounded-full font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary",
+                isScrolled ? "px-3.5 py-1.5 text-[0.82rem]" : "px-4 py-2 text-sm",
+              )}
             >
               Inicio
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -254,7 +305,14 @@ export function Header({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary">
+                <button
+                  className={cn(
+                    "flex items-center gap-1 rounded-full font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary",
+                    isScrolled
+                      ? "px-3.5 py-1.5 text-[0.82rem]"
+                      : "px-4 py-2 text-sm",
+                  )}
+                >
                   Lineas
                   <ChevronDown className="h-4 w-4 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                 </button>
@@ -278,7 +336,10 @@ export function Header({
 
               <Link
               href="/productos"
-              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
+              className={cn(
+                "group relative rounded-full font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary",
+                isScrolled ? "px-3.5 py-1.5 text-[0.82rem]" : "px-4 py-2 text-sm",
+              )}
             >
               Productos
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -286,7 +347,10 @@ export function Header({
 
               <Link
               href="/nosotros"
-              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
+              className={cn(
+                "group relative rounded-full font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary",
+                isScrolled ? "px-3.5 py-1.5 text-[0.82rem]" : "px-4 py-2 text-sm",
+              )}
             >
               Sobre Nosotros
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -294,7 +358,10 @@ export function Header({
 
               <Link
               href="/contacto"
-              className="group relative rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary"
+              className={cn(
+                "group relative rounded-full font-medium text-foreground/80 transition-all duration-300 hover:bg-white/72 hover:text-primary",
+                isScrolled ? "px-3.5 py-1.5 text-[0.82rem]" : "px-4 py-2 text-sm",
+              )}
             >
               Contacto
               <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-3/4" />
@@ -305,7 +372,10 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="relative transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
+              className={cn(
+                "relative transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10",
+                isScrolled ? "h-9 w-9" : "h-10 w-10",
+              )}
               onClick={() => setSheetOpen(!isSheetOpen)}
             >
               <ShoppingBag className="h-5 w-5" />
@@ -322,7 +392,10 @@ export function Header({
                 variant="ghost"
                 size="icon"
                 disabled
-                className="transition-all duration-300 hover:bg-primary/10"
+                className={cn(
+                  "transition-all duration-300 hover:bg-primary/10",
+                  isScrolled ? "h-9 w-9" : "h-10 w-10",
+                )}
               >
                 <User className="h-5 w-5" />
                 <span className="sr-only">Cargando sesion</span>
@@ -333,7 +406,10 @@ export function Header({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
+                    className={cn(
+                      "transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10",
+                      isScrolled ? "h-9 w-9" : "h-10 w-10",
+                    )}
                   >
                     <User className="h-5 w-5" />
                     <span className="sr-only">Mi cuenta</span>
@@ -370,7 +446,10 @@ export function Header({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10"
+                  className={cn(
+                    "transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10",
+                    isScrolled ? "h-9 w-9" : "h-10 w-10",
+                  )}
                 >
                   <User className="h-5 w-5" />
                   <span className="sr-only">Iniciar sesion</span>
@@ -381,7 +460,10 @@ export function Header({
             <Button
               variant="ghost"
               size="icon"
-              className="transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 lg:hidden"
+              className={cn(
+                "transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary/10 lg:hidden",
+                isScrolled ? "h-9 w-9" : "h-10 w-10",
+              )}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? (

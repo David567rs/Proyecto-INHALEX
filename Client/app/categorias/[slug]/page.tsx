@@ -218,7 +218,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
                   </p>
                   <p className="mt-2 text-3xl font-semibold">{averageRating ?? "Nuevo"}</p>
                   <p className="mt-1 text-sm text-white/70">
-                    {totalReviews > 0 ? `${totalReviews} resenas acumuladas.` : "Linea lista para descubrir."}
+                    {totalReviews > 0 ? `${totalReviews} reseñas acumuladas.` : "Linea lista para descubrir."}
                   </p>
                 </div>
               </div>

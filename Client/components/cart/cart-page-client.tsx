@@ -191,7 +191,7 @@ export function CartPageClient() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="rounded-full px-6 shadow-[0_22px_42px_-26px_rgba(16,112,58,0.48)]">
-              <Link href="/">Volver al catalogo</Link>
+              <Link href="/">Volver al catálogo</Link>
             </Button>
             <Button
               variant="outline"
@@ -231,13 +231,13 @@ export function CartPageClient() {
             <ShoppingBag className="h-8 w-8" />
           </div>
           <h1 className="mt-6 text-balance text-4xl font-serif font-semibold text-foreground lg:text-5xl">
-            Tu bolsa esta vacia por ahora
+            Tu bolsa está vacía por ahora
           </h1>
           <p className="mt-4 text-base leading-8 text-muted-foreground">
-            Explora las lineas, agrega tus aromas favoritos y cuando estes listo aqui podremos validar inventario real y confirmar tu pedido.
+            Explora las líneas, agrega tus aromas favoritos y cuando estés listo aquí podremos validar inventario real y confirmar tu pedido.
           </p>
           <Button asChild className="mt-8 rounded-full px-6 shadow-[0_22px_42px_-26px_rgba(16,112,58,0.48)]">
-            <Link href="/">Ir al catalogo</Link>
+            <Link href="/">Ir al catálogo</Link>
           </Button>
         </div>
       </section>
@@ -279,7 +279,7 @@ export function CartPageClient() {
             <div className="space-y-3 rounded-[1.8rem] border border-stone-200/80 bg-white/88 p-5 shadow-[0_18px_40px_-34px_rgba(64,50,30,0.2)]">
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-foreground/75">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Alertas de validacion
+                Alertas de validación
               </div>
               {issueList.map((issue) => (
                 <div

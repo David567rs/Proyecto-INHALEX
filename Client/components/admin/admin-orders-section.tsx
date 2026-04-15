@@ -80,7 +80,7 @@ const STATUS_ACTION_MESSAGES: Record<
   pending_review: "El pedido sigue pendiente de revision.",
   confirmed: "Pedido confirmado por el equipo.",
   cancelled: "Pedido cancelado y existencias liberadas.",
-  completed: "Pedido completado y reserva consumida.",
+  completed: "Pedido completado y piezas descontadas del inventario.",
 };
 
 function formatDate(value?: string) {
@@ -146,6 +146,12 @@ function canCancel(status?: AdminOrderStatus) {
 
 function canComplete(status?: AdminOrderStatus) {
   return status === "confirmed";
+}
+
+function getFulfilledStockLabel(status: AdminOrderStatus, quantity: number) {
+  return status === "completed"
+    ? `${quantity} surtidas`
+    : `${quantity} reservadas`;
 }
 
 export function AdminOrdersSection() {
@@ -328,6 +334,15 @@ export function AdminOrdersSection() {
       summary.pending_review,
     ],
   );
+
+  const pendingFulfillmentUnits = useMemo(() => {
+    if (!selectedOrder) return 0;
+
+    return selectedOrder.items.reduce(
+      (sum, item) => sum + Math.max(0, item.quantity - item.reservedQuantity),
+      0,
+    );
+  }, [selectedOrder]);
 
   const refreshAll = async () => {
     const token = getAccessToken();
@@ -823,6 +838,14 @@ export function AdminOrdersSection() {
                       )}
                     </div>
                   </div>
+
+                  {pendingFulfillmentUnits > 0 ? (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      Faltan {pendingFulfillmentUnits} piezas por surtir. Si ya
+                      entraron al inventario, el sistema intentara reservarlas
+                      automaticamente al marcar este pedido como completado.
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="admin-section-card p-4">
@@ -976,7 +999,10 @@ export function AdminOrdersSection() {
                               </span>
                               {item.reservedQuantity > 0 ? (
                                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700">
-                                  {item.reservedQuantity} reservadas
+                                  {getFulfilledStockLabel(
+                                    selectedOrder.status,
+                                    item.reservedQuantity,
+                                  )}
                                 </span>
                               ) : null}
                               {item.backorderQuantity > 0 ? (

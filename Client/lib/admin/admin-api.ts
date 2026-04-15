@@ -38,16 +38,28 @@ export interface AdminProduct {
   _id: string
   name: string
   slug: string
+  description: string
+  longDescription?: string
   category: string
   price: number
   currency: string
+  image: string
+  benefits?: string[]
+  aromas?: string[]
   presentation?: string
+  origin?: string
+  rawMaterialName?: string
+  rawMaterialInitialStockMl?: number
+  rawMaterialConsumptionPerBatchMl?: number
+  rawMaterialBatchYieldUnits?: number
   status: "draft" | "active" | "archived"
   inStock: boolean
   stockAvailable?: number
   stockReserved?: number
   stockMin?: number
   allowBackorder?: boolean
+  rating?: number
+  reviews?: number
   sortOrder?: number
   createdAt?: string
   updatedAt?: string
@@ -214,13 +226,36 @@ export function seedAdminProducts(token: string): Promise<SeedProductsResult> {
 }
 
 export interface UpdateAdminProductInput {
+  name?: string
+  slug?: string
+  description?: string
+  longDescription?: string
   category?: string
   price?: number
+  image?: string
+  benefits?: string[]
+  aromas?: string[]
+  presentation?: string
+  origin?: string
+  rawMaterialName?: string
+  rawMaterialInitialStockMl?: number
+  rawMaterialConsumptionPerBatchMl?: number
+  rawMaterialBatchYieldUnits?: number
   status?: AdminProduct["status"]
   inStock?: boolean
   stockMin?: number
   allowBackorder?: boolean
   sortOrder?: number
+}
+
+export function getAdminProduct(
+  productIdOrSlug: string,
+  token: string,
+): Promise<AdminProduct> {
+  return apiRequest<AdminProduct>(`/admin/products/${productIdOrSlug}`, {
+    method: "GET",
+    token,
+  })
 }
 
 export type InventoryMovementType =

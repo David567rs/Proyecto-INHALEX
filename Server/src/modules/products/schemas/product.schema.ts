@@ -42,6 +42,18 @@ export class Product {
   @Prop({ required: true, trim: true, default: '100% Natural' })
   origin: string;
 
+  @Prop({ trim: true, maxlength: 160 })
+  rawMaterialName?: string;
+
+  @Prop({ min: 0 })
+  rawMaterialInitialStockMl?: number;
+
+  @Prop({ min: 0 })
+  rawMaterialConsumptionPerBatchMl?: number;
+
+  @Prop({ min: 1 })
+  rawMaterialBatchYieldUnits?: number;
+
   @Prop({ min: 0, index: true })
   stockAvailable?: number;
 

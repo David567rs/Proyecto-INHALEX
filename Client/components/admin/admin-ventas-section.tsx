@@ -1,7 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Award,
   BarChart3,
   DollarSign,
   Loader2,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AdminSalesDepletionForecast } from "@/components/admin/admin-sales-depletion-forecast";
 import { SalesHistoryModal } from "@/components/admin/admin-sales-history-section";
 import { AdminSalesAPI, type SalesOverview } from "@/lib/admin/admin-sales-api";
 import { listAdminProducts, type AdminProduct } from "@/lib/admin/admin-api";
@@ -22,6 +24,8 @@ interface ProductRow {
   id: string;
   name: string;
   category: string;
+  image?: string;
+  presentation?: string;
   totalSales: number;
   revenue: number;
   growth: number;
@@ -34,6 +38,9 @@ const currencyFormatter = new Intl.NumberFormat("es-MX", {
 });
 
 const numberFormatter = new Intl.NumberFormat("es-MX");
+const percentFormatter = new Intl.NumberFormat("es-MX", {
+  maximumFractionDigits: 1,
+});
 
 function formatCurrency(value: number): string {
   return currencyFormatter.format(value);
@@ -41,6 +48,10 @@ function formatCurrency(value: number): string {
 
 function formatNumber(value: number): string {
   return numberFormatter.format(value);
+}
+
+function formatPercent(value: number): string {
+  return `${percentFormatter.format(value)}%`;
 }
 
 export function AdminVentasSection() {
@@ -82,6 +93,8 @@ export function AdminVentasSection() {
             id: product._id,
             name: product.name,
             category: product.category,
+            image: product.image,
+            presentation: product.presentation,
             totalSales: 0,
             revenue: 0,
             growth: 0,
@@ -96,6 +109,8 @@ export function AdminVentasSection() {
             id: sale.id,
             name: catalogProduct?.name ?? sale.name,
             category: catalogProduct?.category ?? sale.category,
+            image: catalogProduct?.image,
+            presentation: catalogProduct?.presentation,
             totalSales: sale.totalSales,
             revenue: sale.revenue,
             growth: sale.growth,
@@ -145,6 +160,14 @@ export function AdminVentasSection() {
     () => products.filter((product) => product.totalSales > 0).length,
     [products],
   );
+  const topProduct = useMemo(
+    () => products.find((product) => product.totalSales > 0) ?? null,
+    [products],
+  );
+  const topProductShare = useMemo(() => {
+    if (!topProduct || totalUnits <= 0) return 0;
+    return (topProduct.totalSales / totalUnits) * 100;
+  }, [topProduct, totalUnits]);
 
   if (loading) {
     return (
@@ -254,6 +277,103 @@ export function AdminVentasSection() {
           ))}
         </div>
 
+        {topProduct ? (
+          <div className="admin-section-card overflow-hidden p-4 sm:p-5">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_13rem] lg:items-center">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Award className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Producto estrella
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <h4 className="text-lg font-semibold tracking-tight text-foreground">
+                        {topProduct.name}
+                      </h4>
+                      <Badge
+                        variant="outline"
+                        className="rounded-full border-primary/15 bg-primary/[0.05] text-primary"
+                      >
+                        Mas vendido
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {topProduct.category}
+                      {topProduct.presentation
+                        ? ` / ${topProduct.presentation}`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-border/60 bg-secondary/20 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Unidades
+                    </p>
+                    <p className="mt-2 text-xl font-semibold text-foreground">
+                      {formatNumber(topProduct.totalSales)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-secondary/20 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Ingresos
+                    </p>
+                    <p className="mt-2 text-xl font-semibold text-foreground">
+                      {formatCurrency(topProduct.revenue)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/60 bg-secondary/20 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Participacion
+                    </p>
+                    <p className="mt-2 text-xl font-semibold text-foreground">
+                      {formatPercent(topProductShare)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-lg"
+                    onClick={() => handleOpenHistory(topProduct)}
+                  >
+                    Ver historial del producto estrella
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] via-background to-emerald-500/[0.08] p-3">
+                <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-white/60 bg-background shadow-[0_20px_45px_-30px_rgba(15,23,42,0.45)]">
+                  <img
+                    src={topProduct.image || "/placeholder.svg"}
+                    alt={topProduct.name}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="pointer-events-none absolute inset-x-3 bottom-3 rounded-xl border border-white/70 bg-white/88 px-3 py-2 backdrop-blur">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {topProduct.name}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Lider del periodo
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <AdminSalesDepletionForecast
+          products={products}
+          defaultProductId={topProduct?.id ?? products[0]?.id ?? null}
+        />
+
         <div className="admin-table-shell">
           <div className="flex flex-col gap-3 border-b border-border/60 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -352,3 +472,4 @@ export function AdminVentasSection() {
     </section>
   );
 }
+

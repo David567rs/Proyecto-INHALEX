@@ -546,13 +546,13 @@ export function AdminCompanyContentSection() {
               Guia rapida
             </p>
             <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-              Buenas practicas de edicion
+              Buenas practicas de edición
             </h3>
 
             <div className="mt-4 grid gap-2">
               <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
                 <p className="text-sm font-medium text-foreground">
-                  Usa titulos cortos
+                  Usa títulos cortos
                 </p>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">
                   Facilitan lectura en paginas legales y bloques
@@ -564,7 +564,7 @@ export function AdminCompanyContentSection() {
                   Aprovecha Markdown
                 </p>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                  Puedes usar listas, subtitulos, enlaces y tablas para ordenar
+                  Puedes usar listas, subtítulos, enlaces y tablas para ordenar
                   mejor el texto.
                 </p>
               </div>
@@ -573,7 +573,7 @@ export function AdminCompanyContentSection() {
                   Edita por bloques
                 </p>
                 <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                  Cambia una seccion, revisa la vista previa y luego guarda para
+                  Cambia una sección, revisa la vista previa y luego guarda para
                   mantener control.
                 </p>
               </div>

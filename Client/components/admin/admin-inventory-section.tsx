@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   AlertTriangle,
   ArrowDownUp,
@@ -18,6 +19,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -43,16 +54,60 @@ import {
   listAdminProductCategories,
   listAdminProducts,
   updateAdminProduct,
+  type AdjustAdminInventoryInput,
   type AdminInventoryMovement,
   type AdminInventorySummary,
   type AdminProduct,
   type AdminProductCategory,
   type InventoryMovementType,
 } from "@/lib/admin/admin-api";
+import {
+  getAvailableUnits,
+  getInventoryHealth,
+  getMinimumStock,
+  getReservedUnits,
+  hasTrackedInventory,
+} from "@/lib/admin/product-inventory";
 import { cn } from "@/lib/utils";
 
 type StockFilter = "all" | "tracked" | "pending" | "low" | "out" | "backorder";
 type StatusFilter = "all" | "active" | "draft" | "archived";
+
+type InventoryConfirmationState =
+  | {
+      kind: "adjustment";
+      productId: string;
+      productName: string;
+      title: string;
+      description: string;
+      actionLabel: string;
+      movementLabel: string;
+      quantity: number;
+      note?: string;
+      helper: string;
+      previousAvailable: number;
+      nextAvailable: number;
+      previousReserved: number;
+      nextReserved: number;
+      payload: AdjustAdminInventoryInput;
+    }
+  | {
+      kind: "policy";
+      productId: string;
+      productName: string;
+      title: string;
+      description: string;
+      actionLabel: string;
+      helper: string;
+      previousStockMin: number;
+      nextStockMin: number;
+      previousAllowBackorder: boolean;
+      nextAllowBackorder: boolean;
+      payload: {
+        stockMin: number;
+        allowBackorder: boolean;
+      };
+    };
 
 const movementLabels: Record<InventoryMovementType, string> = {
   initialize: "Inicializacion",
@@ -70,43 +125,6 @@ const productStatusLabels: Record<Exclude<StatusFilter, "all">, string> = {
   archived: "Archivado",
 };
 
-const tracked = (product: AdminProduct) =>
-  typeof product.stockAvailable === "number";
-const available = (product: AdminProduct) =>
-  tracked(product) ? (product.stockAvailable ?? 0) : 0;
-const reserved = (product: AdminProduct) =>
-  tracked(product) ? (product.stockReserved ?? 0) : 0;
-const stockMin = (product: AdminProduct) => product.stockMin ?? 0;
-
-function tone(product: AdminProduct) {
-  if (!tracked(product))
-    return {
-      label: "Pendiente",
-      className: "border-amber-200 bg-amber-50 text-amber-700",
-    };
-  if (available(product) === 0) {
-    return product.allowBackorder
-      ? {
-          label: "Bajo pedido",
-          className: "border-sky-200 bg-sky-50 text-sky-700",
-        }
-      : {
-          label: "Sin existencias",
-          className: "border-rose-200 bg-rose-50 text-rose-700",
-        };
-  }
-  if (stockMin(product) > 0 && available(product) <= stockMin(product)) {
-    return {
-      label: "Stock bajo",
-      className: "border-amber-200 bg-amber-50 text-amber-700",
-    };
-  }
-  return {
-    label: "Saludable",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  };
-}
-
 function formatDate(value?: string) {
   if (!value) return "-";
   const date = new Date(value);
@@ -117,7 +135,138 @@ function formatDate(value?: string) {
   }).format(date);
 }
 
+function getInventorySnapshot(product: AdminProduct) {
+  const tracked = hasTrackedInventory(product);
+  return {
+    tracked,
+    available: tracked ? getAvailableUnits(product) : 0,
+    reserved: tracked ? getReservedUnits(product) : 0,
+  };
+}
+
+function buildAdjustmentConfirmation(
+  product: AdminProduct,
+  adjustment: {
+    type: InventoryMovementType;
+    quantity: string;
+    note: string;
+  },
+): { error?: string; state?: InventoryConfirmationState } {
+  const quantity = Number(adjustment.quantity);
+
+  if (!Number.isFinite(quantity) || quantity < 0) {
+    return { error: "La cantidad debe ser un numero valido." };
+  }
+
+  if (adjustment.type !== "set_available" && quantity <= 0) {
+    return { error: "La cantidad debe ser mayor a cero." };
+  }
+
+  const normalizedQuantity = Math.floor(quantity);
+  const snapshot = getInventorySnapshot(product);
+  let nextAvailable = snapshot.available;
+  let nextReserved = snapshot.reserved;
+  let helper = "";
+
+  switch (adjustment.type) {
+    case "restock":
+      nextAvailable = snapshot.available + normalizedQuantity;
+      helper = snapshot.tracked
+        ? `Se sumaran ${normalizedQuantity} unidades al disponible actual.`
+        : `Se iniciara el inventario con ${normalizedQuantity} unidades disponibles.`;
+      break;
+    case "deduct":
+      if (!snapshot.tracked) {
+        return {
+          error: "Inicializa el inventario antes de registrar salidas.",
+        };
+      }
+      if (normalizedQuantity > snapshot.available) {
+        return {
+          error: "No puedes descontar mas unidades que las disponibles.",
+        };
+      }
+      nextAvailable = snapshot.available - normalizedQuantity;
+      helper = `Se descontaran ${normalizedQuantity} unidades del disponible.`;
+      break;
+    case "set_available":
+      if (normalizedQuantity < snapshot.reserved) {
+        return {
+          error:
+            "La cantidad disponible no puede quedar por debajo del stock reservado.",
+        };
+      }
+      nextAvailable = normalizedQuantity;
+      helper = `La disponibilidad final quedara fijada en ${normalizedQuantity} unidades.`;
+      break;
+    case "reserve":
+      if (!snapshot.tracked) {
+        return {
+          error: "Inicializa el inventario antes de reservar unidades.",
+        };
+      }
+      if (normalizedQuantity > snapshot.available) {
+        return {
+          error: "No puedes reservar mas unidades que las disponibles.",
+        };
+      }
+      nextAvailable = snapshot.available - normalizedQuantity;
+      nextReserved = snapshot.reserved + normalizedQuantity;
+      helper = `Se moveran ${normalizedQuantity} unidades de disponibles a reservadas.`;
+      break;
+    case "release":
+      if (!snapshot.tracked) {
+        return {
+          error: "No hay inventario inicializado para liberar unidades.",
+        };
+      }
+      if (normalizedQuantity > snapshot.reserved) {
+        return {
+          error: "No puedes liberar mas unidades que las reservadas.",
+        };
+      }
+      nextAvailable = snapshot.available + normalizedQuantity;
+      nextReserved = snapshot.reserved - normalizedQuantity;
+      helper = `Se liberaran ${normalizedQuantity} unidades reservadas y volveran a disponibles.`;
+      break;
+    default:
+      return { error: "Tipo de ajuste invalido." };
+  }
+
+  const movementLabel =
+    !snapshot.tracked &&
+    (adjustment.type === "restock" || adjustment.type === "set_available")
+      ? "Inventario inicial"
+      : movementLabels[adjustment.type];
+
+  return {
+    state: {
+      kind: "adjustment",
+      productId: product._id,
+      productName: product.name,
+      title: "Confirmar movimiento de inventario",
+      description:
+        "Revisa el impacto del ajuste antes de guardarlo en el historial del sistema.",
+      actionLabel: "Confirmar movimiento",
+      movementLabel,
+      quantity: normalizedQuantity,
+      note: adjustment.note.trim() || undefined,
+      helper,
+      previousAvailable: snapshot.available,
+      nextAvailable,
+      previousReserved: snapshot.reserved,
+      nextReserved,
+      payload: {
+        type: adjustment.type,
+        quantity: normalizedQuantity,
+        note: adjustment.note.trim() || undefined,
+      },
+    },
+  };
+}
+
 export function AdminInventorySection() {
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const canManage = user?.role === "admin";
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -146,12 +295,15 @@ export function AdminInventorySection() {
   const [savingAdjustment, setSavingAdjustment] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [confirmationState, setConfirmationState] =
+    useState<InventoryConfirmationState | null>(null);
 
   const selectedProduct = useMemo(
     () =>
       products.find((item) => item._id === selectedId) ?? products[0] ?? null,
     [products, selectedId],
   );
+  const requestedProductId = searchParams.get("producto");
 
   useEffect(() => {
     if (!selectedProduct) {
@@ -190,17 +342,19 @@ export function AdminInventorySection() {
       });
       let nextProducts = response.items;
       nextProducts = nextProducts.filter((product) => {
-        if (stockFilter === "tracked") return tracked(product);
-        if (stockFilter === "pending") return !tracked(product);
+        if (stockFilter === "tracked") return hasTrackedInventory(product);
+        if (stockFilter === "pending") return !hasTrackedInventory(product);
         if (stockFilter === "low")
           return (
-            tracked(product) &&
-            available(product) > 0 &&
-            stockMin(product) > 0 &&
-            available(product) <= stockMin(product)
+            hasTrackedInventory(product) &&
+            getAvailableUnits(product) > 0 &&
+            getMinimumStock(product) > 0 &&
+            getAvailableUnits(product) <= getMinimumStock(product)
           );
         if (stockFilter === "out")
-          return tracked(product) && available(product) === 0;
+          return (
+            hasTrackedInventory(product) && getAvailableUnits(product) === 0
+          );
         if (stockFilter === "backorder") return Boolean(product.allowBackorder);
         return true;
       });
@@ -276,6 +430,17 @@ export function AdminInventorySection() {
     });
   }, [selectedProduct?._id]);
 
+  useEffect(() => {
+    if (!requestedProductId || products.length === 0) return;
+    const requestedProduct = products.find(
+      (product) =>
+        product._id === requestedProductId || product.slug === requestedProductId,
+    );
+    if (requestedProduct) {
+      setSelectedId(requestedProduct._id);
+    }
+  }, [products, requestedProductId]);
+
   const refreshAll = async () => {
     setSuccessMessage("");
     await Promise.all([loadSummary(), loadProducts()]);
@@ -284,27 +449,53 @@ export function AdminInventorySection() {
 
   const savePolicy = async () => {
     if (!selectedProduct) return;
-    const token = getAccessToken();
     const minValue = Number(settings.stockMin);
-    if (!token)
+    if (!Number.isFinite(minValue) || minValue < 0)
+      return setErrorMessage("El stock minimo debe ser mayor o igual a 0.");
+    const nextStockMin = Math.floor(minValue);
+    const nextAllowBackorder = settings.allowBackorder === "true";
+    if (
+      nextStockMin === (selectedProduct.stockMin ?? 0) &&
+      nextAllowBackorder === Boolean(selectedProduct.allowBackorder)
+    ) {
+      return setErrorMessage("No hay cambios de politica por guardar.");
+    }
+    setErrorMessage("");
+    setConfirmationState({
+      kind: "policy",
+      productId: selectedProduct._id,
+      productName: selectedProduct.name,
+      title: "Confirmar politica de inventario",
+      description:
+        "Antes de guardar, revisa como quedara la politica operativa de este producto.",
+      actionLabel: "Guardar politica",
+      helper:
+        "Estos cambios afectan alertas de stock y la posibilidad de vender bajo pedido cuando no haya existencia inmediata.",
+      previousStockMin: selectedProduct.stockMin ?? 0,
+      nextStockMin,
+      previousAllowBackorder: Boolean(selectedProduct.allowBackorder),
+      nextAllowBackorder,
+      payload: {
+        stockMin: nextStockMin,
+        allowBackorder: nextAllowBackorder,
+      },
+    });
+  };
+
+  const confirmPolicySave = async (state: Extract<InventoryConfirmationState, { kind: "policy" }>) => {
+    const token = getAccessToken();
+    if (!token) {
+      setConfirmationState(null);
       return setErrorMessage(
         "Tu sesion no esta disponible. Inicia sesion de nuevo.",
       );
-    if (!Number.isFinite(minValue) || minValue < 0)
-      return setErrorMessage("El stock minimo debe ser mayor o igual a 0.");
-    const accepted = window.confirm(
-      `Vas a actualizar la configuracion de inventario de "${selectedProduct.name}". Deseas continuar?`,
-    );
-    if (!accepted) return;
+    }
     setSavingSettings(true);
     setErrorMessage("");
     try {
       const updated = await updateAdminProduct(
-        selectedProduct._id,
-        {
-          stockMin: Math.floor(minValue),
-          allowBackorder: settings.allowBackorder === "true",
-        },
+        state.productId,
+        state.payload,
         token,
       );
       setProducts((prev) =>
@@ -313,8 +504,10 @@ export function AdminInventorySection() {
         ),
       );
       setSuccessMessage("Politica de inventario guardada.");
+      setConfirmationState(null);
       await loadSummary();
     } catch (error) {
+      setConfirmationState(null);
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -327,30 +520,29 @@ export function AdminInventorySection() {
 
   const submitAdjustment = async () => {
     if (!selectedProduct) return;
+    const result = buildAdjustmentConfirmation(selectedProduct, adjustment);
+    if (result.error) return setErrorMessage(result.error);
+    if (!result.state || result.state.kind !== "adjustment") return;
+    setErrorMessage("");
+    setConfirmationState(result.state);
+  };
+
+  const confirmAdjustment = async (
+    state: Extract<InventoryConfirmationState, { kind: "adjustment" }>,
+  ) => {
     const token = getAccessToken();
-    const quantity = Number(adjustment.quantity);
-    if (!token)
+    if (!token) {
+      setConfirmationState(null);
       return setErrorMessage(
         "Tu sesion no esta disponible. Inicia sesion de nuevo.",
       );
-    if (!Number.isFinite(quantity) || quantity < 0)
-      return setErrorMessage("La cantidad debe ser un numero valido.");
-    if (adjustment.type !== "set_available" && quantity <= 0)
-      return setErrorMessage("La cantidad debe ser mayor a cero.");
-    const accepted = window.confirm(
-      `Vas a registrar "${movementLabels[adjustment.type]}" por ${Math.floor(quantity)} unidades en "${selectedProduct.name}". Deseas continuar?`,
-    );
-    if (!accepted) return;
+    }
     setSavingAdjustment(true);
     setErrorMessage("");
     try {
       const response = await adjustAdminInventory(
-        selectedProduct._id,
-        {
-          type: adjustment.type,
-          quantity: Math.floor(quantity),
-          note: adjustment.note.trim() || undefined,
-        },
+        state.productId,
+        state.payload,
         token,
       );
       setProducts((prev) =>
@@ -360,8 +552,10 @@ export function AdminInventorySection() {
       );
       setAdjustment({ type: "restock", quantity: "", note: "" });
       setSuccessMessage("Movimiento registrado correctamente.");
-      await Promise.all([loadSummary(), loadMovements(selectedProduct._id)]);
+      setConfirmationState(null);
+      await Promise.all([loadSummary(), loadMovements(state.productId)]);
     } catch (error) {
+      setConfirmationState(null);
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -615,7 +809,7 @@ export function AdminInventorySection() {
                       </TableRow>
                     ) : (
                       products.map((product) => {
-                        const state = tone(product);
+                        const state = getInventoryHealth(product);
                         return (
                           <TableRow
                             key={product._id}
@@ -642,13 +836,19 @@ export function AdminInventorySection() {
                               {product.category}
                             </TableCell>
                             <TableCell className="text-right font-medium text-foreground">
-                              {tracked(product) ? available(product) : "-"}
+                              {hasTrackedInventory(product)
+                                ? getAvailableUnits(product)
+                                : "-"}
                             </TableCell>
                             <TableCell className="text-right font-medium text-foreground">
-                              {tracked(product) ? reserved(product) : "-"}
+                              {hasTrackedInventory(product)
+                                ? getReservedUnits(product)
+                                : "-"}
                             </TableCell>
                             <TableCell className="text-right text-muted-foreground">
-                              {tracked(product) ? stockMin(product) : "-"}
+                              {hasTrackedInventory(product)
+                                ? getMinimumStock(product)
+                                : "-"}
                             </TableCell>
                             <TableCell>
                               <Badge
@@ -693,33 +893,33 @@ export function AdminInventorySection() {
                       variant="outline"
                       className={cn(
                         "rounded-full",
-                        tone(selectedProduct).className,
+                        getInventoryHealth(selectedProduct).className,
                       )}
                     >
-                      {tone(selectedProduct).label}
+                      {getInventoryHealth(selectedProduct).label}
                     </Badge>
                   </div>
                   <div className="mt-4 rounded-lg border border-border/60 bg-background/75 px-3 py-2.5 text-sm text-muted-foreground">
-                    {tracked(selectedProduct)
+                    {hasTrackedInventory(selectedProduct)
                       ? "Este producto ya tiene existencias cargadas. Cualquier movimiento actualiza la disponibilidad para ventas."
                       : "Este producto aun no tiene stock cargado. El primer movimiento iniciara su control de existencias."}
                   </div>
                   <div className="mt-4 grid gap-2 sm:grid-cols-2">
                     <div className="admin-stat-chip">
                       <span className="font-medium">Libres:</span>{" "}
-                      {tracked(selectedProduct)
-                        ? available(selectedProduct)
+                      {hasTrackedInventory(selectedProduct)
+                        ? getAvailableUnits(selectedProduct)
                         : "Pendiente"}
                     </div>
                     <div className="admin-stat-chip">
                       <span className="font-medium">Reservadas:</span>{" "}
-                      {tracked(selectedProduct)
-                        ? reserved(selectedProduct)
+                      {hasTrackedInventory(selectedProduct)
+                        ? getReservedUnits(selectedProduct)
                         : "Pendiente"}
                     </div>
                     <div className="admin-stat-chip">
                       <span className="font-medium">Minimo:</span>{" "}
-                      {stockMin(selectedProduct)}
+                      {getMinimumStock(selectedProduct)}
                     </div>
                     <div className="admin-stat-chip">
                       <span className="font-medium">Bajo pedido:</span>{" "}
@@ -958,6 +1158,187 @@ export function AdminInventorySection() {
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={Boolean(confirmationState)}
+        onOpenChange={(open) => {
+          if (!open && !savingAdjustment && !savingSettings) {
+            setConfirmationState(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="overflow-hidden border-primary/10 p-0 shadow-[0_30px_90px_-40px_rgba(15,23,42,0.42)] sm:max-w-[min(640px,calc(100vw-2rem))]">
+          {confirmationState ? (
+            <div className="bg-background">
+              <div className="border-b border-border/60 bg-secondary/20 px-6 py-5">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  {confirmationState.kind === "adjustment" ? (
+                    <ArrowDownUp className="h-5 w-5" />
+                  ) : (
+                    <Save className="h-5 w-5" />
+                  )}
+                </div>
+                <AlertDialogHeader className="mt-4 gap-2 text-left">
+                  <AlertDialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
+                    {confirmationState.title}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm leading-6 text-muted-foreground">
+                    {confirmationState.description}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+              </div>
+
+              <div className="space-y-4 px-6 py-5">
+                <div className="rounded-2xl border border-border/60 bg-background px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Producto
+                      </p>
+                      <p className="mt-2 text-xl font-semibold text-foreground">
+                        {confirmationState.productName}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="rounded-full border-primary/15 bg-primary/[0.05] text-primary"
+                    >
+                      {confirmationState.kind === "adjustment"
+                        ? confirmationState.movementLabel
+                        : "Politica de inventario"}
+                    </Badge>
+                  </div>
+                </div>
+
+                {confirmationState.kind === "adjustment" ? (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-border/60 bg-secondary/20 px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Unidades del ajuste
+                        </p>
+                        <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                          {confirmationState.quantity}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-secondary/20 px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Resultado esperado
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-foreground">
+                          {confirmationState.helper}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Disponibles
+                        </p>
+                        <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-foreground">
+                          <span>{confirmationState.previousAvailable}</span>
+                          <span className="text-muted-foreground">-&gt;</span>
+                          <span className="text-primary">
+                            {confirmationState.nextAvailable}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Reservadas
+                        </p>
+                        <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-foreground">
+                          <span>{confirmationState.previousReserved}</span>
+                          <span className="text-muted-foreground">-&gt;</span>
+                          <span className="text-primary">
+                            {confirmationState.nextReserved}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {confirmationState.note ? (
+                      <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Nota interna
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {confirmationState.note}
+                        </p>
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-primary/15 bg-primary/[0.05] px-4 py-3 text-sm leading-6 text-foreground">
+                      {confirmationState.helper}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Stock minimo
+                        </p>
+                        <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-foreground">
+                          <span>{confirmationState.previousStockMin}</span>
+                          <span className="text-muted-foreground">-&gt;</span>
+                          <span className="text-primary">
+                            {confirmationState.nextStockMin}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-background px-4 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Bajo pedido
+                        </p>
+                        <div className="mt-2 flex items-center gap-2 text-lg font-semibold text-foreground">
+                          <span>
+                            {confirmationState.previousAllowBackorder ? "Si" : "No"}
+                          </span>
+                          <span className="text-muted-foreground">-&gt;</span>
+                          <span className="text-primary">
+                            {confirmationState.nextAllowBackorder ? "Si" : "No"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <AlertDialogFooter className="border-t border-border/60 bg-background px-6 py-4 sm:justify-between">
+                <AlertDialogCancel
+                  className="rounded-xl"
+                  disabled={savingAdjustment || savingSettings}
+                >
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  className="rounded-xl"
+                  disabled={savingAdjustment || savingSettings}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (confirmationState.kind === "adjustment") {
+                      void confirmAdjustment(confirmationState);
+                      return;
+                    }
+                    void confirmPolicySave(confirmationState);
+                  }}
+                >
+                  {savingAdjustment || savingSettings ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : confirmationState.kind === "adjustment" ? (
+                    <PackageCheck className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {confirmationState.actionLabel}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
+          ) : null}
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

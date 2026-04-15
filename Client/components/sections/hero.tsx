@@ -50,7 +50,7 @@ export function Hero() {
       </div>
 
       <div className="container relative z-10 mx-auto px-4 pb-16 pt-28 sm:pb-20 sm:pt-32 lg:pb-24 lg:pt-36">
-        <div className="grid items-center gap-10 xl:grid-cols-[minmax(0,0.96fr)_minmax(440px,560px)] xl:gap-14">
+        <div className="grid items-center gap-10 xl:grid-cols-[minmax(0,0.84fr)_minmax(560px,740px)] xl:gap-10">
           <div
             className={cn(
               "max-w-2xl space-y-8 transition-all duration-1000 ease-out",
@@ -133,7 +133,7 @@ export function Hero() {
 
           <div
             className={cn(
-              "mx-auto w-full max-w-[560px] transition-all duration-1000 delay-150 ease-out xl:mx-0 xl:justify-self-end",
+              "mx-auto w-full max-w-[660px] transition-all duration-1000 delay-150 ease-out xl:mx-0 xl:max-w-[740px] xl:justify-self-end",
               isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0",
             )}
           >

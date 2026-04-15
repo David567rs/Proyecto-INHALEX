@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -9,6 +13,13 @@ import {
   SalesMetricsDto,
 } from './dto/sales-history.dto';
 import {
+  DepletionChartPointDto,
+  DepletionForecastDto,
+  ForecastStatus,
+  ForecastTrend,
+  GetDepletionForecastQueryDto,
+} from './dto/sales-depletion-forecast.dto';
+import {
   SalesAggregateDocument,
   SalesPeriodType,
 } from './schemas/sales-aggregate.schema';
@@ -18,6 +29,7 @@ import {
   OrderDocument,
   OrderItemSnapshot,
 } from '../orders/schemas/order.schema';
+import { Product, ProductDocument } from '../products/schemas/product.schema';
 
 interface DateRange {
   start: Date;
@@ -53,6 +65,13 @@ interface RecordedProductSale {
   orderId: string;
 }
 
+interface DailySalesPoint {
+  date: Date;
+  units: number;
+  revenue: number;
+  orders: number;
+}
+
 @Injectable()
 export class SalesService {
   constructor(
@@ -60,6 +79,8 @@ export class SalesService {
     private salesAggregateModel: Model<SalesAggregateDocument>,
     @InjectModel(Order.name)
     private orderModel: Model<OrderDocument>,
+    @InjectModel(Product.name)
+    private productModel: Model<ProductDocument>,
   ) {}
 
   async getSalesHistory(dto: GetSalesHistoryDto): Promise<SalesDataPointDto[]> {
@@ -224,6 +245,453 @@ export class SalesService {
       },
       topProducts: productRows.slice(0, Math.max(1, Number(limit) || 10)),
     };
+  }
+
+  async getDepletionForecast(
+    productId: string,
+    query?: GetDepletionForecastQueryDto,
+  ): Promise<DepletionForecastDto> {
+    const product = await this.productModel.findById(productId).exec();
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const requestedRange = this.buildForecastDateRange(
+      query?.startDate,
+      query?.endDate,
+    );
+    const missingFields = this.getDepletionMissingFields(product);
+    const dailySales = await this.getDailySalesTimeline(product.id, requestedRange);
+    const totalSalesUnits = dailySales.reduce((sum, item) => sum + item.units, 0);
+    const fallbackDate = requestedRange?.start ?? product.createdAt ?? new Date();
+    const analysisStartDate = requestedRange?.start ?? dailySales[0]?.date ?? fallbackDate;
+    const analysisEndDate =
+      requestedRange?.end ?? dailySales[dailySales.length - 1]?.date ?? analysisStartDate;
+    const observedDays = Math.max(
+      1,
+      this.diffDaysElapsed(analysisStartDate, analysisEndDate),
+    );
+    const averageDailyUnitsRaw =
+      totalSalesUnits > 0 ? totalSalesUnits / observedDays : 0;
+    const averageDailyUnits = this.round(averageDailyUnitsRaw, 2);
+
+    const actualPointsBase: DepletionChartPointDto[] = [];
+
+    if (missingFields.length > 0) {
+      actualPointsBase.push({
+        date: analysisStartDate.toISOString(),
+        label: this.formatForecastDate(analysisStartDate),
+        stockMl: this.round(product.rawMaterialInitialStockMl ?? 0),
+        units: 0,
+        kind: 'actual',
+      });
+
+      if (analysisEndDate.getTime() !== analysisStartDate.getTime()) {
+        actualPointsBase.push({
+          date: analysisEndDate.toISOString(),
+          label: this.formatForecastDate(analysisEndDate),
+          stockMl: this.round(product.rawMaterialInitialStockMl ?? 0),
+          units: 0,
+          kind: 'current',
+        });
+      }
+
+      return {
+        product: {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          image: product.image,
+          presentation: product.presentation,
+        },
+        configuration: {
+          rawMaterialName: product.rawMaterialName,
+          initialStockMl: product.rawMaterialInitialStockMl,
+          consumptionPerBatchMl: product.rawMaterialConsumptionPerBatchMl,
+          batchYieldUnits: product.rawMaterialBatchYieldUnits,
+          criticalUnits: product.stockMin ?? 0,
+        },
+        analysis: {
+          model: 'exponential',
+          startDate: analysisStartDate.toISOString(),
+          endDate: analysisEndDate.toISOString(),
+          observedDays,
+          totalSalesUnits,
+          accumulatedConsumptionMl: 0,
+          averageDailyUnits,
+          projectedDailyUnits: 0,
+          projectedDailyConsumptionMl: 0,
+          exponentialRateK: 0,
+          growthRate: 0,
+          trend: 'stable',
+        },
+        forecast: {
+          status: 'not_configured',
+        },
+        chart: {
+          initialStockMl: product.rawMaterialInitialStockMl,
+          criticalLevelMl: undefined,
+          actualPoints: actualPointsBase,
+          projectedPoint: null,
+        },
+        missingFields,
+      };
+    }
+
+    const consumptionPerPieceMlRaw =
+      (product.rawMaterialConsumptionPerBatchMl ?? 0) /
+      (product.rawMaterialBatchYieldUnits ?? 1);
+    const consumptionPerPieceMl = this.round(consumptionPerPieceMlRaw, 4);
+    const accumulatedConsumptionMlRaw = totalSalesUnits * consumptionPerPieceMlRaw;
+    const accumulatedConsumptionMl = this.round(accumulatedConsumptionMlRaw);
+    const estimatedCurrentStockMlRaw = Math.max(
+      0,
+      (product.rawMaterialInitialStockMl ?? 0) - accumulatedConsumptionMlRaw,
+    );
+    const estimatedCurrentStockMl = this.round(estimatedCurrentStockMlRaw);
+    const criticalLevelMlRaw = (product.stockMin ?? 0) * consumptionPerPieceMlRaw;
+    const criticalLevelMl = this.round(criticalLevelMlRaw);
+    const trendMetrics = this.calculateTrendFromDailySales(dailySales);
+    const projectedDailyUnitsRaw = averageDailyUnitsRaw;
+    const projectedDailyUnits = this.round(projectedDailyUnitsRaw, 2);
+    const projectedDailyConsumptionMlRaw =
+      projectedDailyUnitsRaw * consumptionPerPieceMlRaw;
+    const projectedDailyConsumptionMl = this.round(
+      projectedDailyConsumptionMlRaw,
+      3,
+    );
+    const exponentialRateKRaw =
+      estimatedCurrentStockMlRaw > 0 && (product.rawMaterialInitialStockMl ?? 0) > 0
+        ? Math.log(
+            estimatedCurrentStockMlRaw / (product.rawMaterialInitialStockMl ?? 1),
+          ) / observedDays
+        : 0;
+    const exponentialRateK = this.round(exponentialRateKRaw, 6);
+    const remainingUntilCriticalMlRaw = Math.max(
+      0,
+      estimatedCurrentStockMlRaw - criticalLevelMlRaw,
+    );
+    const remainingUntilCriticalMl = this.round(remainingUntilCriticalMlRaw);
+    const totalEstimatedDaysToCriticalRaw =
+      exponentialRateKRaw < 0 &&
+      criticalLevelMlRaw > 0 &&
+      (product.rawMaterialInitialStockMl ?? 0) > criticalLevelMlRaw
+        ? Math.log(
+            criticalLevelMlRaw / (product.rawMaterialInitialStockMl ?? 1),
+          ) / exponentialRateKRaw
+        : null;
+    const estimatedDaysToCritical =
+      totalEstimatedDaysToCriticalRaw !== null
+        ? this.round(totalEstimatedDaysToCriticalRaw, 1)
+        : null;
+    const remainingDaysToCriticalRaw =
+      totalEstimatedDaysToCriticalRaw !== null
+        ? Math.max(0, totalEstimatedDaysToCriticalRaw - observedDays)
+        : null;
+    const remainingDaysToCritical =
+      remainingDaysToCriticalRaw !== null
+        ? this.round(remainingDaysToCriticalRaw, 1)
+        : null;
+    const estimatedCriticalDate =
+      totalEstimatedDaysToCriticalRaw !== null
+        ? this.addDays(
+            analysisStartDate,
+            totalEstimatedDaysToCriticalRaw,
+          ).toISOString()
+        : null;
+
+    let runningStockMl = this.round(product.rawMaterialInitialStockMl ?? 0);
+    const actualPoints: DepletionChartPointDto[] = [
+      {
+        date: analysisStartDate.toISOString(),
+        label: this.formatForecastDate(analysisStartDate),
+        stockMl: runningStockMl,
+        units: 0,
+        kind: 'actual',
+      },
+    ];
+
+    for (const point of dailySales) {
+      runningStockMl = this.round(
+        Math.max(0, runningStockMl - point.units * consumptionPerPieceMl),
+      );
+      actualPoints.push({
+        date: point.date.toISOString(),
+        label: this.formatForecastDate(point.date),
+        stockMl: runningStockMl,
+        units: point.units,
+        kind: 'actual',
+      });
+    }
+
+    if (actualPoints[actualPoints.length - 1]?.date !== analysisEndDate.toISOString()) {
+      actualPoints.push({
+        date: analysisEndDate.toISOString(),
+        label: this.formatForecastDate(analysisEndDate),
+        stockMl: estimatedCurrentStockMl,
+        units: 0,
+        kind: 'current',
+      });
+    }
+
+    const status = this.resolveForecastStatus({
+      missingFields,
+      totalSalesUnits,
+      estimatedCurrentStockMl,
+      criticalLevelMl,
+      remainingDaysToCritical,
+    });
+
+    return {
+      product: {
+        id: product.id,
+        name: product.name,
+        category: product.category,
+        image: product.image,
+        presentation: product.presentation,
+      },
+      configuration: {
+        rawMaterialName: product.rawMaterialName,
+        initialStockMl: this.round(product.rawMaterialInitialStockMl ?? 0),
+        consumptionPerBatchMl: this.round(
+          product.rawMaterialConsumptionPerBatchMl ?? 0,
+        ),
+        batchYieldUnits: product.rawMaterialBatchYieldUnits ?? 0,
+        criticalUnits: product.stockMin ?? 0,
+        consumptionPerPieceMl,
+      },
+      analysis: {
+        model: 'exponential',
+        startDate: analysisStartDate.toISOString(),
+        endDate: analysisEndDate.toISOString(),
+        observedDays,
+        totalSalesUnits,
+        accumulatedConsumptionMl,
+        averageDailyUnits,
+        projectedDailyUnits,
+        projectedDailyConsumptionMl,
+        exponentialRateK,
+        growthRate: this.round(trendMetrics.growthRate, 1),
+        trend: trendMetrics.trend,
+      },
+      forecast: {
+        estimatedCurrentStockMl,
+        criticalLevelMl,
+        remainingUntilCriticalMl,
+        estimatedDaysToCritical,
+        remainingDaysToCritical,
+        estimatedCriticalDate,
+        status,
+      },
+      chart: {
+        initialStockMl: this.round(product.rawMaterialInitialStockMl ?? 0),
+        criticalLevelMl,
+        actualPoints,
+        projectedPoint:
+          estimatedDaysToCritical !== null
+            ? {
+                date: estimatedCriticalDate ?? analysisEndDate.toISOString(),
+                label: estimatedCriticalDate
+                  ? this.formatForecastDate(new Date(estimatedCriticalDate))
+                  : this.formatForecastDate(analysisEndDate),
+                stockMl: criticalLevelMl,
+                units: 0,
+                kind: 'projection',
+              }
+            : null,
+      },
+      missingFields: [],
+    };
+  }
+
+  private getDepletionMissingFields(product: ProductDocument): string[] {
+    const missing: string[] = [];
+
+    if (!product.rawMaterialName?.trim()) {
+      missing.push('Materia prima principal');
+    }
+
+    if (
+      !Number.isFinite(product.rawMaterialInitialStockMl) ||
+      (product.rawMaterialInitialStockMl ?? 0) <= 0
+    ) {
+      missing.push('Stock inicial');
+    }
+
+    if (
+      !Number.isFinite(product.rawMaterialConsumptionPerBatchMl) ||
+      (product.rawMaterialConsumptionPerBatchMl ?? 0) <= 0
+    ) {
+      missing.push('Consumo por lote');
+    }
+
+    if (
+      !Number.isFinite(product.rawMaterialBatchYieldUnits) ||
+      (product.rawMaterialBatchYieldUnits ?? 0) <= 0
+    ) {
+      missing.push('Rendimiento por lote');
+    }
+
+    if (!Number.isFinite(product.stockMin) || (product.stockMin ?? 0) <= 0) {
+      missing.push('Nivel critico en piezas');
+    }
+
+    return missing;
+  }
+
+  private async getDailySalesTimeline(
+    productId: string,
+    dateRange?: DateRange,
+  ): Promise<DailySalesPoint[]> {
+    const periodRange =
+      dateRange !== undefined
+        ? { periodStart: { $gte: dateRange.start, $lte: dateRange.end } }
+        : {};
+    const aggregateTimeline = await this.salesAggregateModel
+      .find({
+        productId,
+        periodType: SalesPeriodType.DAILY,
+        isActive: true,
+        ...periodRange,
+      })
+      .sort({ periodStart: 1 })
+      .select('periodStart totalUnits totalRevenue totalOrders')
+      .exec();
+
+    if (aggregateTimeline.length > 0) {
+      return aggregateTimeline.map((item) => ({
+        date: item.periodStart,
+        units: item.totalUnits,
+        revenue: this.round(item.totalRevenue),
+        orders: item.totalOrders,
+      }));
+    }
+
+    const orders = await this.orderModel
+      .find({
+        status: OrderStatus.COMPLETED,
+        'items.productId': productId,
+        ...(dateRange
+          ? {
+              $or: [
+                {
+                  completedAt: { $gte: dateRange.start, $lte: dateRange.end },
+                },
+                {
+                  completedAt: null,
+                  createdAt: { $gte: dateRange.start, $lte: dateRange.end },
+                },
+              ],
+            }
+          : {}),
+      })
+      .sort({ completedAt: 1, createdAt: 1 })
+      .exec();
+
+    const grouped = this.groupProductOrdersByPeriod(
+      orders,
+      productId,
+      SalesPeriodType.DAILY,
+    );
+
+    return Array.from(grouped.values())
+      .sort(
+        (left, right) =>
+          left.periodStart.getTime() - right.periodStart.getTime(),
+      )
+      .map((item) => ({
+        date: item.periodStart,
+        units: item.units,
+        revenue: this.round(item.revenue),
+        orders: item.orderIds.size,
+      }));
+  }
+
+  private calculateTrendFromDailySales(dailySales: DailySalesPoint[]): {
+    growthRate: number;
+    deltaPerDay: number;
+    trend: ForecastTrend;
+  } {
+    if (dailySales.length === 0) {
+      return {
+        growthRate: 0,
+        deltaPerDay: 0,
+        trend: 'stable',
+      };
+    }
+
+    const totalDays = Math.max(
+      1,
+      this.diffDaysInclusive(
+        dailySales[0].date,
+        dailySales[dailySales.length - 1].date,
+      ),
+    );
+    const splitIndex = Math.max(1, Math.ceil(totalDays / 2));
+    const midpoint = this.addDays(dailySales[0].date, splitIndex - 1);
+
+    let previousUnits = 0;
+    let recentUnits = 0;
+
+    for (const item of dailySales) {
+      if (item.date.getTime() <= midpoint.getTime()) {
+        previousUnits += item.units;
+      } else {
+        recentUnits += item.units;
+      }
+    }
+
+    const previousDays = Math.max(1, splitIndex);
+    const recentDays = Math.max(1, totalDays - previousDays);
+    const previousPerDay = previousUnits / previousDays;
+    const recentPerDay =
+      totalDays === previousDays ? previousPerDay : recentUnits / recentDays;
+    const deltaPerDay = recentPerDay - previousPerDay;
+
+    let growthRate = 0;
+    if (previousPerDay > 0) {
+      growthRate = ((recentPerDay - previousPerDay) / previousPerDay) * 100;
+    } else if (recentPerDay > 0) {
+      growthRate = 100;
+    }
+
+    const trend: ForecastTrend =
+      deltaPerDay > 0.08 ? 'growth' : deltaPerDay < -0.08 ? 'decline' : 'stable';
+
+    return {
+      growthRate,
+      deltaPerDay,
+      trend,
+    };
+  }
+
+  private resolveForecastStatus(input: {
+    missingFields: string[];
+    totalSalesUnits: number;
+    estimatedCurrentStockMl: number;
+    criticalLevelMl: number;
+    remainingDaysToCritical: number | null;
+  }): ForecastStatus {
+    if (input.missingFields.length > 0) {
+      return 'not_configured';
+    }
+
+    if (input.totalSalesUnits <= 0) {
+      return 'no_sales';
+    }
+
+    if (input.estimatedCurrentStockMl <= input.criticalLevelMl) {
+      return 'critical';
+    }
+
+    if (
+      input.remainingDaysToCritical !== null &&
+      input.remainingDaysToCritical <= 45
+    ) {
+      return 'warning';
+    }
+
+    return 'ready';
   }
 
   private async getSalesHistoryFromAggregates(
@@ -405,7 +873,7 @@ export class SalesService {
           orderId,
         };
 
-        sale.units += item.quantity;
+        sale.units += this.getFulfilledItemUnits(item);
         sale.revenue += this.getItemRevenue(item);
         productSales.set(key, sale);
       }
@@ -524,7 +992,7 @@ export class SalesService {
       };
 
       for (const item of productItems) {
-        bucket.units += item.quantity;
+        bucket.units += this.getFulfilledItemUnits(item);
         bucket.revenue += this.getItemRevenue(item);
       }
       bucket.orderIds.add(order.id);
@@ -550,7 +1018,7 @@ export class SalesService {
           orderIds: new Set<string>(),
         };
 
-        product.totalSales += item.quantity;
+        product.totalSales += this.getFulfilledItemUnits(item);
         product.revenue += this.getItemRevenue(item);
         product.orderIds.add(order.id);
         productsById.set(item.productId, product);
@@ -581,7 +1049,7 @@ export class SalesService {
         total +
         order.items
           .filter((item) => item.productId === productId)
-          .reduce((sum, item) => sum + item.quantity, 0),
+          .reduce((sum, item) => sum + this.getFulfilledItemUnits(item), 0),
       0,
     );
   }
@@ -621,11 +1089,30 @@ export class SalesService {
   }
 
   private getItemRevenue(item: OrderItemSnapshot): number {
-    if (Number.isFinite(item.subtotal)) {
+    const fulfilledUnits = this.getFulfilledItemUnits(item);
+    if (fulfilledUnits <= 0) {
+      return 0;
+    }
+
+    if (
+      Number.isFinite(item.subtotal) &&
+      (!Number.isFinite(item.backorderQuantity) || item.backorderQuantity <= 0)
+    ) {
       return item.subtotal;
     }
 
-    return item.quantity * item.unitPrice;
+    return fulfilledUnits * item.unitPrice;
+  }
+
+  private getFulfilledItemUnits(item: OrderItemSnapshot): number {
+    const confirmedQuantity = Number.isFinite(item.quantity)
+      ? Math.max(0, item.quantity)
+      : 0;
+    const pendingBackorder = Number.isFinite(item.backorderQuantity)
+      ? Math.max(0, item.backorderQuantity)
+      : 0;
+
+    return Math.max(0, confirmedQuantity - pendingBackorder);
   }
 
   private getPeriodStart(date: Date, periodType: SalesPeriodType): Date {
@@ -785,6 +1272,70 @@ export class SalesService {
       default:
         return diffDays;
     }
+  }
+
+  private diffDaysInclusive(start: Date, end: Date): number {
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.max(1, Math.floor(diffTime / millisecondsPerDay) + 1);
+  }
+
+  private diffDaysElapsed(start: Date, end: Date): number {
+    const millisecondsPerDay = 1000 * 60 * 60 * 24;
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.max(1, Math.floor(diffTime / millisecondsPerDay));
+  }
+
+  private addDays(date: Date, days: number): Date {
+    return new Date(date.getTime() + days * 1000 * 60 * 60 * 24);
+  }
+
+  private buildForecastDateRange(
+    startDate?: string,
+    endDate?: string,
+  ): DateRange | undefined {
+    const start = startDate
+      ? this.parseForecastBoundaryDate(startDate, false)
+      : undefined;
+    const end = endDate ? this.parseForecastBoundaryDate(endDate, true) : undefined;
+
+    if (!start && !end) {
+      return undefined;
+    }
+
+    if (start && end && start.getTime() > end.getTime()) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser mayor a la fecha final.',
+      );
+    }
+
+    return {
+      start: start ?? this.parseForecastBoundaryDate(endDate!, false),
+      end: end ?? this.parseForecastBoundaryDate(startDate!, true),
+    };
+  }
+
+  private parseForecastBoundaryDate(value: string, endOfDay: boolean): Date {
+    const [yearRaw, monthRaw, dayRaw] = value.split('-');
+    const year = Number(yearRaw);
+    const month = Number(monthRaw);
+    const day = Number(dayRaw);
+
+    if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+      throw new BadRequestException('El rango de fechas no es valido.');
+    }
+
+    return endOfDay
+      ? new Date(year, month - 1, day, 23, 59, 59, 999)
+      : new Date(year, month - 1, day, 0, 0, 0, 0);
+  }
+
+  private formatForecastDate(date: Date): string {
+    return date.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   private round(value: number, decimals = 2): number {

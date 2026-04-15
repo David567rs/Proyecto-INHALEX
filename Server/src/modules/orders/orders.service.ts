@@ -32,6 +32,7 @@ import {
   OrderDocument,
   OrderIssueSeverity,
   OrderItemFulfillment,
+  OrderItemSnapshot,
 } from './schemas/order.schema';
 
 export interface DraftOrderIssue {
@@ -169,6 +170,12 @@ interface AppliedInventoryMutation {
   productId: string;
   productName: string;
   quantity: number;
+}
+
+interface CompletionPreparationResult {
+  items: OrderItemSnapshot[];
+  issues: DraftOrderIssue[];
+  newlyReservedMutations: AppliedInventoryMutation[];
 }
 
 @Injectable()
@@ -402,6 +409,7 @@ export class OrdersService {
   ): Promise<AdminOrderDetailResponse> {
     const order = await this.findOrderOrThrow(id);
     const targetStatus = updateOrderStatusDto.status;
+    const actorSnapshot = this.toOrderActorSnapshot(actor);
 
     this.assertOrderTransition(order.status, targetStatus);
 
@@ -410,12 +418,16 @@ export class OrdersService {
         return this.confirmReviewedOrder(
           order,
           updateOrderStatusDto.note,
-          actor,
+          actorSnapshot,
         );
       case OrderStatus.CANCELLED:
-        return this.cancelOrder(order, updateOrderStatusDto.note, actor);
+        return this.cancelOrder(order, updateOrderStatusDto.note, actorSnapshot);
       case OrderStatus.COMPLETED:
-        return this.completeOrder(order, updateOrderStatusDto.note, actor);
+        return this.completeOrder(
+          order,
+          updateOrderStatusDto.note,
+          actorSnapshot,
+        );
       default:
         throw new BadRequestException(
           'Este cambio de estado no esta permitido',
@@ -426,7 +438,7 @@ export class OrdersService {
   private async confirmReviewedOrder(
     order: OrderDocument,
     note: string | undefined,
-    actor: JwtPayload,
+    actor: OrderActorSnapshot,
   ): Promise<AdminOrderDetailResponse> {
     const updatedOrder = await this.orderModel
       .findOneAndUpdate(
@@ -463,15 +475,18 @@ export class OrdersService {
   private async cancelOrder(
     order: OrderDocument,
     note: string | undefined,
-    actor: JwtPayload,
+    actor: OrderActorSnapshot,
   ): Promise<AdminOrderDetailResponse> {
-    const releasableItems = order.items
-      .filter((item) => item.reservedQuantity > 0)
-      .map((item) => ({
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.reservedQuantity,
-      }));
+    const releasableItems =
+      order.status === OrderStatus.DRAFT
+        ? []
+        : order.items
+            .filter((item) => item.reservedQuantity > 0)
+            .map((item) => ({
+              productId: item.productId,
+              productName: item.productName,
+              quantity: item.reservedQuantity,
+            }));
 
     const releasedMutations: AppliedInventoryMutation[] = [];
 
@@ -542,9 +557,45 @@ export class OrdersService {
   private async completeOrder(
     order: OrderDocument,
     note: string | undefined,
-    actor: JwtPayload,
+    actor: OrderActorSnapshot,
   ): Promise<AdminOrderDetailResponse> {
-    const committedMutations = order.items
+    const prepared = await this.prepareOrderForCompletion(order, actor);
+    let workingOrder = order;
+
+    if (prepared.newlyReservedMutations.length > 0) {
+      const reconciledOrder = await this.orderModel
+        .findOneAndUpdate(
+          { _id: order._id, status: order.status },
+          {
+            $set: {
+              items: prepared.items,
+              issues: prepared.issues,
+              lastValidatedAt: new Date(),
+              needsManualReview: false,
+            },
+          },
+          {
+            returnDocument: 'after',
+            runValidators: true,
+          },
+        )
+        .exec();
+
+      if (!reconciledOrder) {
+        await this.rollbackReservedInventory(
+          prepared.newlyReservedMutations,
+          order.reference,
+          actor,
+        );
+        throw new ConflictException(
+          'El pedido cambio mientras preparabamos el inventario para completarlo. Recarga la lista e intenta de nuevo.',
+        );
+      }
+
+      workingOrder = reconciledOrder;
+    }
+
+    const committedMutations = workingOrder.items
       .filter((item) => item.reservedQuantity > 0)
       .map((item) => ({
         productId: item.productId,
@@ -571,11 +622,13 @@ export class OrdersService {
 
       const updatedOrder = await this.orderModel
         .findOneAndUpdate(
-          { _id: order._id, status: order.status },
+          { _id: workingOrder._id, status: workingOrder.status },
           {
             $set: {
               status: OrderStatus.COMPLETED,
               completedAt: new Date(),
+              needsManualReview: false,
+              lastValidatedAt: new Date(),
             },
             $push: {
               statusNotes: this.buildStatusNote(
@@ -595,7 +648,7 @@ export class OrdersService {
       if (!updatedOrder) {
         await this.restoreCommittedInventory(
           completedMutations,
-          order.reference,
+          workingOrder.reference,
           actor,
         );
         throw new ConflictException(
@@ -610,7 +663,7 @@ export class OrdersService {
       if (completedMutations.length > 0) {
         await this.restoreCommittedInventory(
           completedMutations,
-          order.reference,
+          workingOrder.reference,
           actor,
         );
       }
@@ -1057,7 +1110,15 @@ export class OrdersService {
     item: OrderPreviewItem,
     orderReference: string,
     actor: OrderActorSnapshot,
-  ): Promise<void> {
+    options?: {
+      orderId?: string;
+      note?: string;
+      conflictMessage?: string;
+    },
+  ): Promise<{
+    nextAvailable: number;
+    nextReserved: number;
+  }> {
     const updatedProduct = await this.productModel
       .findOneAndUpdate(
         {
@@ -1104,7 +1165,8 @@ export class OrdersService {
 
     if (!updatedProduct) {
       throw new ConflictException(
-        `El inventario de ${item.productName} cambio mientras confirmabas tu pedido. Actualizamos la bolsa para que revises la disponibilidad actual.`,
+        options?.conflictMessage ??
+          `El inventario de ${item.productName} cambio mientras confirmabas tu pedido. Actualizamos la bolsa para que revises la disponibilidad actual.`,
       );
     }
 
@@ -1120,11 +1182,18 @@ export class OrdersService {
       nextAvailable,
       previousReserved: Math.max(0, nextReserved - item.reservedQuantity),
       nextReserved,
-      note: `Reserva automatica por el pedido ${orderReference}.`,
+      note:
+        options?.note ?? `Reserva automatica por el pedido ${orderReference}.`,
+      orderId: options?.orderId,
       orderReference,
       actorId: actor.userId,
       actorEmail: actor.email,
     });
+
+    return {
+      nextAvailable,
+      nextReserved,
+    };
   }
 
   private async rollbackReservedInventory(
@@ -1154,7 +1223,7 @@ export class OrdersService {
   private async reReserveReleasedInventory(
     releasedMutations: AppliedInventoryMutation[],
     orderReference: string,
-    actor: JwtPayload,
+    actor: OrderActorSnapshot,
   ): Promise<void> {
     for (const item of [...releasedMutations].reverse()) {
       try {
@@ -1177,7 +1246,7 @@ export class OrdersService {
   private async restoreCommittedInventory(
     committedMutations: AppliedInventoryMutation[],
     orderReference: string,
-    actor: JwtPayload,
+    actor: OrderActorSnapshot,
   ): Promise<void> {
     for (const item of [...committedMutations].reverse()) {
       try {
@@ -1395,5 +1464,167 @@ export class OrdersService {
       actorId: options.actor.userId,
       actorEmail: options.actor.email,
     });
+  }
+
+  private async prepareOrderForCompletion(
+    order: OrderDocument,
+    actor: OrderActorSnapshot,
+  ): Promise<CompletionPreparationResult> {
+    const items = order.items.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      productSlug: item.productSlug,
+      image: item.image,
+      category: item.category,
+      presentation: item.presentation,
+      origin: item.origin,
+      unitPrice: item.unitPrice,
+      currency: item.currency,
+      requestedQuantity: item.requestedQuantity,
+      quantity: item.quantity,
+      subtotal: item.subtotal,
+      fulfillment: item.fulfillment,
+      stockAvailable: item.stockAvailable,
+      reservedQuantity: item.reservedQuantity,
+      backorderQuantity: item.backorderQuantity,
+      inventoryTracked: item.inventoryTracked,
+      allowBackorder: item.allowBackorder,
+      message: item.message,
+    }));
+    const newlyReservedMutations: AppliedInventoryMutation[] = [];
+    const resolvedProductIds = new Set<string>();
+
+    try {
+      for (const [index, item] of items.entries()) {
+        const missingQuantity = Math.max(
+          0,
+          item.quantity - item.reservedQuantity,
+        );
+        if (missingQuantity <= 0) {
+          continue;
+        }
+
+        const product = await this.productModel
+          .findById(item.productId)
+          .select('name status stockAvailable allowBackorder inStock')
+          .exec();
+
+        if (!product || product.status !== ProductStatus.ACTIVE) {
+          throw new ConflictException(
+            `${item.productName} ya no esta activo en el catalogo. No puedes completar este pedido hasta revisarlo.`,
+          );
+        }
+
+        const inventory = this.readAvailability(product);
+
+        if (!inventory.tracked) {
+          throw new ConflictException(
+            `${item.productName} aun no tiene inventario inicializado. Carga existencias o ajusta el pedido antes de marcarlo como completado.`,
+          );
+        }
+
+        if (inventory.available < missingQuantity) {
+          throw new ConflictException(
+            `${item.productName} solo tiene ${inventory.available} piezas libres y faltan ${missingQuantity} para completar el pedido.`,
+          );
+        }
+
+        const reservation = await this.reserveInventoryForItem(
+          {
+            ...item,
+            reservedQuantity: missingQuantity,
+          },
+          order.reference,
+          actor,
+          {
+            orderId: order.id,
+            note: `Reserva complementaria para completar el pedido ${order.reference}.`,
+            conflictMessage: `El inventario de ${item.productName} cambio mientras preparabamos este pedido para completarlo. Recarga el detalle y vuelve a intentarlo.`,
+          },
+        );
+
+        newlyReservedMutations.push({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: missingQuantity,
+        });
+        resolvedProductIds.add(item.productId);
+
+        items[index] = {
+          ...item,
+          stockAvailable: reservation.nextAvailable,
+          reservedQuantity: item.reservedQuantity + missingQuantity,
+          backorderQuantity: 0,
+          inventoryTracked: true,
+          fulfillment:
+            item.fulfillment === OrderItemFulfillment.ADJUSTED
+              ? OrderItemFulfillment.ADJUSTED
+              : OrderItemFulfillment.AVAILABLE,
+          message:
+            item.fulfillment === OrderItemFulfillment.ADJUSTED
+              ? item.message
+              : undefined,
+        };
+      }
+    } catch (error) {
+      if (newlyReservedMutations.length > 0) {
+        await this.rollbackReservedInventory(
+          newlyReservedMutations,
+          order.reference,
+          actor,
+        );
+      }
+      throw error;
+    }
+
+    const issues = order.issues
+      .filter(
+        (issue) =>
+          !(
+            issue.productId &&
+            resolvedProductIds.has(issue.productId) &&
+            ['manual_inventory_review', 'backorder_only', 'partial_backorder'].includes(
+              issue.code,
+            )
+          ),
+      )
+      .map((issue) => ({
+        code: issue.code,
+        severity: issue.severity,
+        productId: issue.productId,
+        productName: issue.productName,
+        title: issue.title,
+        description: issue.description,
+      }));
+
+    return {
+      items,
+      issues,
+      newlyReservedMutations,
+    };
+  }
+
+  private toOrderActorSnapshot(
+    actor?: JwtPayload | OrderActorSnapshot | null,
+  ): OrderActorSnapshot {
+    if (!actor) {
+      return {};
+    }
+
+    if ('sub' in actor) {
+      return {
+        userId: actor.sub,
+        email: actor.email,
+      };
+    }
+
+    if ('userId' in actor || 'email' in actor) {
+      return {
+        userId: actor.userId,
+        email: actor.email,
+      };
+    }
+
+    return {};
   }
 }

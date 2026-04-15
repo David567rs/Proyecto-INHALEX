@@ -7,6 +7,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { Order, OrderDocument } from '../orders/schemas/order.schema';
+import { OrderStatus } from '../orders/enums/order-status.enum';
 import { AdjustProductInventoryDto } from './dto/adjust-product-inventory.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductCategoryDto } from './dto/create-product-category.dto';
@@ -117,6 +119,8 @@ interface InventorySnapshot {
 @Injectable()
 export class ProductsService {
   constructor(
+    @InjectModel(Order.name)
+    private readonly orderModel: Model<OrderDocument>,
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
     @InjectModel(ProductCategoryEntity.name)
@@ -136,8 +140,22 @@ export class ProductsService {
       slug,
       category: categorySlug,
       currency: (createProductDto.currency ?? 'MXN').toUpperCase(),
+      rawMaterialName: createProductDto.rawMaterialName?.trim() || undefined,
+      rawMaterialInitialStockMl: createProductDto.rawMaterialInitialStockMl,
+      rawMaterialConsumptionPerBatchMl:
+        createProductDto.rawMaterialConsumptionPerBatchMl,
+      rawMaterialBatchYieldUnits: createProductDto.rawMaterialBatchYieldUnits,
       benefits: this.normalizeStringArray(createProductDto.benefits),
       aromas: this.normalizeStringArray(createProductDto.aromas),
+    });
+
+    this.assertDepletionConfig({
+      rawMaterialName: product.rawMaterialName,
+      rawMaterialInitialStockMl: product.rawMaterialInitialStockMl,
+      rawMaterialConsumptionPerBatchMl:
+        product.rawMaterialConsumptionPerBatchMl,
+      rawMaterialBatchYieldUnits: product.rawMaterialBatchYieldUnits,
+      stockMin: product.stockMin,
     });
 
     try {
@@ -748,12 +766,17 @@ export class ProductsService {
 
     const nextSlug = updateProductDto.slug
       ? this.buildSlug(updateProductDto.slug)
-      : updateProductDto.name
-        ? this.buildSlug(updateProductDto.name)
-        : existingProduct.slug;
+      : existingProduct.slug;
 
     if (nextSlug !== existingProduct.slug) {
       await this.ensureUniqueSlug(nextSlug, existingProduct.id);
+    }
+
+    if (
+      updateProductDto.status === ProductStatus.ARCHIVED &&
+      existingProduct.status !== ProductStatus.ARCHIVED
+    ) {
+      await this.assertProductCanBeArchived(existingProduct);
     }
 
     const updatePayload: UpdateProductDto & {
@@ -766,6 +789,50 @@ export class ProductsService {
 
     if (updateProductDto.currency) {
       updatePayload.currency = updateProductDto.currency.toUpperCase();
+    }
+
+    if (updateProductDto.name !== undefined) {
+      updatePayload.name = updateProductDto.name.trim();
+    }
+
+    if (updateProductDto.description !== undefined) {
+      updatePayload.description = updateProductDto.description.trim();
+    }
+
+    if (updateProductDto.longDescription !== undefined) {
+      updatePayload.longDescription = updateProductDto.longDescription.trim();
+    }
+
+    if (updateProductDto.image !== undefined) {
+      updatePayload.image = updateProductDto.image.trim();
+    }
+
+    if (updateProductDto.presentation !== undefined) {
+      updatePayload.presentation = updateProductDto.presentation.trim();
+    }
+
+    if (updateProductDto.origin !== undefined) {
+      updatePayload.origin = updateProductDto.origin.trim();
+    }
+
+    if (updateProductDto.rawMaterialName !== undefined) {
+      updatePayload.rawMaterialName =
+        updateProductDto.rawMaterialName.trim() || undefined;
+    }
+
+    if (updateProductDto.rawMaterialInitialStockMl !== undefined) {
+      updatePayload.rawMaterialInitialStockMl =
+        updateProductDto.rawMaterialInitialStockMl;
+    }
+
+    if (updateProductDto.rawMaterialConsumptionPerBatchMl !== undefined) {
+      updatePayload.rawMaterialConsumptionPerBatchMl =
+        updateProductDto.rawMaterialConsumptionPerBatchMl;
+    }
+
+    if (updateProductDto.rawMaterialBatchYieldUnits !== undefined) {
+      updatePayload.rawMaterialBatchYieldUnits =
+        updateProductDto.rawMaterialBatchYieldUnits;
     }
 
     if (updateProductDto.benefits !== undefined) {
@@ -787,6 +854,21 @@ export class ProductsService {
     if (this.hasTrackedInventory(existingProduct)) {
       delete updatePayload.inStock;
     }
+
+    this.assertDepletionConfig({
+      rawMaterialName:
+        updatePayload.rawMaterialName ?? existingProduct.rawMaterialName,
+      rawMaterialInitialStockMl:
+        updatePayload.rawMaterialInitialStockMl ??
+        existingProduct.rawMaterialInitialStockMl,
+      rawMaterialConsumptionPerBatchMl:
+        updatePayload.rawMaterialConsumptionPerBatchMl ??
+        existingProduct.rawMaterialConsumptionPerBatchMl,
+      rawMaterialBatchYieldUnits:
+        updatePayload.rawMaterialBatchYieldUnits ??
+        existingProduct.rawMaterialBatchYieldUnits,
+      stockMin: updatePayload.stockMin ?? existingProduct.stockMin,
+    });
 
     const updatedProduct = await this.productModel
       .findByIdAndUpdate(productId, updatePayload, {
@@ -816,6 +898,11 @@ export class ProductsService {
         slug,
         category: this.buildSlug(seedProduct.category),
         currency: (seedProduct.currency ?? 'MXN').toUpperCase(),
+        rawMaterialName: seedProduct.rawMaterialName?.trim() || undefined,
+        rawMaterialInitialStockMl: seedProduct.rawMaterialInitialStockMl,
+        rawMaterialConsumptionPerBatchMl:
+          seedProduct.rawMaterialConsumptionPerBatchMl,
+        rawMaterialBatchYieldUnits: seedProduct.rawMaterialBatchYieldUnits,
         benefits: this.normalizeStringArray(seedProduct.benefits),
         aromas: this.normalizeStringArray(seedProduct.aromas),
         inStock: stockAvailable > 0,
@@ -824,6 +911,15 @@ export class ProductsService {
         stockMin: seedProduct.stockMin ?? 6,
         allowBackorder: seedProduct.allowBackorder ?? false,
       };
+
+      this.assertDepletionConfig({
+        rawMaterialName: payload.rawMaterialName,
+        rawMaterialInitialStockMl: payload.rawMaterialInitialStockMl,
+        rawMaterialConsumptionPerBatchMl:
+          payload.rawMaterialConsumptionPerBatchMl,
+        rawMaterialBatchYieldUnits: payload.rawMaterialBatchYieldUnits,
+        stockMin: payload.stockMin,
+      });
 
       const existing = await this.productModel
         .findOne({ slug })
@@ -978,6 +1074,36 @@ export class ProductsService {
     }
 
     throw new ConflictException('Category slug already exists');
+  }
+
+  private async assertProductCanBeArchived(
+    product: Pick<ProductDocument, 'id' | 'name' | 'stockReserved'>,
+  ): Promise<void> {
+    const reservedUnits =
+      typeof product.stockReserved === 'number'
+        ? Math.max(0, product.stockReserved)
+        : 0;
+
+    if (reservedUnits > 0) {
+      throw new BadRequestException(
+        `${product.name} tiene ${reservedUnits} unidades reservadas. Libera o completa esos pedidos antes de archivarlo.`,
+      );
+    }
+
+    const hasOpenOrders = await this.orderModel
+      .exists({
+        status: {
+          $in: [OrderStatus.PENDING_REVIEW, OrderStatus.CONFIRMED],
+        },
+        'items.productId': product.id,
+      })
+      .exec();
+
+    if (hasOpenOrders) {
+      throw new BadRequestException(
+        `${product.name} aun aparece en pedidos abiertos. Cierra o cancela esos pedidos antes de archivarlo.`,
+      );
+    }
   }
 
   private mapAdminCategory(
@@ -1192,6 +1318,61 @@ export class ProductsService {
       return false;
     }
     throw new BadRequestException('Disponibilidad invalida');
+  }
+
+  private assertDepletionConfig(config: {
+    rawMaterialName?: string;
+    rawMaterialInitialStockMl?: number;
+    rawMaterialConsumptionPerBatchMl?: number;
+    rawMaterialBatchYieldUnits?: number;
+    stockMin?: number;
+  }): void {
+    const hasAnyRawMaterialField =
+      Boolean(config.rawMaterialName?.trim()) ||
+      typeof config.rawMaterialInitialStockMl === 'number' ||
+      typeof config.rawMaterialConsumptionPerBatchMl === 'number' ||
+      typeof config.rawMaterialBatchYieldUnits === 'number';
+
+    if (!hasAnyRawMaterialField) {
+      return;
+    }
+
+    const missing: string[] = [];
+
+    if (!config.rawMaterialName?.trim()) {
+      missing.push('materia prima principal');
+    }
+
+    if (
+      !Number.isFinite(config.rawMaterialInitialStockMl) ||
+      (config.rawMaterialInitialStockMl ?? 0) <= 0
+    ) {
+      missing.push('stock inicial de materia prima');
+    }
+
+    if (
+      !Number.isFinite(config.rawMaterialConsumptionPerBatchMl) ||
+      (config.rawMaterialConsumptionPerBatchMl ?? 0) <= 0
+    ) {
+      missing.push('consumo por lote');
+    }
+
+    if (
+      !Number.isFinite(config.rawMaterialBatchYieldUnits) ||
+      (config.rawMaterialBatchYieldUnits ?? 0) <= 0
+    ) {
+      missing.push('rendimiento por lote');
+    }
+
+    if (!Number.isFinite(config.stockMin) || (config.stockMin ?? 0) <= 0) {
+      missing.push('stock minimo');
+    }
+
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `Completa la configuracion de agotamiento: ${missing.join(', ')}`,
+      );
+    }
   }
 
   private readInventorySnapshot(product: ProductDocument): InventorySnapshot {
