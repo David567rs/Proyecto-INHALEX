@@ -14,6 +14,11 @@ import {
   resolveProductDisplayImage,
   resolveProductImagePosition,
 } from "@/lib/products/product-images"
+import {
+  getProductDisplayPrice,
+  getProductOfferLabel,
+  hasActiveProductOffer,
+} from "@/lib/products/promotions"
 import { cn } from "@/lib/utils"
 import type { Product } from "@/lib/types/product"
 
@@ -56,6 +61,8 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
 
   if (!product) return null
   const isUnavailable = !product.inStock && !product.allowBackorder
+  const hasOffer = hasActiveProductOffer(product)
+  const displayPrice = getProductDisplayPrice(product)
   const maxQuantity = product.allowBackorder
     ? 10
     : Math.max(1, Math.min(product.stockAvailable ?? 10, 10))
@@ -151,7 +158,9 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
                   )}
                 >
                   <span className="rounded-full bg-primary px-4 py-2 text-[0.66rem] font-semibold uppercase tracking-[0.14em] text-primary-foreground shadow-[0_20px_44px_-26px_rgba(16,112,58,0.42)]">
-                    {getCategoryLabel(product.category)}
+                    {hasOffer
+                      ? getProductOfferLabel(product)
+                      : getCategoryLabel(product.category)}
                   </span>
                   <span className="rounded-full border border-white/80 bg-white/92 px-3 py-1.5 text-[0.75rem] font-medium text-neutral-600 shadow-[0_18px_36px_-24px_rgba(0,0,0,0.18)] backdrop-blur-sm">
                     {product.presentation}
@@ -269,10 +278,20 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
               >
                 <div className="flex items-end gap-3">
                   <span className="text-4xl font-bold tracking-tight text-neutral-900 md:text-5xl">
-                    {formatPrice(product.price)}
+                    {formatPrice(displayPrice)}
                   </span>
                   <span className="pb-2 text-sm font-medium text-neutral-400">{product.currency}</span>
                 </div>
+                {hasOffer ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-neutral-400 line-through">
+                      {formatPrice(product.price)}
+                    </span>
+                    <span className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                      Oferta activa
+                    </span>
+                  </div>
+                ) : null}
               </div>
 
               <div className="flex-1 min-h-4" />

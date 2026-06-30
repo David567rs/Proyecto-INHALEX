@@ -19,6 +19,10 @@ pnpm-debug.log*
 
 # Respaldos locales
 Server/backups/
+mongo-migration/
+
+# Logs locales del servidor
+Server/server-start*.txt
 
 # SO / editor
 .DS_Store

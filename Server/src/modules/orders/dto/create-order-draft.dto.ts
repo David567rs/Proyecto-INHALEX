@@ -4,6 +4,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsEmail,
+  IsMongoId,
   IsOptional,
   IsString,
   Length,
@@ -42,4 +43,8 @@ export class CreateOrderDraftDto {
   @IsString()
   @Length(0, 600)
   notes?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  shippingAddressId?: string;
 }

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { UserDocument, User } from './schemas/user.schema';
+import { Model, Types } from 'mongoose';
+import {
+  ShippingAddressResponse,
+  UserDocument,
+  User,
+} from './schemas/user.schema';
 import { UserRole } from './enums/user-role.enum';
 import { UserStatus } from './enums/user-status.enum';
 
@@ -109,5 +113,42 @@ export class UsersService {
         },
       )
       .exec();
+  }
+
+  async findShippingAddressById(
+    userId: string,
+    addressId: string,
+  ): Promise<ShippingAddressResponse | null> {
+    if (!Types.ObjectId.isValid(addressId)) {
+      return null;
+    }
+
+    const user = await this.userModel
+      .findById(userId)
+      .select('+shippingAddresses')
+      .exec();
+    const address = user?.shippingAddresses?.find(
+      (candidate) => candidate._id.toString() === addressId,
+    );
+
+    if (!address) {
+      return null;
+    }
+
+    return {
+      id: address._id.toString(),
+      label: address.label,
+      recipientName: address.recipientName,
+      phone: address.phone,
+      street: address.street,
+      exteriorNumber: address.exteriorNumber,
+      interiorNumber: address.interiorNumber,
+      neighborhood: address.neighborhood,
+      municipality: address.municipality,
+      state: address.state,
+      postalCode: address.postalCode,
+      references: address.references,
+      isDefault: address.isDefault,
+    };
   }
 }

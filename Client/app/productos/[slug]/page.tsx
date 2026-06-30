@@ -7,10 +7,16 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { ProductDetailPurchase } from "@/components/products/product-detail-purchase"
+import { ProductReviewsPanel } from "@/components/products/product-reviews-panel"
 import {
   resolveProductDisplayImage,
   resolveProductImagePosition,
 } from "@/lib/products/product-images"
+import {
+  getProductDisplayPrice,
+  getProductOfferLabel,
+  hasActiveProductOffer,
+} from "@/lib/products/promotions"
 import { fetchProductBySlugServer } from "@/lib/products/products-server"
 import type { Product } from "@/lib/types/product"
 
@@ -78,10 +84,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     notFound()
   }
 
-  const formattedPrice = new Intl.NumberFormat("es-MX", {
+  const hasOffer = hasActiveProductOffer(product)
+  const displayPrice = getProductDisplayPrice(product)
+  const priceFormatter = new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: product.currency || "MXN",
-  }).format(product.price)
+  })
+  const formattedPrice = priceFormatter.format(displayPrice)
+  const formattedBasePrice = priceFormatter.format(product.price)
   const displayImage = resolveProductDisplayImage(product)
   const imagePosition = resolveProductImagePosition(product)
 
@@ -130,6 +140,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 <span className="rounded-full border border-primary/10 bg-primary/8 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-primary">
                   Producto INHALEX
                 </span>
+                {hasOffer ? (
+                  <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                    {getProductOfferLabel(product)}
+                  </span>
+                ) : null}
                 {product.inStock ? (
                   <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[0.76rem] font-medium text-emerald-700">
                     Disponible
@@ -160,7 +175,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {product.rating} - {product.reviews ?? 0} resenas
+                    {product.rating} - {product.reviews ?? 0} reseñas
                   </span>
                 </div>
               )}
@@ -198,6 +213,16 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/75">
                   Precio unitario
                 </p>
+                {hasOffer ? (
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground line-through">
+                      {formattedBasePrice}
+                    </span>
+                    <span className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                      Oferta activa
+                    </span>
+                  </div>
+                ) : null}
                 <div className="flex items-end gap-2">
                   <span className="text-4xl font-bold leading-none text-foreground">{formattedPrice}</span>
                   <span className="pb-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -218,6 +243,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 </Button>
               </div>
             </div>
+          </div>
+
+          <div className="mx-auto max-w-[1060px]">
+            <ProductReviewsPanel productId={product.id} />
           </div>
         </section>
       </main>

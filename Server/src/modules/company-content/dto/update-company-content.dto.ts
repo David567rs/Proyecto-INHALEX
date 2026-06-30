@@ -45,6 +45,18 @@ export class UpdateAboutCompanyDto {
   values?: string[];
 }
 
+export class UpdateCompanyFaqItemDto {
+  @IsString()
+  @MinLength(5)
+  @MaxLength(240)
+  question: string;
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(2000)
+  answer: string;
+}
+
 export class UpdateCompanyContentDto {
   @IsOptional()
   @ValidateNested()
@@ -60,4 +72,11 @@ export class UpdateCompanyContentDto {
   @ValidateNested()
   @Type(() => UpdateAboutCompanyDto)
   about?: UpdateAboutCompanyDto;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @ValidateNested({ each: true })
+  @Type(() => UpdateCompanyFaqItemDto)
+  faqs?: UpdateCompanyFaqItemDto[];
 }

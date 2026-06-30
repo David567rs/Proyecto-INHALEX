@@ -906,6 +906,34 @@ export function AdminOrdersSection() {
                       <p className="mt-2">{selectedOrder.customerNotes}</p>
                     </div>
                   ) : null}
+
+                  {selectedOrder.shippingAddress ? (
+                    <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.05] px-4 py-3 text-sm leading-6 text-foreground">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Direccion de envio
+                      </p>
+                      <p className="mt-2 font-medium">
+                        {selectedOrder.shippingAddress.recipientName} ·{" "}
+                        {selectedOrder.shippingAddress.phone}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        {selectedOrder.shippingAddress.street}{" "}
+                        {selectedOrder.shippingAddress.exteriorNumber}
+                        {selectedOrder.shippingAddress.interiorNumber
+                          ? `, int. ${selectedOrder.shippingAddress.interiorNumber}`
+                          : ""}
+                        , {selectedOrder.shippingAddress.neighborhood},{" "}
+                        {selectedOrder.shippingAddress.municipality},{" "}
+                        {selectedOrder.shippingAddress.state}, C.P.{" "}
+                        {selectedOrder.shippingAddress.postalCode}
+                      </p>
+                      {selectedOrder.shippingAddress.references ? (
+                        <p className="mt-1 text-muted-foreground">
+                          Referencias: {selectedOrder.shippingAddress.references}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="admin-section-card p-4">

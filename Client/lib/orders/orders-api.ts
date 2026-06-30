@@ -61,6 +61,7 @@ export interface CreateDraftOrderInput {
   customerEmail: string
   customerPhone: string
   notes?: string
+  shippingAddressId?: string
 }
 
 export interface CreatedDraftOrder extends DraftOrderPreview {
@@ -101,11 +102,15 @@ export function createDraftOrder(
 
 export function confirmOrder(
   payload: ConfirmOrderInput,
+  idempotencyKey: string,
   token?: string,
 ): Promise<ConfirmedOrder> {
   return apiRequest<ConfirmedOrder>("/orders/confirm", {
     method: "POST",
     body: payload,
     token,
+    headers: {
+      "Idempotency-Key": idempotencyKey,
+    },
   })
 }

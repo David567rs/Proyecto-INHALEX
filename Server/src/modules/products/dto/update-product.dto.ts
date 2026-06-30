@@ -1,6 +1,7 @@
 import {
   IsArray,
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNumber,
@@ -44,6 +45,31 @@ export class UpdateProductDto {
   @Min(0)
   @Max(1000000)
   price?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  promoActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  promoLabel?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  promoDescription?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1000000)
+  promoPrice?: number;
+
+  @IsOptional()
+  @IsDateString()
+  promoEndsAt?: string;
 
   @IsOptional()
   @IsString()

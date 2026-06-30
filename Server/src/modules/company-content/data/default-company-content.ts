@@ -21,4 +21,36 @@ export const DEFAULT_COMPANY_CONTENT = {
       'Confianza y credibilidad',
     ],
   },
+  faqs: [
+    {
+      question: 'Como elijo la linea adecuada?',
+      answer:
+        'Puedes empezar por la seccion de lineas. Cada una agrupa aromas con una intencion mas clara, por ejemplo descanso, frescura botanica o alivio respiratorio.',
+    },
+    {
+      question: 'Las imagenes del catalogo corresponden a aromas reales?',
+      answer:
+        'Si. En las vistas publicas organizamos cada aroma con su imagen de referencia para que la navegacion sea mas clara y consistente dentro del catalogo.',
+    },
+    {
+      question: 'Los productos sustituyen atencion medica?',
+      answer:
+        'No. INHALEX se presenta como una experiencia de bienestar y acompanamiento aromatico. Si tienes una condicion medica, lo adecuado es buscar orientacion profesional.',
+    },
+    {
+      question: 'Donde veo politicas de privacidad y terminos?',
+      answer:
+        'En el footer y en el bloque de ayuda tienes acceso directo a Politicas y Terminos para consultar privacidad, uso del sitio y condiciones generales.',
+    },
+    {
+      question: 'Puedo contactar a alguien antes de comprar?',
+      answer:
+        'Si. Existe una pagina de Contacto para escribir por correo o llamar, ideal si quieres orientacion antes de elegir una linea o aroma.',
+    },
+    {
+      question: 'Que pasa si no encuentro la respuesta aqui?',
+      answer:
+        'Puedes escribirnos directamente a nuestro correo de contacto y atenderemos tu consulta con la mayor claridad posible.',
+    },
+  ],
 } as const;

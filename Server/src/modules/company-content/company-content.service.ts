@@ -2,7 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DEFAULT_COMPANY_CONTENT } from './data/default-company-content';
-import { UpdateCompanyContentDto } from './dto/update-company-content.dto';
+import {
+  UpdateCompanyContentDto,
+  UpdateCompanyFaqItemDto,
+} from './dto/update-company-content.dto';
 import {
   CompanyContent,
   CompanyContentDocument,
@@ -24,6 +27,10 @@ export interface CompanyContentResponse {
     vision: string;
     values: string[];
   };
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -87,6 +94,10 @@ export class CompanyContentService {
       }
     }
 
+    if (payload.faqs !== undefined) {
+      updatePayload.faqs = this.normalizeFaqs(payload.faqs);
+    }
+
     if (Object.keys(updatePayload).length === 0) {
       throw new BadRequestException('At least one field must be updated');
     }
@@ -134,6 +145,21 @@ export class CompanyContentService {
     ];
   }
 
+  private normalizeFaqs(faqs: UpdateCompanyFaqItemDto[]) {
+    const normalizedFaqs = faqs.map((faq) => ({
+      question: faq.question.trim(),
+      answer: faq.answer.trim(),
+    }));
+
+    return normalizedFaqs.filter(
+      (faq, index) =>
+        normalizedFaqs.findIndex(
+          (currentFaq) =>
+            currentFaq.question.toLowerCase() === faq.question.toLowerCase(),
+        ) === index,
+    );
+  }
+
   private toResponse(document: CompanyContentDocument): CompanyContentResponse {
     return {
       privacyPolicy: {
@@ -149,6 +175,10 @@ export class CompanyContentService {
         vision: document.about?.vision ?? '',
         values: document.about?.values ?? [],
       },
+      faqs: (document.faqs ?? DEFAULT_COMPANY_CONTENT.faqs).map((faq) => ({
+        question: faq.question,
+        answer: faq.answer,
+      })),
       createdAt: document.createdAt?.toISOString(),
       updatedAt: document.updatedAt?.toISOString(),
     };

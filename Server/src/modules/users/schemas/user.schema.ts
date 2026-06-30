@@ -1,9 +1,68 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import { UserRole } from '../enums/user-role.enum';
 import { UserStatus } from '../enums/user-status.enum';
 
 export type UserDocument = HydratedDocument<User>;
+
+@Schema({ _id: true, versionKey: false })
+export class ShippingAddress {
+  _id: Types.ObjectId;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 40 })
+  label: string;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 120 })
+  recipientName: string;
+
+  @Prop({ required: true, trim: true, match: /^\d{10,15}$/ })
+  phone: string;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 120 })
+  street: string;
+
+  @Prop({ required: true, trim: true, minlength: 1, maxlength: 20 })
+  exteriorNumber: string;
+
+  @Prop({ trim: true, maxlength: 20 })
+  interiorNumber?: string;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 100 })
+  neighborhood: string;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 100 })
+  municipality: string;
+
+  @Prop({ required: true, trim: true, minlength: 2, maxlength: 100 })
+  state: string;
+
+  @Prop({ required: true, trim: true, match: /^\d{5}$/ })
+  postalCode: string;
+
+  @Prop({ trim: true, maxlength: 300 })
+  references?: string;
+
+  @Prop({ required: true, default: false })
+  isDefault: boolean;
+}
+
+export const ShippingAddressSchema = SchemaFactory.createForClass(ShippingAddress);
+
+export interface ShippingAddressResponse {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  street: string;
+  exteriorNumber: string;
+  interiorNumber?: string;
+  neighborhood: string;
+  municipality: string;
+  state: string;
+  postalCode: string;
+  references?: string;
+  isDefault: boolean;
+}
 
 @Schema({ timestamps: true, versionKey: false, collection: 'usuarios' })
 export class User {
@@ -42,6 +101,16 @@ export class User {
 
   @Prop({ index: true })
   lastSeenAt?: Date;
+
+  @Prop({
+    type: [{ type: Types.ObjectId, ref: 'Product' }],
+    default: [],
+    select: false,
+  })
+  favoriteProductIds: Types.ObjectId[];
+
+  @Prop({ type: [ShippingAddressSchema], default: [], select: false })
+  shippingAddresses: ShippingAddress[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

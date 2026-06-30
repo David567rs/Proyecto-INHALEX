@@ -74,7 +74,9 @@ describe('OrdersService', () => {
     };
 
     orderModel = {
+      create: jest.fn(),
       findById: jest.fn(),
+      findOne: jest.fn(),
       findOneAndUpdate: jest.fn(),
     };
 
@@ -117,6 +119,84 @@ describe('OrdersService', () => {
     );
 
     expect(releaseSpy).not.toHaveBeenCalled();
+  });
+
+  it('devuelve el pedido existente sin reservar inventario otra vez', async () => {
+    const existingOrder = {
+      ...buildOrder(OrderStatus.PENDING_REVIEW),
+      idempotencyKey: 'checkout_retry_1234567890',
+    };
+    orderModel.findOne.mockReturnValue(execResult(existingOrder));
+
+    const response = await service.confirmOrder(
+      {} as never,
+      undefined,
+      existingOrder.idempotencyKey,
+    );
+
+    expect(response.reference).toBe(existingOrder.reference);
+    expect(inventoryMovementModel.create).not.toHaveBeenCalled();
+  });
+
+  it('recupera el pedido existente si dos confirmaciones compiten', async () => {
+    const productId = '507f1f77bcf86cd799439012';
+    const existingOrder = {
+      ...buildOrder(OrderStatus.PENDING_REVIEW),
+      idempotencyKey: 'checkout_race_1234567890',
+    };
+    const preview = {
+      items: existingOrder.items,
+      issues: existingOrder.issues,
+      subtotal: existingOrder.subtotal,
+      totalItems: existingOrder.totalItems,
+      currency: existingOrder.currency,
+      canCreateDraft: true,
+      canConfirmOrder: true,
+      needsManualReview: existingOrder.needsManualReview,
+      signature: 'preview_signature_1234567890',
+    };
+    orderModel.findOne
+      .mockReturnValueOnce(execResult(null))
+      .mockReturnValueOnce(execResult(existingOrder));
+    orderModel.create.mockRejectedValue({ code: 11000 });
+    jest.spyOn(service, 'previewDraft').mockResolvedValue(preview);
+    jest
+      .spyOn(
+        service as unknown as {
+          reserveInventoryForItem: (...args: unknown[]) => Promise<void>;
+        },
+        'reserveInventoryForItem',
+      )
+      .mockResolvedValue();
+    const rollbackSpy = jest
+      .spyOn(
+        service as unknown as {
+          rollbackReservedInventory: (...args: unknown[]) => Promise<void>;
+        },
+        'rollbackReservedInventory',
+      )
+      .mockResolvedValue();
+
+    const response = await service.confirmOrder(
+      {
+        items: [{ productId, quantity: 3 }],
+        customerName: 'Cliente Demo',
+        customerEmail: 'cliente@demo.mx',
+        customerPhone: '5555555555',
+        previewSignature: preview.signature,
+      },
+      undefined,
+      existingOrder.idempotencyKey,
+    );
+
+    expect(response.reference).toBe(existingOrder.reference);
+    expect(rollbackSpy).toHaveBeenCalled();
+  });
+
+  it('rechaza confirmaciones sin clave idempotente', async () => {
+    await expect(service.confirmOrder({} as never)).rejects.toThrow(
+      'Idempotency-Key invalida o ausente',
+    );
   });
 
   it('guarda el actor correcto en las notas cuando confirma un pedido', async () => {

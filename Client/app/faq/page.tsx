@@ -5,41 +5,12 @@ import { Header } from "@/components/layout/header"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { CONTACT_EMAIL, CONTACT_EMAIL_HREF } from "@/lib/company/contact-info"
+import { fetchCompanyContentServer } from "@/lib/company/company-content-server"
 
-const faqItems = [
-  {
-    question: "Como elijo la linea adecuada?",
-    answer:
-      "Puedes empezar por la seccion de lineas. Cada una agrupa aromas con una intencion mas clara, por ejemplo descanso, frescura botanica o alivio respiratorio.",
-  },
-  {
-    question: "Las imagenes del catalogo corresponden a aromas reales?",
-    answer:
-      "Si. En las vistas publicas organizamos cada aroma con su imagen de referencia para que la navegacion sea mas clara y consistente dentro del catalogo.",
-  },
-  {
-    question: "Los productos sustituyen atencion medica?",
-    answer:
-      "No. INHALEX se presenta como una experiencia de bienestar y acompanamiento aromatico. Si tienes una condicion medica, lo adecuado es buscar orientacion profesional.",
-  },
-  {
-    question: "Donde veo politicas de privacidad y terminos?",
-    answer:
-      "En el footer y en el bloque de ayuda tienes acceso directo a Politicas y Terminos para consultar privacidad, uso del sitio y condiciones generales.",
-  },
-  {
-    question: "Puedo contactar a alguien antes de comprar?",
-    answer:
-      "Si. Existe una pagina de Contacto para escribir por correo o llamar, ideal si quieres orientacion antes de elegir una linea o aroma.",
-  },
-  {
-    question: "Que pasa si no encuentro la respuesta aqui?",
-    answer:
-      "Puedes escribirnos directamente a nuestro correo de contacto y atenderemos tu consulta con la mayor claridad posible.",
-  },
-]
+export default async function FaqPage() {
+  const companyContent = await fetchCompanyContentServer()
+  const faqItems = companyContent.faqs ?? []
 
-export default function FaqPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
       <Header />
@@ -70,22 +41,28 @@ export default function FaqPage() {
         <section className="container mx-auto px-4 py-10 lg:py-14">
           <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="page-fade-up page-fade-up-delay-1 public-soft-surface rounded-[2rem] p-4 sm:p-5 lg:p-6">
-              <Accordion type="single" collapsible className="space-y-3">
-                {faqItems.map((item, index) => (
-                  <AccordionItem
-                    key={item.question}
-                    value={`item-${index}`}
-                    className="overflow-hidden rounded-[1.4rem] border border-emerald-100/80 bg-white/88 px-4 sm:px-5"
-                  >
-                    <AccordionTrigger className="py-5 text-base font-semibold text-foreground hover:no-underline">
-                      {item.question}
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-5 text-[0.98rem] leading-7 text-muted-foreground">
-                      {item.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              {faqItems.length === 0 ? (
+                <div className="rounded-[1.4rem] border border-dashed border-emerald-100/80 bg-white/88 px-5 py-8 text-center text-muted-foreground">
+                  Estamos preparando nuevas respuestas. Si necesitas ayuda, escribenos directamente.
+                </div>
+              ) : (
+                <Accordion type="single" collapsible className="space-y-3">
+                  {faqItems.map((item, index) => (
+                    <AccordionItem
+                      key={`${item.question}-${index}`}
+                      value={`item-${index}`}
+                      className="overflow-hidden rounded-[1.4rem] border border-emerald-100/80 bg-white/88 px-4 sm:px-5"
+                    >
+                      <AccordionTrigger className="py-5 text-base font-semibold text-foreground hover:no-underline">
+                        {item.question}
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-5 text-[0.98rem] leading-7 text-muted-foreground">
+                        {item.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              )}
             </div>
 
             <aside className="space-y-5">

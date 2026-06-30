@@ -21,15 +21,18 @@ import {
   type DraftOrderPreviewItem,
 } from "@/lib/orders/orders-api"
 import { getAccessToken } from "@/lib/auth/token-storage"
+import { getProductDisplayPrice } from "@/lib/products/promotions"
 import type { CartItem, Product } from "@/lib/types/product"
 
 const CART_STORAGE_KEY = "inhalex-cart-v1"
+const CART_IDEMPOTENCY_STORAGE_KEY = "inhalex-cart-idempotency-v1"
 
 interface CreateDraftPayload {
   customerName: string
   customerEmail: string
   customerPhone: string
   notes?: string
+  shippingAddressId?: string
 }
 
 interface CartContextValue {
@@ -113,6 +116,39 @@ function buildVisualCartSignature(items: CartItem[]) {
     )
     .sort()
     .join("|")
+}
+
+function getOrCreateIdempotencyKey(items: CartItem[]): string {
+  const cartSignature = buildCartSignature(items)
+  try {
+    const storedValue = window.localStorage.getItem(CART_IDEMPOTENCY_STORAGE_KEY)
+    if (storedValue) {
+      const parsed = JSON.parse(storedValue) as {
+        cartSignature?: string
+        idempotencyKey?: string
+      }
+      if (
+        parsed.cartSignature === cartSignature &&
+        typeof parsed.idempotencyKey === "string"
+      ) {
+        return parsed.idempotencyKey
+      }
+    }
+  } catch {
+    window.localStorage.removeItem(CART_IDEMPOTENCY_STORAGE_KEY)
+  }
+
+  const idempotencyKey = window.crypto.randomUUID()
+  window.localStorage.setItem(
+    CART_IDEMPOTENCY_STORAGE_KEY,
+    JSON.stringify({ cartSignature, idempotencyKey }),
+  )
+  return idempotencyKey
+}
+
+function clearIdempotencyKey(): void {
+  if (typeof window === "undefined") return
+  window.localStorage.removeItem(CART_IDEMPOTENCY_STORAGE_KEY)
 }
 
 function mapPreviewItemToCartItem(item: DraftOrderPreviewItem): CartItem {
@@ -245,7 +281,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((currentItems) => {
       const existingIndex = currentItems.findIndex((item) => item.id === product.id)
       if (existingIndex === -1) {
-        return [...currentItems, { ...product, quantity: safeQuantity }]
+        return [
+          ...currentItems,
+          {
+            ...product,
+            price: getProductDisplayPrice(product),
+            quantity: safeQuantity,
+          },
+        ]
       }
 
       return currentItems.map((item, index) =>
@@ -295,6 +338,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        const idempotencyKey = getOrCreateIdempotencyKey(items)
         const response = await confirmOrder(
           {
             ...payload,
@@ -304,9 +348,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             })),
             previewSignature: preview.signature,
           },
+          idempotencyKey,
           getAccessToken() ?? undefined,
         )
 
+        clearIdempotencyKey()
         setLastDraft(response)
         setItems([])
         setPreview(null)

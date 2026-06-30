@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { DEFAULT_COMPANY_CONTENT } from '../data/default-company-content';
 
 export type CompanyContentDocument = HydratedDocument<CompanyContent>;
 
@@ -30,6 +31,18 @@ export class AboutCompanySection {
 export const AboutCompanySectionSchema =
   SchemaFactory.createForClass(AboutCompanySection);
 
+@Schema({ _id: false, versionKey: false })
+export class CompanyFaqItem {
+  @Prop({ required: true, trim: true, minlength: 5, maxlength: 240 })
+  question: string;
+
+  @Prop({ required: true, trim: true, minlength: 10, maxlength: 2000 })
+  answer: string;
+}
+
+export const CompanyFaqItemSchema =
+  SchemaFactory.createForClass(CompanyFaqItem);
+
 @Schema({
   timestamps: true,
   versionKey: false,
@@ -53,6 +66,12 @@ export class CompanyContent {
 
   @Prop({ type: AboutCompanySectionSchema, required: true })
   about: AboutCompanySection;
+
+  @Prop({
+    type: [CompanyFaqItemSchema],
+    default: () => DEFAULT_COMPANY_CONTENT.faqs.map((faq) => ({ ...faq })),
+  })
+  faqs: CompanyFaqItem[];
 
   createdAt?: Date;
   updatedAt?: Date;

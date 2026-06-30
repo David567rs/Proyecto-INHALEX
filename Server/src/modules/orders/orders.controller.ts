@@ -25,7 +25,12 @@ export class OrdersController {
   confirmOrder(
     @Body() confirmOrderDto: ConfirmOrderDto,
     @Headers('authorization') authorization?: string,
+    @Headers('idempotency-key') idempotencyKey?: string,
   ) {
-    return this.ordersService.confirmOrder(confirmOrderDto, authorization);
+    return this.ordersService.confirmOrder(
+      confirmOrderDto,
+      authorization,
+      idempotencyKey,
+    );
   }
 }

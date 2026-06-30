@@ -69,6 +69,10 @@ interface ProductEditDraft {
   slug: string
   category: string
   price: string
+  promoActive: boolean
+  promoLabel: string
+  promoDescription: string
+  promoPrice: string
   status: AdminProduct["status"]
   presentation: string
   origin: string
@@ -118,6 +122,11 @@ function buildDraft(product: AdminProduct): ProductEditDraft {
     slug: product.slug ?? "",
     category: product.category,
     price: String(product.price),
+    promoActive: Boolean(product.promoActive),
+    promoLabel: product.promoLabel ?? "",
+    promoDescription: product.promoDescription ?? "",
+    promoPrice:
+      typeof product.promoPrice === "number" ? String(product.promoPrice) : "",
     status: product.status,
     presentation: product.presentation ?? "",
     origin: product.origin ?? "",
@@ -377,6 +386,8 @@ export function AdminProductEditDialog({
     const normalizedOrigin = draft.origin.trim()
     const normalizedImage = draft.image.trim()
     const normalizedRawMaterialName = draft.rawMaterialName.trim()
+    const normalizedPromoLabel = draft.promoLabel.trim()
+    const normalizedPromoDescription = draft.promoDescription.trim()
     const normalizedBenefits = parseLineList(draft.benefitsText)
     const normalizedAromas = parseLineList(draft.aromasText)
 
@@ -437,6 +448,43 @@ export function AdminProductEditDialog({
     const roundedPrice = Number(parsedPrice.toFixed(2))
     if (roundedPrice !== product.price) {
       payload.price = roundedPrice
+    }
+
+    if (draft.promoActive !== Boolean(product.promoActive)) {
+      payload.promoActive = draft.promoActive
+    }
+
+    if (normalizedPromoLabel !== (product.promoLabel ?? "")) {
+      payload.promoLabel = normalizedPromoLabel
+    }
+
+    if (normalizedPromoDescription !== (product.promoDescription ?? "")) {
+      payload.promoDescription = normalizedPromoDescription
+    }
+
+    const normalizedPromoPrice = draft.promoPrice.trim().replace(",", ".")
+    if (draft.promoActive || normalizedPromoPrice) {
+      const parsedPromoPrice = Number(normalizedPromoPrice)
+      if (!Number.isFinite(parsedPromoPrice) || parsedPromoPrice <= 0) {
+        return {
+          payload,
+          hasChanges: false,
+          error: "El precio de oferta debe ser mayor a 0.",
+        }
+      }
+
+      const roundedPromoPrice = Number(parsedPromoPrice.toFixed(2))
+      if (roundedPromoPrice >= roundedPrice) {
+        return {
+          payload,
+          hasChanges: false,
+          error: "El precio de oferta debe ser menor al precio normal.",
+        }
+      }
+
+      if (roundedPromoPrice !== (product.promoPrice ?? undefined)) {
+        payload.promoPrice = roundedPromoPrice
+      }
     }
 
     if (normalizedDescription.length < 10) {
@@ -1123,6 +1171,105 @@ export function AdminProductEditDialog({
                             <SelectItem value="archived">Archivado</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-xl border border-amber-100 bg-amber-50/35 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Oferta en catalogo
+                          </p>
+                          <p className="mt-1 text-xs leading-6 text-muted-foreground">
+                            Activa un precio especial visible para clientes.
+                          </p>
+                        </div>
+                        <Switch
+                          checked={draft.promoActive}
+                          disabled={isSaving || !canManageCatalog}
+                          onCheckedChange={(checked) => {
+                            setDraft((prev) =>
+                              prev ? { ...prev, promoActive: checked } : prev,
+                            )
+                            setFormMessage("")
+                          }}
+                        />
+                      </div>
+
+                      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="product-promo-price">
+                            Precio de oferta
+                          </Label>
+                          <Input
+                            id="product-promo-price"
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            inputMode="decimal"
+                            className="admin-input-surface"
+                            value={draft.promoPrice}
+                            disabled={isSaving || !canManageCatalog}
+                            onKeyDown={blockInvalidNumberKey}
+                            onChange={(event) => {
+                              setDraft((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      promoPrice: event.target.value.replace(
+                                        "-",
+                                        "",
+                                      ),
+                                    }
+                                  : prev,
+                              )
+                              setFormMessage("")
+                            }}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="product-promo-label">Etiqueta</Label>
+                          <Input
+                            id="product-promo-label"
+                            className="admin-input-surface"
+                            value={draft.promoLabel}
+                            disabled={isSaving || !canManageCatalog}
+                            maxLength={80}
+                            onChange={(event) => {
+                              setDraft((prev) =>
+                                prev
+                                  ? { ...prev, promoLabel: event.target.value }
+                                  : prev,
+                              )
+                              setFormMessage("")
+                            }}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="product-promo-description">
+                            Mensaje corto
+                          </Label>
+                          <Input
+                            id="product-promo-description"
+                            className="admin-input-surface"
+                            value={draft.promoDescription}
+                            disabled={isSaving || !canManageCatalog}
+                            maxLength={200}
+                            onChange={(event) => {
+                              setDraft((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      promoDescription: event.target.value,
+                                    }
+                                  : prev,
+                              )
+                              setFormMessage("")
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
 

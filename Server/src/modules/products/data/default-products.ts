@@ -6,6 +6,11 @@ export interface DefaultProductSeed {
   description: string;
   longDescription?: string;
   price: number;
+  promoActive?: boolean;
+  promoLabel?: string;
+  promoDescription?: string;
+  promoPrice?: number;
+  promoEndsAt?: Date;
   currency: string;
   image: string;
   category: ProductCategory;
@@ -35,6 +40,11 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     longDescription:
       'El Toronjil, tambien conocido como melisa, es una planta aromatica reconocida por sus propiedades calmantes y relajantes. Nuestro macerado captura la esencia pura de esta hierba medicinal, ofreciendo un aroma fresco y citrico que ayuda a reducir la ansiedad, calmar los nervios y promover un estado de paz interior.',
     price: 60,
+    promoActive: true,
+    promoLabel: 'Calma de junio',
+    promoDescription: 'Precio especial para aromas de descanso y serenidad.',
+    promoPrice: 52,
+    promoEndsAt: new Date('2026-07-31T23:59:59.000Z'),
     currency: 'MXN',
     image: '/products/toronjil.jpg',
     category: ProductCategory.LINEA_INSOMNIO,
@@ -55,6 +65,11 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     longDescription:
       'Una fusion unica de dos ingredientes legendarios. La mirra, con su aroma profundo y balsamico, se combina con el azafran para crear una experiencia olfativa sofisticada que eleva el espiritu y proporciona una sensacion de lujo y bienestar.',
     price: 60,
+    promoActive: true,
+    promoLabel: 'Aroma especial',
+    promoDescription: 'Promocion ligera para una seleccion sofisticada.',
+    promoPrice: 55,
+    promoEndsAt: new Date('2026-07-31T23:59:59.000Z'),
     currency: 'MXN',
     image: '/products/mirra-azafran.jpg',
     category: ProductCategory.LINEA_ANSIEDAD_ESTRES,
@@ -75,6 +90,11 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     longDescription:
       'El Copal es una resina sagrada utilizada desde tiempos prehispanicos por las culturas mesoamericanas. Su aroma distintivo tiene propiedades purificadoras que ayudan a limpiar espacios de energias negativas, promoviendo un ambiente de paz, meditacion y conexion espiritual.',
     price: 60,
+    promoActive: true,
+    promoLabel: 'Ritual purificador',
+    promoDescription: 'Oferta de temporada para limpiar y armonizar espacios.',
+    promoPrice: 54,
+    promoEndsAt: new Date('2026-07-31T23:59:59.000Z'),
     currency: 'MXN',
     image: '/products/copal.jpg',
     category: ProductCategory.LINEA_ESTIMULANTE,

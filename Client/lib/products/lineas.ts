@@ -24,135 +24,135 @@ const LINEAS_IMAGE_BASE = "/L%C3%ADneas"
 export const LINEA_CONFIGS: LineaConfig[] = [
   {
     id: "linea-insomnio",
-    name: "Linea insomnio",
+    name: "L\u00ednea insomnio",
     label: "Descanso natural",
-    headline: "Rituales aromaticos para bajar el ritmo y preparar una noche mas serena.",
+    headline: "Rituales arom\u00e1ticos para bajar el ritmo y preparar una noche m\u00e1s serena.",
     description:
-      "Esta linea reune aromas suaves, florales y herbaceos para acompañar rutinas de descanso, lectura y relajacion profunda.",
+      "Esta l\u00ednea re\u00fane aromas suaves, florales y herb\u00e1ceos para acompa\u00f1ar rutinas de descanso, lectura y relajaci\u00f3n profunda.",
     ritual:
-      "Ideal para el cierre del dia, despues de una jornada intensa o como parte de tu rutina nocturna.",
+      "Ideal para el cierre del d\u00eda, despu\u00e9s de una jornada intensa o como parte de tu rutina nocturna.",
     image: `${LINEAS_IMAGE_BASE}/insomnio.png`,
-    highlights: ["Calma nocturna", "Notas florales", "Acompaña el descanso"],
-    heroGradient: "from-emerald-950 via-teal-900 to-emerald-700",
-    heroGlow: "bg-emerald-300/30",
+    highlights: ["Calma nocturna", "Notas florales", "Acompa\u00f1a el descanso"],
+    heroGradient: "from-[#edf5ef] via-[#f9fbf9] to-[#eef4f2]",
+    heroGlow: "bg-emerald-200/60",
     frameSurface:
-      "border-emerald-200/60 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.28),rgba(17,94,89,0.2)_55%,rgba(4,47,46,0.5))]",
+      "border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.88),rgba(230,242,235,0.86))]",
     badgeSurface:
-      "border-emerald-200/50 bg-emerald-50/90 text-emerald-700",
+      "border-emerald-200/90 bg-white/92 text-emerald-800",
     statSurface:
-      "border-emerald-200/60 bg-white/10 text-white shadow-[0_20px_50px_-38px_rgba(16,185,129,0.55)]",
+      "border-emerald-100/80 bg-white/70 text-emerald-950 shadow-[0_24px_46px_-38px_rgba(22,101,52,0.28)]",
     chipSurface:
-      "border-emerald-200/70 bg-emerald-50/80 text-emerald-800",
+      "border-emerald-100/90 bg-emerald-50/88 text-emerald-900",
     accentSurface:
-      "border-emerald-100/80 bg-[linear-gradient(180deg,rgba(236,253,245,0.95),rgba(255,255,255,0.92))]",
+      "border-emerald-100/85 bg-[linear-gradient(180deg,rgba(245,251,246,0.98),rgba(255,255,255,0.94))]",
     heroImagePosition: "center bottom",
     heroImageAspect: "aspect-[2/3]",
     heroImagePadding: "p-2 sm:p-2.5",
   },
   {
     id: "linea-ansiedad-estres",
-    name: "Linea ansiedad y estres",
+    name: "L\u00ednea ansiedad y estr\u00e9s",
     label: "Equilibrio emocional",
-    headline: "Una coleccion pensada para soltar la tension y recuperar centro con cada inhalacion.",
+    headline: "Una colecci\u00f3n pensada para soltar la tensi\u00f3n y recuperar centro con cada inhalaci\u00f3n.",
     description:
-      "Integra perfiles florales, especiados y balsamicos que ayudan a crear un ambiente mas suave, estable y reconfortante.",
+      "Integra perfiles florales, especiados y bals\u00e1micos que ayudan a crear un ambiente m\u00e1s suave, estable y reconfortante.",
     ritual:
-      "Acompaña pausas conscientes, momentos de sobrecarga mental y espacios donde necesitas volver a tu eje.",
+      "Acompa\u00f1a pausas conscientes, momentos de sobrecarga mental y espacios donde necesitas volver a tu eje.",
     image: `${LINEAS_IMAGE_BASE}/ansiedad-estres.png`,
-    highlights: ["Pausa emocional", "Toques balsamicos", "Sensacion reconfortante"],
-    heroGradient: "from-rose-900 via-fuchsia-900 to-amber-700",
-    heroGlow: "bg-rose-300/30",
+    highlights: ["Pausa emocional", "Toques bals\u00e1micos", "Sensaci\u00f3n reconfortante"],
+    heroGradient: "from-[#faf0f3] via-[#fffaf8] to-[#eef4ef]",
+    heroGlow: "bg-rose-200/60",
     frameSurface:
-      "border-rose-200/55 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(159,18,57,0.18)_54%,rgba(67,20,7,0.55))]",
+      "border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.9),rgba(250,234,239,0.84))]",
     badgeSurface:
-      "border-rose-200/60 bg-rose-50/90 text-rose-700",
+      "border-rose-200/90 bg-white/92 text-rose-800",
     statSurface:
-      "border-rose-200/50 bg-white/10 text-white shadow-[0_20px_50px_-38px_rgba(244,114,182,0.45)]",
+      "border-rose-100/80 bg-white/72 text-slate-900 shadow-[0_24px_46px_-38px_rgba(190,24,93,0.18)]",
     chipSurface:
-      "border-rose-200/70 bg-rose-50/80 text-rose-800",
+      "border-rose-100/90 bg-rose-50/90 text-rose-900",
     accentSurface:
-      "border-rose-100/80 bg-[linear-gradient(180deg,rgba(255,241,242,0.95),rgba(255,255,255,0.92))]",
+      "border-rose-100/85 bg-[linear-gradient(180deg,rgba(255,246,248,0.98),rgba(255,255,255,0.94))]",
     heroImagePosition: "center 52%",
     heroImageAspect: "aspect-[2/3]",
     heroImagePadding: "p-2 sm:p-2.5",
   },
   {
     id: "linea-resfriado",
-    name: "Linea resfriado",
+    name: "L\u00ednea resfriado",
     label: "Alivio respiratorio",
-    headline: "Notas calidas y botanicas para acompañar temporadas de resfriado y malestar.",
+    headline: "Notas c\u00e1lidas y bot\u00e1nicas para acompa\u00f1ar temporadas de resfriado y malestar.",
     description:
-      "Su seleccion equilibra frescura respiratoria con acordes especiados para brindar una sensacion de alivio y confort.",
+      "Su selecci\u00f3n equilibra frescura respiratoria con acordes especiados para brindar una sensaci\u00f3n de alivio y confort.",
     ritual:
-      "Pensada para dias frios, congestion ligera y momentos donde el cuerpo pide calor, aire y bienestar.",
+      "Pensada para d\u00edas fr\u00edos, congesti\u00f3n ligera y momentos donde el cuerpo pide calor, aire y bienestar.",
     image: `${LINEAS_IMAGE_BASE}/resfriado.png`,
-    highlights: ["Respiro mas claro", "Aromas especiados", "Sensacion reconfortante"],
-    heroGradient: "from-amber-950 via-orange-800 to-amber-500",
-    heroGlow: "bg-amber-300/35",
+    highlights: ["Respiro m\u00e1s claro", "Aromas especiados", "Sensaci\u00f3n reconfortante"],
+    heroGradient: "from-[#f7efe4] via-[#fffaf4] to-[#eef4ee]",
+    heroGlow: "bg-amber-200/65",
     frameSurface:
-      "border-amber-200/60 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(217,119,6,0.2)_54%,rgba(120,53,15,0.56))]",
+      "border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.9),rgba(250,239,220,0.86))]",
     badgeSurface:
-      "border-amber-200/70 bg-amber-50/95 text-amber-700",
+      "border-amber-200/90 bg-white/92 text-amber-800",
     statSurface:
-      "border-amber-200/50 bg-white/10 text-white shadow-[0_20px_50px_-38px_rgba(251,191,36,0.48)]",
+      "border-amber-100/80 bg-white/72 text-slate-900 shadow-[0_24px_46px_-38px_rgba(180,83,9,0.18)]",
     chipSurface:
-      "border-amber-200/70 bg-amber-50/85 text-amber-900",
+      "border-amber-100/90 bg-amber-50/90 text-amber-950",
     accentSurface:
-      "border-amber-100/80 bg-[linear-gradient(180deg,rgba(255,251,235,0.95),rgba(255,255,255,0.92))]",
+      "border-amber-100/85 bg-[linear-gradient(180deg,rgba(255,249,240,0.98),rgba(255,255,255,0.94))]",
     heroImagePosition: "center bottom",
     heroImageAspect: "aspect-[2/3]",
     heroImagePadding: "p-2.5 sm:p-3",
   },
   {
     id: "linea-verde",
-    name: "Linea verde",
-    label: "Frescura botanica",
-    headline: "Una linea vibrante para despejar, refrescar y sentir el impulso verde de las plantas.",
+    name: "L\u00ednea verde",
+    label: "Frescura bot\u00e1nica",
+    headline: "Una l\u00ednea vibrante para despejar, refrescar y sentir el impulso verde de las plantas.",
     description:
-      "Reune aromas mentolados y herbales con una sensacion limpia, directa y muy refrescante para el dia a dia.",
+      "Re\u00fane aromas mentolados y herbales con una sensaci\u00f3n limpia, directa y muy refrescante para el d\u00eda a d\u00eda.",
     ritual:
-      "Perfecta para comenzar la manana, despejar la respiracion o regalar un momento de frescura inmediata.",
+      "Perfecta para comenzar la ma\u00f1ana, despejar la respiraci\u00f3n o regalar un momento de frescura inmediata.",
     image: `${LINEAS_IMAGE_BASE}/verde.png`,
-    highlights: ["Sensacion fresca", "Tonos mentolados", "Energia botanica"],
-    heroGradient: "from-cyan-950 via-sky-800 to-emerald-500",
-    heroGlow: "bg-cyan-300/30",
+    highlights: ["Sensaci\u00f3n fresca", "Tonos mentolados", "Energ\u00eda bot\u00e1nica"],
+    heroGradient: "from-[#edf6f0] via-[#fbfdfb] to-[#edf7f4]",
+    heroGlow: "bg-cyan-200/55",
     frameSurface:
-      "border-cyan-200/60 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(14,116,144,0.18)_54%,rgba(8,51,68,0.56))]",
+      "border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.9),rgba(232,247,243,0.86))]",
     badgeSurface:
-      "border-cyan-200/70 bg-cyan-50/90 text-cyan-700",
+      "border-cyan-200/90 bg-white/92 text-cyan-800",
     statSurface:
-      "border-cyan-200/50 bg-white/10 text-white shadow-[0_20px_50px_-38px_rgba(56,189,248,0.45)]",
+      "border-cyan-100/80 bg-white/72 text-slate-900 shadow-[0_24px_46px_-38px_rgba(8,145,178,0.18)]",
     chipSurface:
-      "border-cyan-200/70 bg-cyan-50/85 text-cyan-900",
+      "border-cyan-100/90 bg-cyan-50/90 text-cyan-950",
     accentSurface:
-      "border-cyan-100/80 bg-[linear-gradient(180deg,rgba(236,254,255,0.95),rgba(255,255,255,0.92))]",
+      "border-cyan-100/85 bg-[linear-gradient(180deg,rgba(241,252,254,0.98),rgba(255,255,255,0.94))]",
     heroImagePosition: "center 56%",
     heroImageAspect: "aspect-[2/3]",
     heroImagePadding: "p-2 sm:p-2.5",
   },
   {
     id: "linea-estimulante",
-    name: "Linea estimulante",
+    name: "L\u00ednea estimulante",
     label: "Impulso natural",
-    headline: "Aromas intensos que despiertan la atencion, activan los sentidos y levantan el animo.",
+    headline: "Aromas intensos que despiertan la atenci\u00f3n, activan los sentidos y levantan el \u00e1nimo.",
     description:
-      "Esta linea combina perfiles energicos, tostados y resinosos para acompañar momentos de enfoque, accion y presencia.",
+      "Esta l\u00ednea combina perfiles en\u00e9rgicos, tostados y resinosos para acompa\u00f1ar momentos de enfoque, acci\u00f3n y presencia.",
     ritual:
-      "Ideal para arrancar proyectos, retomar energia a media jornada o activar la mente antes de una tarea importante.",
+      "Ideal para arrancar proyectos, retomar energ\u00eda a media jornada o activar la mente antes de una tarea importante.",
     image: `${LINEAS_IMAGE_BASE}/estimulante.png`,
-    highlights: ["Enfoque activo", "Notas intensas", "Sensacion energizante"],
-    heroGradient: "from-lime-950 via-emerald-800 to-yellow-500",
-    heroGlow: "bg-lime-300/30",
+    highlights: ["Enfoque activo", "Notas intensas", "Sensaci\u00f3n energizante"],
+    heroGradient: "from-[#f2f2e7] via-[#fbfbf5] to-[#eef4eb]",
+    heroGlow: "bg-lime-200/60",
     frameSurface:
-      "border-lime-200/60 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.24),rgba(77,124,15,0.18)_54%,rgba(39,39,42,0.56))]",
+      "border-white/70 bg-[linear-gradient(145deg,rgba(255,255,255,0.9),rgba(240,244,222,0.86))]",
     badgeSurface:
-      "border-lime-200/70 bg-lime-50/90 text-lime-800",
+      "border-lime-200/90 bg-white/92 text-lime-800",
     statSurface:
-      "border-lime-200/50 bg-white/10 text-white shadow-[0_20px_50px_-38px_rgba(132,204,22,0.45)]",
+      "border-lime-100/80 bg-white/72 text-slate-900 shadow-[0_24px_46px_-38px_rgba(77,124,15,0.18)]",
     chipSurface:
-      "border-lime-200/70 bg-lime-50/85 text-lime-900",
+      "border-lime-100/90 bg-lime-50/90 text-lime-950",
     accentSurface:
-      "border-lime-100/80 bg-[linear-gradient(180deg,rgba(247,254,231,0.95),rgba(255,255,255,0.92))]",
+      "border-lime-100/85 bg-[linear-gradient(180deg,rgba(248,251,239,0.98),rgba(255,255,255,0.94))]",
     heroImagePosition: "center 54%",
     heroImageAspect: "aspect-[2/3]",
     heroImagePadding: "p-2 sm:p-2.5",

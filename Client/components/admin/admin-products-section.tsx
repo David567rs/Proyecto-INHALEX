@@ -1400,7 +1400,18 @@ export function AdminProductsSection() {
                       </TableCell>
 
                       <TableCell className="text-sm font-medium text-foreground">
-                        {formatPrice(product.price, product.currency)}
+                        {product.promoActive &&
+                        typeof product.promoPrice === "number" &&
+                        product.promoPrice < product.price ? (
+                          <div>
+                            <p>{formatPrice(product.promoPrice, product.currency)}</p>
+                            <p className="mt-1 text-xs text-muted-foreground line-through">
+                              {formatPrice(product.price, product.currency)}
+                            </p>
+                          </div>
+                        ) : (
+                          formatPrice(product.price, product.currency)
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -1575,8 +1586,19 @@ export function AdminProductsSection() {
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">Precio</p>
                     <p className="text-sm font-medium text-foreground">
-                      {formatPrice(product.price, product.currency)}
+                      {product.promoActive &&
+                      typeof product.promoPrice === "number" &&
+                      product.promoPrice < product.price
+                        ? formatPrice(product.promoPrice, product.currency)
+                        : formatPrice(product.price, product.currency)}
                     </p>
+                    {product.promoActive &&
+                    typeof product.promoPrice === "number" &&
+                    product.promoPrice < product.price ? (
+                      <p className="text-xs text-muted-foreground line-through">
+                        {formatPrice(product.price, product.currency)}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-1">

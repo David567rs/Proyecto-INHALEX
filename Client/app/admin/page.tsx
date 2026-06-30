@@ -7,6 +7,7 @@ import {
   DatabaseBackup,
   FileText,
   History,
+  MessageSquareWarning,
   Package,
   PackageCheck,
   ShoppingBag,
@@ -52,6 +53,13 @@ const MODULE_CARDS: AdminModuleCard[] = [
     title: "Pedidos",
     description: "Revisa compras, estados y acciones del equipo comercial.",
     icon: ShoppingBag,
+    group: "operacion",
+  },
+  {
+    href: "/admin/reportes",
+    title: "Reportes e incidencias",
+    description: "Recibe solicitudes de clientes y actualiza su atencion.",
+    icon: MessageSquareWarning,
     group: "operacion",
   },
   {
@@ -232,10 +240,13 @@ export default function AdminPage() {
                   <span className="font-medium">2.</span> Pedidos y estados
                 </div>
                 <div className="admin-stat-chip">
-                  <span className="font-medium">3.</span> Productos y catalogo
+                  <span className="font-medium">3.</span> Reportes abiertos
                 </div>
                 <div className="admin-stat-chip">
-                  <span className="font-medium">4.</span> Contenido y textos
+                  <span className="font-medium">4.</span> Productos y catalogo
+                </div>
+                <div className="admin-stat-chip">
+                  <span className="font-medium">5.</span> Contenido y textos
                   legales
                 </div>
               </div>

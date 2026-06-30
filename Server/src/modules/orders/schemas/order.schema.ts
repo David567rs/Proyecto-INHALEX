@@ -124,6 +124,49 @@ export const OrderCustomerSnapshotSchema = SchemaFactory.createForClass(
 );
 
 @Schema({ _id: false, versionKey: false })
+export class OrderShippingAddressSnapshot {
+  @Prop({ required: true, trim: true })
+  sourceAddressId: string;
+
+  @Prop({ required: true, trim: true })
+  label: string;
+
+  @Prop({ required: true, trim: true })
+  recipientName: string;
+
+  @Prop({ required: true, trim: true })
+  phone: string;
+
+  @Prop({ required: true, trim: true })
+  street: string;
+
+  @Prop({ required: true, trim: true })
+  exteriorNumber: string;
+
+  @Prop({ trim: true })
+  interiorNumber?: string;
+
+  @Prop({ required: true, trim: true })
+  neighborhood: string;
+
+  @Prop({ required: true, trim: true })
+  municipality: string;
+
+  @Prop({ required: true, trim: true })
+  state: string;
+
+  @Prop({ required: true, trim: true })
+  postalCode: string;
+
+  @Prop({ trim: true })
+  references?: string;
+}
+
+export const OrderShippingAddressSnapshotSchema = SchemaFactory.createForClass(
+  OrderShippingAddressSnapshot,
+);
+
+@Schema({ _id: false, versionKey: false })
 export class OrderStatusNoteSnapshot {
   @Prop({ type: String, required: true, enum: OrderStatus })
   status: OrderStatus;
@@ -149,6 +192,9 @@ export const OrderStatusNoteSnapshotSchema = SchemaFactory.createForClass(
 export class Order {
   @Prop({ required: true, unique: true, trim: true, index: true })
   reference: string;
+
+  @Prop({ unique: true, sparse: true, trim: true, maxlength: 100, index: true })
+  idempotencyKey?: string;
 
   @Prop({
     type: String,
@@ -182,6 +228,9 @@ export class Order {
 
   @Prop({ trim: true, lowercase: true, maxlength: 180 })
   customerUserEmail?: string;
+
+  @Prop({ type: OrderShippingAddressSnapshotSchema })
+  shippingAddress?: OrderShippingAddressSnapshot;
 
   @Prop({ required: true, default: false })
   needsManualReview: boolean;

@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   FileText,
+  Plus,
   RefreshCw,
   RotateCcw,
   Save,
+  Trash2,
 } from "lucide-react";
 import { MarkdownContent } from "@/components/common/markdown-content";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +66,10 @@ function normalizeContent(content: CompanyContent): CompanyContent {
         ),
       ],
     },
+    faqs: (content.faqs ?? []).map((faq) => ({
+      question: faq.question.trim(),
+      answer: faq.answer.trim(),
+    })),
   };
 }
 
@@ -153,8 +159,12 @@ export function AdminCompanyContentSection() {
 
     try {
       const response = await getAdminCompanyContent(token);
-      setContent(response);
-      setDraft(response);
+      const contentWithFaqs = {
+        ...response,
+        faqs: response.faqs ?? DEFAULT_COMPANY_CONTENT.faqs,
+      };
+      setContent(contentWithFaqs);
+      setDraft(contentWithFaqs);
       setValuesInput(response.about.values.join("\n"));
     } catch (error) {
       const message =
@@ -195,10 +205,21 @@ export function AdminCompanyContentSection() {
     [valuesInput],
   );
 
+  const hasIncompleteFaq = normalizedDraft.faqs.some(
+    (faq) => faq.question.length < 5 || faq.answer.length < 10,
+  );
+
   const handleSave = async () => {
     const token = getAccessToken();
     if (!token) {
       setErrorMessage("No se encontro token de acceso");
+      return;
+    }
+
+    if (hasIncompleteFaq) {
+      setErrorMessage(
+        "Completa la pregunta y la respuesta de cada FAQ antes de guardar.",
+      );
       return;
     }
 
@@ -212,6 +233,7 @@ export function AdminCompanyContentSection() {
           privacyPolicy: normalizedDraft.privacyPolicy,
           termsAndConditions: normalizedDraft.termsAndConditions,
           about: normalizedDraft.about,
+          faqs: normalizedDraft.faqs,
         },
         token,
       );
@@ -251,7 +273,7 @@ export function AdminCompanyContentSection() {
             Informacion de empresa
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Edita politicas, terminos, mision, vision y valores.
+            Edita politicas, terminos, identidad institucional y FAQs.
           </p>
         </div>
 
@@ -326,10 +348,10 @@ export function AdminCompanyContentSection() {
             Bloques editables
           </p>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-            3
+            4
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            {totalValues} valores activos definidos.
+            {totalValues} valores y {draft.faqs.length} FAQs activas.
           </p>
         </div>
       </div>
@@ -504,6 +526,119 @@ export function AdminCompanyContentSection() {
               </div>
             </div>
           </div>
+
+          <div className="admin-form-card">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <Badge variant="outline">Ayuda</Badge>
+                <h3 className="mt-3 text-lg font-semibold text-foreground">
+                  Preguntas frecuentes
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Respuestas breves para orientar al cliente antes de comprar.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    faqs: [...prev.faqs, { question: "", answer: "" }],
+                  }))
+                }
+                disabled={
+                  isLoading ||
+                  isSaving ||
+                  !canManageContent ||
+                  draft.faqs.length >= 30
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar FAQ
+              </Button>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {draft.faqs.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border/70 bg-secondary/20 px-4 py-5 text-sm text-muted-foreground">
+                  No hay preguntas configuradas.
+                </div>
+              ) : (
+                draft.faqs.map((faq, index) => (
+                  <div
+                    key={`faq-${index}`}
+                    className="rounded-xl border border-border/60 bg-background/80 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">
+                        Pregunta {index + 1}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Eliminar pregunta ${index + 1}`}
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            faqs: prev.faqs.filter(
+                              (_, currentIndex) => currentIndex !== index,
+                            ),
+                          }))
+                        }
+                        disabled={isLoading || isSaving || !canManageContent}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="mt-2 grid gap-2">
+                      <Input
+                        className="admin-input-surface"
+                        value={faq.question}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            faqs: prev.faqs.map((currentFaq, currentIndex) =>
+                              currentIndex === index
+                                ? {
+                                    ...currentFaq,
+                                    question: event.target.value,
+                                  }
+                                : currentFaq,
+                            ),
+                          }))
+                        }
+                        placeholder="Pregunta frecuente"
+                        maxLength={240}
+                        disabled={isLoading || isSaving || !canManageContent}
+                      />
+                      <Textarea
+                        className="admin-input-surface min-h-[88px]"
+                        value={faq.answer}
+                        onChange={(event) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            faqs: prev.faqs.map((currentFaq, currentIndex) =>
+                              currentIndex === index
+                                ? {
+                                    ...currentFaq,
+                                    answer: event.target.value,
+                                  }
+                                : currentFaq,
+                            ),
+                          }))
+                        }
+                        placeholder="Respuesta clara y breve"
+                        maxLength={2000}
+                        disabled={isLoading || isSaving || !canManageContent}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="space-y-5 xl:sticky xl:top-24 xl:self-start">
@@ -533,6 +668,10 @@ export function AdminCompanyContentSection() {
               <div className="admin-stat-chip">
                 <span className="font-medium">Valores registrados:</span>{" "}
                 {totalValues}
+              </div>
+              <div className="admin-stat-chip">
+                <span className="font-medium">FAQs publicadas:</span>{" "}
+                {draft.faqs.length}
               </div>
               <div className="admin-stat-chip">
                 <span className="font-medium">Permiso:</span>{" "}

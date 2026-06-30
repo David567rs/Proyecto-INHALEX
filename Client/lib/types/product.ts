@@ -5,6 +5,11 @@ export interface Product {
   description: string
   longDescription?: string
   price: number
+  promoActive?: boolean
+  promoLabel?: string
+  promoDescription?: string
+  promoPrice?: number
+  promoEndsAt?: string
   currency: string
   image: string
   category: string

@@ -10,6 +10,11 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { NotificationsService } from '../notifications/notifications.service';
+import {
+  CustomerNotificationSeverity,
+  CustomerNotificationType,
+} from '../notifications/schemas/customer-notification.schema';
 import { InventoryMovementType } from '../products/enums/inventory-movement-type.enum';
 import { ProductStatus } from '../products/enums/product-status.enum';
 import {
@@ -18,6 +23,7 @@ import {
 } from '../products/schemas/product-inventory-movement.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { UserStatus } from '../users/enums/user-status.enum';
+import { ShippingAddressResponse } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { SalesService } from '../sales/sales.service';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
@@ -100,6 +106,21 @@ export interface AdminOrderStatusNoteResponse {
   createdAt: string;
 }
 
+export interface AdminShippingAddressResponse {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  street: string;
+  exteriorNumber: string;
+  interiorNumber?: string;
+  neighborhood: string;
+  municipality: string;
+  state: string;
+  postalCode: string;
+  references?: string;
+}
+
 export interface AdminOrderListItemResponse {
   id: string;
   reference: string;
@@ -122,6 +143,7 @@ export interface AdminOrderDetailResponse extends AdminOrderListItemResponse {
   customerNotes?: string;
   customerUserId?: string;
   customerUserEmail?: string;
+  shippingAddress?: AdminShippingAddressResponse;
   items: OrderPreviewItem[];
   issues: DraftOrderIssue[];
   statusNotes: AdminOrderStatusNoteResponse[];
@@ -192,6 +214,7 @@ export class OrdersService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly salesService: SalesService,
+    private readonly notificationsService?: NotificationsService,
   ) {}
 
   async previewDraft(
@@ -216,6 +239,10 @@ export class OrdersService {
     }
 
     const linkedUser = await this.resolveOrderingUser(authorization);
+    const shippingAddress = await this.resolveShippingAddress(
+      linkedUser,
+      createOrderDraftDto.shippingAddressId,
+    );
     const order = await this.orderModel.create({
       reference: this.buildDraftReference(),
       status: OrderStatus.DRAFT,
@@ -232,6 +259,7 @@ export class OrdersService {
       },
       customerUserId: linkedUser?.userId,
       customerUserEmail: linkedUser?.email,
+      shippingAddress: this.toOrderShippingAddress(shippingAddress),
       needsManualReview: preview.needsManualReview,
       channel: 'web_public',
       lastValidatedAt: new Date(),
@@ -243,6 +271,12 @@ export class OrdersService {
         ),
       ],
     });
+
+    await this.notifyCustomerOrder(
+      order,
+      'Borrador preparado',
+      `Tu pedido ${order.reference} quedo preparado para revision.`,
+    );
 
     return {
       ...preview,
@@ -256,7 +290,18 @@ export class OrdersService {
   async confirmOrder(
     confirmOrderDto: ConfirmOrderDto,
     authorization?: string,
+    idempotencyKey?: string,
   ): Promise<ConfirmedOrderResponse> {
+    const normalizedIdempotencyKey =
+      this.normalizeIdempotencyKey(idempotencyKey);
+    const existingOrder = await this.orderModel
+      .findOne({ idempotencyKey: normalizedIdempotencyKey })
+      .exec();
+
+    if (existingOrder) {
+      return this.mapConfirmedOrder(existingOrder);
+    }
+
     const preview = await this.previewDraft({ items: confirmOrderDto.items });
 
     if (!preview.items.length || !preview.canConfirmOrder) {
@@ -272,6 +317,10 @@ export class OrdersService {
     }
 
     const linkedUser = await this.resolveOrderingUser(authorization);
+    const shippingAddress = await this.resolveShippingAddress(
+      linkedUser,
+      confirmOrderDto.shippingAddressId,
+    );
     const orderReference = this.buildConfirmedReference();
     const actor = {
       userId: linkedUser?.userId,
@@ -296,6 +345,7 @@ export class OrdersService {
 
       const order = await this.orderModel.create({
         reference: orderReference,
+        idempotencyKey: normalizedIdempotencyKey,
         status: OrderStatus.PENDING_REVIEW,
         currency: preview.currency,
         totalItems: preview.totalItems,
@@ -310,6 +360,7 @@ export class OrdersService {
         },
         customerUserId: linkedUser?.userId,
         customerUserEmail: linkedUser?.email,
+        shippingAddress: this.toOrderShippingAddress(shippingAddress),
         needsManualReview: preview.needsManualReview,
         channel: 'web_public',
         lastValidatedAt: new Date(),
@@ -331,13 +382,13 @@ export class OrdersService {
         )
         .exec();
 
-      return {
-        ...preview,
-        orderId: order.id,
-        reference: order.reference,
-        status: order.status,
-        createdAt: order.createdAt?.toISOString(),
-      };
+      await this.notifyCustomerOrder(
+        order,
+        'Pedido recibido',
+        `Tu pedido ${order.reference} fue recibido y esta en revision.`,
+      );
+
+      return this.mapConfirmedOrder(order);
     } catch (error) {
       if (reservedMutations.length > 0) {
         await this.rollbackReservedInventory(
@@ -346,6 +397,17 @@ export class OrdersService {
           actor,
         );
       }
+
+      if (this.isDuplicateKeyError(error)) {
+        const duplicatedOrder = await this.orderModel
+          .findOne({ idempotencyKey: normalizedIdempotencyKey })
+          .exec();
+
+        if (duplicatedOrder) {
+          return this.mapConfirmedOrder(duplicatedOrder);
+        }
+      }
+
       throw error;
     }
   }
@@ -469,6 +531,13 @@ export class OrdersService {
       );
     }
 
+    await this.notifyCustomerOrder(
+      updatedOrder,
+      'Pedido confirmado',
+      `Tu pedido ${updatedOrder.reference} fue confirmado por el equipo.`,
+      CustomerNotificationSeverity.SUCCESS,
+    );
+
     return this.mapAdminOrderDetail(updatedOrder);
   }
 
@@ -540,6 +609,13 @@ export class OrdersService {
           'El pedido cambio de estado mientras lo estabas cancelando. Recarga la lista e intenta de nuevo.',
         );
       }
+
+      await this.notifyCustomerOrder(
+        updatedOrder,
+        'Pedido cancelado',
+        `Tu pedido ${updatedOrder.reference} fue cancelado. Si tienes dudas, contactanos desde reportes.`,
+        CustomerNotificationSeverity.WARNING,
+      );
 
       return this.mapAdminOrderDetail(updatedOrder);
     } catch (error) {
@@ -658,6 +734,13 @@ export class OrdersService {
 
       await this.recordCompletedOrderSales(updatedOrder);
 
+      await this.notifyCustomerOrder(
+        updatedOrder,
+        'Pedido completado',
+        `Tu pedido ${updatedOrder.reference} fue completado. Ya puedes calificar tus articulos adquiridos.`,
+        CustomerNotificationSeverity.SUCCESS,
+      );
+
       return this.mapAdminOrderDetail(updatedOrder);
     } catch (error) {
       if (completedMutations.length > 0) {
@@ -694,7 +777,7 @@ export class OrdersService {
         status: ProductStatus.ACTIVE,
       })
       .select(
-        'name slug image category presentation origin price currency inStock stockAvailable allowBackorder',
+        'name slug image category presentation origin price promoActive promoPrice promoEndsAt currency inStock stockAvailable allowBackorder',
       )
       .exec();
 
@@ -749,6 +832,54 @@ export class OrdersService {
     return {
       ...preview,
       signature: this.buildPreviewSignature(preview),
+    };
+  }
+
+  private mapConfirmedOrder(order: OrderDocument): ConfirmedOrderResponse {
+    const preview = this.attachSignature({
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        productSlug: item.productSlug,
+        image: item.image,
+        category: item.category,
+        presentation: item.presentation,
+        origin: item.origin,
+        unitPrice: item.unitPrice,
+        currency: item.currency,
+        requestedQuantity: item.requestedQuantity,
+        quantity: item.quantity,
+        subtotal: item.subtotal,
+        fulfillment: item.fulfillment,
+        stockAvailable: item.stockAvailable,
+        reservedQuantity: item.reservedQuantity,
+        backorderQuantity: item.backorderQuantity,
+        inventoryTracked: item.inventoryTracked,
+        allowBackorder: item.allowBackorder,
+        message: item.message,
+      })),
+      issues: order.issues.map((issue) => ({
+        code: issue.code,
+        severity: issue.severity,
+        productId: issue.productId,
+        productName: issue.productName,
+        title: issue.title,
+        description: issue.description,
+      })),
+      subtotal: order.subtotal,
+      totalItems: order.totalItems,
+      currency: order.currency,
+      canCreateDraft: true,
+      canConfirmOrder: true,
+      needsManualReview: order.needsManualReview,
+    });
+
+    return {
+      ...preview,
+      orderId: order.id,
+      reference: order.reference,
+      status: order.status,
+      createdAt: order.createdAt?.toISOString(),
     };
   }
 
@@ -869,6 +1000,8 @@ export class OrdersService {
       reservedQuantity = requestedQuantity;
     }
 
+    const unitPrice = this.resolveUnitPrice(product);
+
     return {
       item: {
         productId: product.id,
@@ -878,11 +1011,11 @@ export class OrdersService {
         category: product.category,
         presentation: product.presentation,
         origin: product.origin,
-        unitPrice: product.price,
+        unitPrice,
         currency: product.currency,
         requestedQuantity,
         quantity,
-        subtotal: quantity * product.price,
+        subtotal: quantity * unitPrice,
         fulfillment,
         stockAvailable: inventory.tracked ? inventory.available : null,
         reservedQuantity,
@@ -902,6 +1035,24 @@ export class OrdersService {
       available: tracked ? Math.max(product.stockAvailable ?? 0, 0) : 0,
       allowBackorder: Boolean(product.allowBackorder),
     };
+  }
+
+  private resolveUnitPrice(product: ProductDocument): number {
+    const promoEndsAt = product.promoEndsAt?.getTime();
+    const promoIsCurrent =
+      !promoEndsAt || Number.isNaN(promoEndsAt) || promoEndsAt >= Date.now();
+
+    if (
+      product.promoActive &&
+      promoIsCurrent &&
+      typeof product.promoPrice === 'number' &&
+      product.promoPrice > 0 &&
+      product.promoPrice < product.price
+    ) {
+      return product.promoPrice;
+    }
+
+    return product.price;
   }
 
   private buildPreviewSignature(preview: OrderPreviewComputation): string {
@@ -939,6 +1090,24 @@ export class OrdersService {
     return `PED-${stamp}-${random}`;
   }
 
+  private normalizeIdempotencyKey(idempotencyKey?: string): string {
+    const normalized = idempotencyKey?.trim() ?? '';
+    if (!/^[a-zA-Z0-9_-]{16,100}$/.test(normalized)) {
+      throw new BadRequestException('Idempotency-Key invalida o ausente');
+    }
+
+    return normalized;
+  }
+
+  private isDuplicateKeyError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 11000
+    );
+  }
+
   private async resolveOrderingUser(
     authorization?: string,
   ): Promise<OrderActorSnapshot | null> {
@@ -967,6 +1136,43 @@ export class OrdersService {
     }
   }
 
+  private async resolveShippingAddress(
+    linkedUser: OrderActorSnapshot | null,
+    shippingAddressId?: string,
+  ): Promise<ShippingAddressResponse | undefined> {
+    if (!shippingAddressId) {
+      return undefined;
+    }
+
+    if (!linkedUser?.userId) {
+      throw new BadRequestException(
+        'Inicia sesion para seleccionar una direccion guardada',
+      );
+    }
+
+    const address = await this.usersService.findShippingAddressById(
+      linkedUser.userId,
+      shippingAddressId,
+    );
+    if (!address) {
+      throw new BadRequestException('La direccion seleccionada ya no existe');
+    }
+
+    return address;
+  }
+
+  private toOrderShippingAddress(address?: ShippingAddressResponse) {
+    if (!address) {
+      return undefined;
+    }
+
+    const { id, isDefault: _isDefault, ...snapshot } = address;
+    return {
+      sourceAddressId: id,
+      ...snapshot,
+    };
+  }
+
   private buildStatusNote(
     status: OrderStatus,
     note: string,
@@ -979,6 +1185,27 @@ export class OrdersService {
       actorEmail: actor?.email,
       createdAt: new Date(),
     };
+  }
+
+  private async notifyCustomerOrder(
+    order: OrderDocument,
+    title: string,
+    message: string,
+    severity = CustomerNotificationSeverity.INFO,
+  ): Promise<void> {
+    await this.notificationsService?.createForUser({
+      userId: order.customerUserId,
+      userEmail: order.customerUserEmail ?? order.customer.email,
+      title,
+      message,
+      type: CustomerNotificationType.ORDER,
+      severity,
+      metadata: {
+        orderId: order.id,
+        reference: order.reference,
+        status: order.status,
+      },
+    });
   }
 
   private buildAdminOrderFilters(
@@ -1066,6 +1293,22 @@ export class OrdersService {
       customerNotes: order.customer.notes,
       customerUserId: order.customerUserId,
       customerUserEmail: order.customerUserEmail,
+      shippingAddress: order.shippingAddress
+        ? {
+            id: order.shippingAddress.sourceAddressId,
+            label: order.shippingAddress.label,
+            recipientName: order.shippingAddress.recipientName,
+            phone: order.shippingAddress.phone,
+            street: order.shippingAddress.street,
+            exteriorNumber: order.shippingAddress.exteriorNumber,
+            interiorNumber: order.shippingAddress.interiorNumber,
+            neighborhood: order.shippingAddress.neighborhood,
+            municipality: order.shippingAddress.municipality,
+            state: order.shippingAddress.state,
+            postalCode: order.shippingAddress.postalCode,
+            references: order.shippingAddress.references,
+          }
+        : undefined,
       items: order.items.map((item) => ({
         productId: item.productId,
         productName: item.productName,

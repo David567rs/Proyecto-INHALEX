@@ -14,7 +14,9 @@ import {
   ShoppingBag,
   Sparkles,
   Trash2,
+  MapPin,
 } from "lucide-react"
+import { useAddresses } from "@/components/addresses/addresses-provider"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useCart } from "@/components/cart/cart-provider"
 import { Button } from "@/components/ui/button"
@@ -62,6 +64,7 @@ function isValidPhone(value: string) {
 
 export function CartPageClient() {
   const { user } = useAuth()
+  const { addresses, isLoading: areAddressesLoading } = useAddresses()
   const {
     items,
     preview,
@@ -79,6 +82,7 @@ export function CartPageClient() {
   const [customerEmail, setCustomerEmail] = useState("")
   const [customerPhone, setCustomerPhone] = useState("")
   const [notes, setNotes] = useState("")
+  const [shippingAddressId, setShippingAddressId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -88,6 +92,17 @@ export function CartPageClient() {
     setCustomerEmail((current) => current || user.email || "")
     setCustomerPhone((current) => current || user.phone || "")
   }, [user])
+
+  useEffect(() => {
+    if (addresses.length === 0) {
+      setShippingAddressId("")
+      return
+    }
+    if (addresses.some((address) => address.id === shippingAddressId)) return
+    setShippingAddressId(
+      addresses.find((address) => address.isDefault)?.id ?? addresses[0].id,
+    )
+  }, [addresses, shippingAddressId])
 
   const issueList = preview?.issues ?? []
   const needsManualReview = preview?.needsManualReview ?? false
@@ -116,6 +131,7 @@ export function CartPageClient() {
         customerEmail: customerEmail.trim(),
         customerPhone: customerPhone.trim(),
         notes: notes.trim() || undefined,
+        shippingAddressId: shippingAddressId || undefined,
       })
     } catch (error) {
       setErrorMessage(
@@ -463,6 +479,50 @@ export function CartPageClient() {
             </p>
 
             <div className="mt-6 space-y-4">
+              {user ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    Direccion de envio guardada
+                  </div>
+                  {areAddressesLoading ? (
+                    <p className="rounded-xl bg-secondary/30 px-4 py-3 text-sm text-muted-foreground">
+                      Cargando tus direcciones...
+                    </p>
+                  ) : addresses.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-border/70 bg-secondary/20 px-4 py-3 text-sm leading-6 text-muted-foreground">
+                      No tienes domicilios guardados. Puedes confirmar sin uno o{" "}
+                      <Link href="/cuenta" className="font-medium text-primary hover:underline">
+                        agregar una direccion
+                      </Link>
+                      .
+                    </p>
+                  ) : (
+                    <div className="grid gap-2">
+                      {addresses.map((address) => (
+                        <button
+                          key={address.id}
+                          type="button"
+                          className={cn(
+                            "rounded-xl border px-4 py-3 text-left transition-colors",
+                            shippingAddressId === address.id
+                              ? "border-primary/30 bg-primary/[0.06]"
+                              : "border-border/60 bg-background/80 hover:border-primary/20",
+                          )}
+                          onClick={() => setShippingAddressId(address.id)}
+                        >
+                          <span className="text-sm font-semibold text-foreground">
+                            {address.label}
+                          </span>
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {address.street} {address.exteriorNumber}, C.P. {address.postalCode}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Nombre completo</label>
                 <Input

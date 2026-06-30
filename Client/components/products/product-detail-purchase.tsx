@@ -5,6 +5,7 @@ import { Minus, Plus, ShoppingBag } from "lucide-react"
 import { useState } from "react"
 import { useCart } from "@/components/cart/cart-provider"
 import { Button } from "@/components/ui/button"
+import { FavoriteButton } from "@/components/favorites/favorite-button"
 import type { Product } from "@/lib/types/product"
 
 interface ProductDetailPurchaseProps {
@@ -78,6 +79,7 @@ export function ProductDetailPurchase({ product }: ProductDetailPurchaseProps) {
           <ShoppingBag className="mr-2 h-4 w-4" />
           Agregar a la bolsa
         </Button>
+        <FavoriteButton product={product} showLabel />
         <Button
           variant="outline"
           className="rounded-full border-stone-200/80 bg-white shadow-[0_12px_24px_-20px_rgba(64,50,30,0.2)]"

@@ -11,6 +11,9 @@ import { ProductsModule } from './modules/products/products.module';
 import { CompanyContentModule } from './modules/company-content/company-content.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { OrdersModule } from './modules/orders/orders.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { validateEnv } from './config/env.validation';
 
@@ -35,6 +38,9 @@ import { validateEnv } from './config/env.validation';
     AdminModule,
     ProductsModule,
     OrdersModule,
+    NotificationsModule,
+    ReviewsModule,
+    ReportsModule,
     SalesModule,
     CompanyContentModule,
     AuditModule,

@@ -3,7 +3,9 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Manrope } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { AddressesProvider } from "@/components/addresses/addresses-provider";
 import { CartProvider } from "@/components/cart/cart-provider";
+import { FavoritesProvider } from "@/components/favorites/favorites-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
@@ -59,11 +61,15 @@ export default function RootLayout({
     >
       <body className="font-sans antialiased">
         <AuthProvider>
-          <CartProvider>
-            {children}
-            <Toaster />
-            <Analytics />
-          </CartProvider>
+          <AddressesProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                {children}
+                <Toaster />
+                <Analytics />
+              </CartProvider>
+            </FavoritesProvider>
+          </AddressesProvider>
         </AuthProvider>
       </body>
     </html>

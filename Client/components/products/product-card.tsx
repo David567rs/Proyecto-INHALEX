@@ -3,9 +3,15 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ShoppingBag, Eye, Star, Leaf } from "lucide-react"
+import { ShoppingBag, Eye, Star, Leaf, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { FavoriteButton } from "@/components/favorites/favorite-button"
 import { cn } from "@/lib/utils"
+import {
+  getProductDisplayPrice,
+  getProductOfferLabel,
+  hasActiveProductOffer,
+} from "@/lib/products/promotions"
 import type { Product } from "@/lib/types/product"
 
 interface ProductCardProps {
@@ -19,6 +25,8 @@ export function ProductCard({ product, onQuickView, onAddToCart, index = 0 }: Pr
   const [imageError, setImageError] = useState(false)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
   const isUnavailable = !product.inStock && !product.allowBackorder
+  const hasOffer = hasActiveProductOffer(product)
+  const displayPrice = getProductDisplayPrice(product)
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, string> = {
@@ -113,7 +121,18 @@ export function ProductCard({ product, onQuickView, onAddToCart, index = 0 }: Pr
           </div>
         </div>
 
+        <FavoriteButton
+          product={product}
+          className="absolute right-4 top-4 z-20 h-10 w-10"
+        />
+
         <div className="absolute left-4 top-[4.35rem] z-20 flex flex-wrap gap-2">
+          {hasOffer ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-100/70 bg-amber-50/95 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-amber-700 shadow-sm backdrop-blur-md">
+              <Sparkles className="h-3 w-3" />
+              {getProductOfferLabel(product)}
+            </span>
+          ) : null}
           <span className="rounded-full border border-white/45 bg-black/18 px-3 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-white/92 backdrop-blur-md transition-all duration-500 group-hover:border-white/65 group-hover:bg-black/26">
             {getCategoryLabel(product.category)}
           </span>
@@ -183,8 +202,18 @@ export function ProductCard({ product, onQuickView, onAddToCart, index = 0 }: Pr
             <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-muted-foreground/70">
               Precio unitario
             </p>
+            {hasOffer ? (
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground line-through">
+                  {formatPrice(product.price)}
+                </span>
+                <span className="rounded-full border border-amber-100 bg-amber-50 px-2 py-0.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                  Oferta
+                </span>
+              </div>
+            ) : null}
             <span className="text-[2rem] font-bold leading-none text-foreground">
-              {formatPrice(product.price)}
+              {formatPrice(displayPrice)}
             </span>
             <span className="ml-1 text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground/80">
               {product.currency}

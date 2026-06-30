@@ -21,6 +21,21 @@ export class Product {
   @Prop({ required: true, min: 0 })
   price: number;
 
+  @Prop({ default: false, index: true })
+  promoActive?: boolean;
+
+  @Prop({ trim: true, maxlength: 80 })
+  promoLabel?: string;
+
+  @Prop({ trim: true, maxlength: 200 })
+  promoDescription?: string;
+
+  @Prop({ min: 0 })
+  promoPrice?: number;
+
+  @Prop({ type: Date })
+  promoEndsAt?: Date;
+
   @Prop({ required: true, trim: true, uppercase: true, default: 'MXN', maxlength: 5 })
   currency: string;
 

@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Layers3,
   LogOut,
+  MessageSquareWarning,
   Package,
   PackageCheck,
   ShieldCheck,
@@ -74,6 +75,14 @@ const PEDIDOS_LINK: AdminNavLink = {
   description: "Revision y estados",
   icon: ShoppingBag,
   isActive: (pathname) => pathname.startsWith("/admin/pedidos"),
+};
+
+const REPORTES_LINK: AdminNavLink = {
+  href: "/admin/reportes",
+  label: "Reportes",
+  description: "Incidencias y atencion",
+  icon: MessageSquareWarning,
+  isActive: (pathname) => pathname.startsWith("/admin/reportes"),
 };
 
 const VENTAS_LINK: AdminNavLink = {
@@ -136,6 +145,7 @@ const DESKTOP_PRIMARY_LINKS: AdminNavLink[] = [
   RESUMEN_LINK,
   USUARIOS_LINK,
   PEDIDOS_LINK,
+  REPORTES_LINK,
   VENTAS_LINK,
 ];
 const DESKTOP_SECONDARY_LINKS: AdminNavLink[] = [
@@ -147,6 +157,7 @@ const MOBILE_LINKS: AdminNavLink[] = [
   RESUMEN_LINK,
   USUARIOS_LINK,
   PEDIDOS_LINK,
+  REPORTES_LINK,
   VENTAS_LINK,
   ...CATALOGO_LINKS,
   CONTENIDO_LINK,

@@ -147,6 +147,13 @@ export class ProductsService {
       rawMaterialBatchYieldUnits: createProductDto.rawMaterialBatchYieldUnits,
       benefits: this.normalizeStringArray(createProductDto.benefits),
       aromas: this.normalizeStringArray(createProductDto.aromas),
+      promoActive: createProductDto.promoActive ?? false,
+      promoLabel: createProductDto.promoLabel?.trim() || undefined,
+      promoDescription:
+        createProductDto.promoDescription?.trim() || undefined,
+      promoEndsAt: createProductDto.promoEndsAt
+        ? new Date(createProductDto.promoEndsAt)
+        : undefined,
     });
 
     this.assertDepletionConfig({
@@ -156,6 +163,11 @@ export class ProductsService {
         product.rawMaterialConsumptionPerBatchMl,
       rawMaterialBatchYieldUnits: product.rawMaterialBatchYieldUnits,
       stockMin: product.stockMin,
+    });
+    this.assertPromotionConfig({
+      price: product.price,
+      promoActive: product.promoActive,
+      promoPrice: product.promoPrice,
     });
 
     try {
@@ -807,6 +819,20 @@ export class ProductsService {
       updatePayload.image = updateProductDto.image.trim();
     }
 
+    if (updateProductDto.promoLabel !== undefined) {
+      updatePayload.promoLabel =
+        updateProductDto.promoLabel.trim() || undefined;
+    }
+
+    if (updateProductDto.promoDescription !== undefined) {
+      updatePayload.promoDescription =
+        updateProductDto.promoDescription.trim() || undefined;
+    }
+
+    if (updateProductDto.promoEndsAt !== undefined) {
+      updatePayload.promoEndsAt = updateProductDto.promoEndsAt;
+    }
+
     if (updateProductDto.presentation !== undefined) {
       updatePayload.presentation = updateProductDto.presentation.trim();
     }
@@ -869,6 +895,11 @@ export class ProductsService {
         existingProduct.rawMaterialBatchYieldUnits,
       stockMin: updatePayload.stockMin ?? existingProduct.stockMin,
     });
+    this.assertPromotionConfig({
+      price: updatePayload.price ?? existingProduct.price,
+      promoActive: updatePayload.promoActive ?? existingProduct.promoActive,
+      promoPrice: updatePayload.promoPrice ?? existingProduct.promoPrice,
+    });
 
     const updatedProduct = await this.productModel
       .findByIdAndUpdate(productId, updatePayload, {
@@ -919,6 +950,11 @@ export class ProductsService {
           payload.rawMaterialConsumptionPerBatchMl,
         rawMaterialBatchYieldUnits: payload.rawMaterialBatchYieldUnits,
         stockMin: payload.stockMin,
+      });
+      this.assertPromotionConfig({
+        price: payload.price,
+        promoActive: payload.promoActive,
+        promoPrice: payload.promoPrice,
       });
 
       const existing = await this.productModel
@@ -1371,6 +1407,31 @@ export class ProductsService {
     if (missing.length > 0) {
       throw new BadRequestException(
         `Completa la configuracion de agotamiento: ${missing.join(', ')}`,
+      );
+    }
+  }
+
+  private assertPromotionConfig(config: {
+    price: number;
+    promoActive?: boolean;
+    promoPrice?: number;
+  }): void {
+    if (!config.promoActive) {
+      return;
+    }
+
+    if (
+      !Number.isFinite(config.promoPrice) ||
+      (config.promoPrice ?? 0) <= 0
+    ) {
+      throw new BadRequestException(
+        'Define un precio promocional mayor a cero.',
+      );
+    }
+
+    if ((config.promoPrice ?? 0) >= config.price) {
+      throw new BadRequestException(
+        'El precio promocional debe ser menor al precio normal.',
       );
     }
   }

@@ -42,6 +42,11 @@ export interface AdminProduct {
   longDescription?: string
   category: string
   price: number
+  promoActive?: boolean
+  promoLabel?: string
+  promoDescription?: string
+  promoPrice?: number
+  promoEndsAt?: string
   currency: string
   image: string
   benefits?: string[]
@@ -232,6 +237,11 @@ export interface UpdateAdminProductInput {
   longDescription?: string
   category?: string
   price?: number
+  promoActive?: boolean
+  promoLabel?: string
+  promoDescription?: string
+  promoPrice?: number
+  promoEndsAt?: string
   image?: string
   benefits?: string[]
   aromas?: string[]
@@ -383,6 +393,20 @@ export interface AdminOrderDetail extends AdminOrderListItem {
   customerNotes?: string
   customerUserId?: string
   customerUserEmail?: string
+  shippingAddress?: {
+    id: string
+    label: string
+    recipientName: string
+    phone: string
+    street: string
+    exteriorNumber: string
+    interiorNumber?: string
+    neighborhood: string
+    municipality: string
+    state: string
+    postalCode: string
+    references?: string
+  }
   items: DraftOrderPreviewItem[]
   issues: DraftOrderIssue[]
   statusNotes: AdminOrderStatusNote[]
@@ -448,6 +472,92 @@ export function updateAdminOrderStatus(
   token: string,
 ): Promise<AdminOrderDetail> {
   return apiRequest<AdminOrderDetail>(`/admin/orders/${orderId}/status`, {
+    method: "PATCH",
+    body: payload,
+    token,
+  })
+}
+
+export type AdminReportType =
+  | "order"
+  | "product"
+  | "delivery"
+  | "account"
+  | "other"
+
+export type AdminReportStatus = "new" | "in_review" | "resolved" | "closed"
+export type AdminReportPriority = "normal" | "high"
+
+export interface AdminReport {
+  id: string
+  userId: string
+  userEmail: string
+  userName: string
+  type: AdminReportType
+  title: string
+  message: string
+  orderReference?: string
+  productId?: string
+  status: AdminReportStatus
+  priority: AdminReportPriority
+  adminNote?: string
+  handledById?: string
+  handledByEmail?: string
+  resolvedAt?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+interface AdminReportsResponse {
+  items: AdminReport[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  summary: Record<AdminReportStatus, number>
+}
+
+export interface ListAdminReportsQuery {
+  search?: string
+  status?: AdminReportStatus
+  type?: AdminReportType
+  page?: number
+  limit?: number
+}
+
+export interface UpdateAdminReportInput {
+  status?: AdminReportStatus
+  priority?: AdminReportPriority
+  adminNote?: string
+}
+
+export function listAdminReports(
+  token: string,
+  query: ListAdminReportsQuery = {},
+): Promise<AdminReportsResponse> {
+  const params = new URLSearchParams()
+
+  if (query.search) params.set("search", query.search)
+  if (query.status) params.set("status", query.status)
+  if (query.type) params.set("type", query.type)
+  if (query.page) params.set("page", String(query.page))
+  if (query.limit) params.set("limit", String(query.limit))
+
+  const queryString = params.toString()
+  const path = queryString ? `/admin/reports?${queryString}` : "/admin/reports"
+
+  return apiRequest<AdminReportsResponse>(path, {
+    method: "GET",
+    token,
+  })
+}
+
+export function updateAdminReport(
+  reportId: string,
+  payload: UpdateAdminReportInput,
+  token: string,
+): Promise<AdminReport> {
+  return apiRequest<AdminReport>(`/admin/reports/${reportId}`, {
     method: "PATCH",
     body: payload,
     token,

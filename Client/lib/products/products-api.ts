@@ -9,6 +9,11 @@ export interface ProductApiItem {
   description: string
   longDescription?: string
   price: number
+  promoActive?: boolean
+  promoLabel?: string
+  promoDescription?: string
+  promoPrice?: number
+  promoEndsAt?: string
   currency: string
   image: string
   category: string
@@ -48,6 +53,11 @@ export function mapApiProduct(product: ProductApiItem): Product {
     description: product.description,
     longDescription: product.longDescription,
     price: product.price,
+    promoActive: product.promoActive,
+    promoLabel: product.promoLabel,
+    promoDescription: product.promoDescription,
+    promoPrice: product.promoPrice,
+    promoEndsAt: product.promoEndsAt,
     currency: product.currency,
     image: product.image,
     category: product.category,
