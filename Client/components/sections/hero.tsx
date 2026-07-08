@@ -32,7 +32,7 @@ export function Hero() {
     <section className="relative overflow-hidden">
       <div className="absolute inset-0">
         <Image
-          src="/images/fondo.jpg"
+          src="/images/fondo.png"
           alt="Laboratorio de plantas naturales"
           fill
           priority

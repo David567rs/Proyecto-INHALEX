@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { X, Check, ShoppingBag, Minus, Plus, Star, Sparkles, Leaf } from "lucide-react"
+import { X, Check, ShoppingBag, Minus, Plus, Sparkles, Leaf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ProductRatingSummary } from "@/components/products/product-rating-summary"
 import {
   resolveProductDisplayImage,
   resolveProductImagePosition,
@@ -95,6 +97,9 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{product.name}</DialogTitle>
+          <DialogDescription>
+            Vista rapida del producto con disponibilidad, calificacion, precio y compra.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="relative isolate overflow-hidden rounded-[inherit] bg-white">
@@ -201,24 +206,13 @@ export function ProductModal({ product, isOpen, onClose, onAddToCart }: ProductM
                   )}
                 </div>
 
-                {product.rating && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={cn(
-                            "h-5 w-5",
-                            i < Math.floor(product.rating! ?? 0)
-                              ? "fill-amber-400 text-amber-400"
-                              : "fill-neutral-200 text-neutral-200"
-                          )}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-base text-neutral-400">({product.reviews ?? 0})</span>
-                  </div>
-                )}
+                <ProductRatingSummary
+                  rating={product.rating}
+                  reviews={product.reviews}
+                  size="md"
+                  countFormat="parentheses"
+                  className="text-neutral-400"
+                />
               </div>
 
               <h2

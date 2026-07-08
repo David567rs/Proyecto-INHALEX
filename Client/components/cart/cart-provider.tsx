@@ -453,3 +453,7 @@ export function useCart(): CartContextValue {
   }
   return context
 }
+
+export function useOptionalCart(): CartContextValue | null {
+  return useContext(CartContext) ?? null
+}

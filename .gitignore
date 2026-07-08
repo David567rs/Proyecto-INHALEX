@@ -20,6 +20,7 @@ pnpm-debug.log*
 # Respaldos locales
 Server/backups/
 mongo-migration/
+docs/mongo-backups/
 
 # Logs locales del servidor
 Server/server-start*.txt

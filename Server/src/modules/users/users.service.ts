@@ -65,6 +65,64 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
+  async storeAlexaLinkCode(
+    userId: string,
+    codeHash: string,
+    expiresAt: Date,
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            alexaLinkCodeHash: codeHash,
+            alexaLinkCodeExpiresAt: expiresAt,
+          },
+        },
+        {
+          returnDocument: 'after',
+        },
+      )
+      .exec();
+  }
+
+  async findByAlexaLinkCodeHash(
+    codeHash: string,
+    now = new Date(),
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findOne({
+        alexaLinkCodeHash: codeHash,
+        alexaLinkCodeExpiresAt: { $gt: now },
+        status: UserStatus.ACTIVE,
+      })
+      .exec();
+  }
+
+  async clearAlexaLinkCode(
+    userId: string,
+    markLinked = false,
+  ): Promise<UserDocument | null> {
+    const update: Record<string, unknown> = {
+      $unset: {
+        alexaLinkCodeHash: '',
+        alexaLinkCodeExpiresAt: '',
+      },
+    };
+
+    if (markLinked) {
+      update.$set = {
+        alexaLinkedAt: new Date(),
+      };
+    }
+
+    return this.userModel
+      .findByIdAndUpdate(userId, update, {
+        returnDocument: 'after',
+      })
+      .exec();
+  }
+
   async listAll(): Promise<UserDocument[]> {
     return this.userModel.find().sort({ createdAt: -1 }).exec();
   }

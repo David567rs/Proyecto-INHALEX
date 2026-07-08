@@ -9,6 +9,7 @@ import { AccountAddresses } from "@/components/addresses/account-addresses"
 import { AccountNotices } from "@/components/account/account-notices"
 import { AccountReports } from "@/components/account/account-reports"
 import { AccountReviews } from "@/components/account/account-reviews"
+import { AccountAlexaAccess } from "@/components/account/account-alexa-access"
 
 export default function CuentaPage() {
   const { user } = useAuth()
@@ -38,6 +39,8 @@ export default function CuentaPage() {
                     <span className="font-medium">Rol:</span> {roleLabel}
                   </div>
                 </div>
+
+                <AccountAlexaAccess />
               </div>
 
               <AccountNotices />

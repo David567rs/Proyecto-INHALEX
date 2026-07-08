@@ -63,10 +63,8 @@ export class AddressesService {
       references: payload.references?.trim() || undefined,
       isDefault: shouldBeDefault,
     });
-    user.shippingAddresses = addresses;
-    await user.save();
 
-    return this.mapAddresses(user.shippingAddresses);
+    return this.saveAddresses(userId, addresses);
   }
 
   async update(
@@ -97,10 +95,7 @@ export class AddressesService {
       });
     }
 
-    user.shippingAddresses = addresses;
-    await user.save();
-
-    return this.mapAddresses(user.shippingAddresses);
+    return this.saveAddresses(userId, addresses);
   }
 
   async remove(
@@ -129,10 +124,7 @@ export class AddressesService {
       remainingAddresses[0].isDefault = true;
     }
 
-    user.shippingAddresses = remainingAddresses;
-    await user.save();
-
-    return this.mapAddresses(user.shippingAddresses);
+    return this.saveAddresses(userId, remainingAddresses);
   }
 
   private async findUserWithAddresses(userId: string): Promise<UserDocument> {
@@ -146,6 +138,32 @@ export class AddressesService {
     }
 
     return user;
+  }
+
+  private async saveAddresses(
+    userId: string,
+    addresses: ShippingAddress[],
+  ): Promise<ShippingAddressResponse[]> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $set: {
+            shippingAddresses: addresses.map((address) =>
+              this.toPlainAddress(address),
+            ),
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .select('+shippingAddresses')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.mapAddresses(updatedUser.shippingAddresses ?? []);
   }
 
   private normalizeAddress(
@@ -169,11 +187,39 @@ export class AddressesService {
     for (const field of fields) {
       const value = payload[field];
       if (typeof value === 'string') {
-        normalized[field] = value.trim();
+        const trimmedValue = value.trim();
+        normalized[field] =
+          !trimmedValue && this.isOptionalAddressField(field)
+            ? undefined
+            : trimmedValue;
       }
     }
 
     return normalized;
+  }
+
+  private isOptionalAddressField(
+    field: keyof CreateShippingAddressDto,
+  ): field is 'interiorNumber' | 'references' {
+    return field === 'interiorNumber' || field === 'references';
+  }
+
+  private toPlainAddress(address: ShippingAddress): ShippingAddress {
+    return {
+      _id: address._id,
+      label: address.label,
+      recipientName: address.recipientName,
+      phone: address.phone,
+      street: address.street,
+      exteriorNumber: address.exteriorNumber,
+      interiorNumber: address.interiorNumber,
+      neighborhood: address.neighborhood,
+      municipality: address.municipality,
+      state: address.state,
+      postalCode: address.postalCode,
+      references: address.references,
+      isDefault: address.isDefault,
+    };
   }
 
   private mapAddresses(

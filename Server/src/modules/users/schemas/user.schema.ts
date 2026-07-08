@@ -111,6 +111,15 @@ export class User {
 
   @Prop({ type: [ShippingAddressSchema], default: [], select: false })
   shippingAddresses: ShippingAddress[];
+
+  @Prop({ select: false, index: true, sparse: true })
+  alexaLinkCodeHash?: string;
+
+  @Prop({ select: false, index: true })
+  alexaLinkCodeExpiresAt?: Date;
+
+  @Prop()
+  alexaLinkedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -118,6 +127,8 @@ export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.set('toJSON', {
   transform: (_doc, ret: Partial<User>) => {
     delete ret.passwordHash;
+    delete ret.alexaLinkCodeHash;
+    delete ret.alexaLinkCodeExpiresAt;
     return ret;
   },
 });

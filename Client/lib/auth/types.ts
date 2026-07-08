@@ -9,6 +9,7 @@ export interface AuthUser {
   phone?: string
   role: UserRole
   status: "active" | "inactive"
+  alexaLinkedAt?: string
   createdAt?: string
   updatedAt?: string
 }

@@ -33,6 +33,7 @@ describe('AddressesService', () => {
   beforeEach(() => {
     userModel = {
       findById: jest.fn(),
+      findByIdAndUpdate: jest.fn(),
     };
     service = new AddressesService(userModel);
   });
@@ -40,9 +41,15 @@ describe('AddressesService', () => {
   it('marca la primera direccion como principal', async () => {
     const user = {
       shippingAddresses: [],
-      save: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn().mockRejectedValue(new Error('should not save user')),
     };
     userModel.findById.mockReturnValue(selectResult(user));
+    userModel.findByIdAndUpdate.mockImplementation(
+      (_userId: string, update: { $set: { shippingAddresses: unknown[] } }) =>
+        selectResult({
+          shippingAddresses: update.$set.shippingAddresses,
+        }),
+    );
 
     const addresses = await service.create(new Types.ObjectId().toString(), {
       label: 'Casa',
@@ -58,6 +65,16 @@ describe('AddressesService', () => {
 
     expect(addresses).toHaveLength(1);
     expect(addresses[0].isDefault).toBe(true);
+    expect(user.save).not.toHaveBeenCalled();
+    expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          shippingAddresses: expect.any(Array),
+        }),
+      }),
+      { new: true, runValidators: true },
+    );
   });
 
   it('limita la libreta a cinco direcciones', async () => {
@@ -87,9 +104,15 @@ describe('AddressesService', () => {
     const secondaryAddress = buildAddress();
     const user = {
       shippingAddresses: [primaryAddress, secondaryAddress],
-      save: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn().mockRejectedValue(new Error('should not save user')),
     };
     userModel.findById.mockReturnValue(selectResult(user));
+    userModel.findByIdAndUpdate.mockImplementation(
+      (_userId: string, update: { $set: { shippingAddresses: unknown[] } }) =>
+        selectResult({
+          shippingAddresses: update.$set.shippingAddresses,
+        }),
+    );
 
     const addresses = await service.remove(
       new Types.ObjectId().toString(),
@@ -99,5 +122,6 @@ describe('AddressesService', () => {
     expect(addresses).toHaveLength(1);
     expect(addresses[0].id).toBe(secondaryAddress._id.toString());
     expect(addresses[0].isDefault).toBe(true);
+    expect(user.save).not.toHaveBeenCalled();
   });
 });

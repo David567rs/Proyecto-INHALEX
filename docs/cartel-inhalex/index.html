@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cartel INHALEX - Encuentro Universitario Empresarial TI 2026</title>
+    <style>
+      @page {
+        size: 800mm 1800mm;
+        margin: 0;
+      }
+
+      :root {
+        --green-900: #064f2a;
+        --green-800: #007a3d;
+        --green-700: #0a8d49;
+        --green-500: #4f9e3a;
+        --mint-500: #69c7a5;
+        --mint-200: #dff5ea;
+        --blue-700: #1267d6;
+        --blue-600: #1e7df2;
+        --gold-500: #d9a441;
+        --ink: #18241e;
+        --muted: #607066;
+        --line: #d8e6dc;
+        --paper: #f8fbf7;
+        --white: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #d7ded9;
+        color: var(--ink);
+        font-family:
+          "Montserrat",
+          "Aptos",
+          "Segoe UI",
+          Arial,
+          sans-serif;
+      }
+
+      body {
+        padding: 18px;
+      }
+
+      .poster {
+        position: relative;
+        isolation: isolate;
+        width: 800mm;
+        min-height: 1800mm;
+        margin: 0 auto;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(248, 251, 247, 0.96), rgba(255, 255, 255, 0.98)),
+          var(--paper);
+        box-shadow: 0 20px 80px rgba(0, 0, 0, 0.26);
+      }
+
+      .poster::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background:
+          linear-gradient(115deg, rgba(0, 122, 61, 0.08) 0 16%, transparent 16% 100%),
+          linear-gradient(295deg, rgba(18, 103, 214, 0.07) 0 14%, transparent 14% 100%),
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 19mm,
+            rgba(0, 122, 61, 0.035) 19mm 19.45mm
+          );
+      }
+
+      .poster::after {
+        content: "";
+        position: absolute;
+        inset: 28mm;
+        z-index: -1;
+        border: 0.9mm solid rgba(0, 122, 61, 0.12);
+        border-radius: 20mm;
+        pointer-events: none;
+      }
+
+      .band {
+        padding-inline: 42mm;
+      }
+
+      .top-band {
+        min-height: 170mm;
+        padding-top: 24mm;
+        padding-bottom: 22mm;
+        color: white;
+        background:
+          linear-gradient(135deg, rgba(6, 79, 42, 0.98), rgba(0, 122, 61, 0.94) 48%, rgba(18, 103, 214, 0.9)),
+          var(--green-800);
+      }
+
+      .top-grid {
+        display: grid;
+        grid-template-columns: 118mm 1fr 118mm;
+        gap: 18mm;
+        align-items: center;
+      }
+
+      .logo-slot,
+      .event-mark {
+        display: grid;
+        min-height: 82mm;
+        place-items: center;
+        border: 1.1mm solid rgba(255, 255, 255, 0.5);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow: inset 0 0 0 2mm rgba(255, 255, 255, 0.08);
+        text-align: center;
+        backdrop-filter: blur(6px);
+      }
+
+      .logo-slot strong,
+      .event-mark strong {
+        display: block;
+        font-size: 24pt;
+        letter-spacing: 0.04em;
+      }
+
+      .logo-slot span,
+      .event-mark span {
+        display: block;
+        margin-top: 4mm;
+        max-width: 80mm;
+        font-size: 9.5pt;
+        line-height: 1.35;
+        opacity: 0.88;
+      }
+
+      .event-kicker {
+        margin: 0 0 6mm;
+        font-size: 13pt;
+        font-weight: 800;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.76);
+      }
+
+      .event-title {
+        margin: 0;
+        font-size: 35pt;
+        line-height: 1.02;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .event-subtitle {
+        margin: 7mm 0 0;
+        font-size: 14pt;
+        line-height: 1.45;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .institution-phrase {
+        display: inline-flex;
+        margin-top: 8mm;
+        padding: 4mm 8mm;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.15);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 13pt;
+        font-style: italic;
+      }
+
+      .hero {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 270mm;
+        gap: 28mm;
+        align-items: center;
+        min-height: 260mm;
+        padding-top: 30mm;
+        padding-bottom: 28mm;
+      }
+
+      .project-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4mm;
+        padding: 4mm 7mm;
+        border: 0.7mm solid rgba(0, 122, 61, 0.16);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--green-800);
+        font-size: 12pt;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .dot {
+        width: 4.5mm;
+        height: 4.5mm;
+        border-radius: 999px;
+        background: var(--green-800);
+        box-shadow: 0 0 0 2.2mm rgba(0, 122, 61, 0.12);
+      }
+
+      h1 {
+        margin: 12mm 0 0;
+        max-width: 440mm;
+        font-size: 50pt;
+        line-height: 0.98;
+        letter-spacing: -0.025em;
+      }
+
+      .hero-copy {
+        margin: 11mm 0 0;
+        max-width: 460mm;
+        color: var(--muted);
+        font-size: 20pt;
+        line-height: 1.42;
+      }
+
+      .quote {
+        display: inline-flex;
+        margin-top: 13mm;
+        padding: 6mm 10mm;
+        border-left: 2.2mm solid var(--gold-500);
+        border-radius: 0 999px 999px 0;
+        background: #fff8e9;
+        color: #785416;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18pt;
+        font-style: italic;
+      }
+
+      .brand-card {
+        position: relative;
+        min-height: 190mm;
+        padding: 18mm;
+        border: 1mm solid rgba(0, 122, 61, 0.13);
+        border-radius: 22mm;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(236, 248, 241, 0.95)),
+          white;
+        box-shadow: 0 28px 70px rgba(8, 66, 36, 0.14);
+      }
+
+      .brand-card img.logo-inhalex {
+        display: block;
+        width: 100%;
+        max-height: 72mm;
+        object-fit: contain;
+        object-position: center;
+      }
+
+      .product-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7mm;
+        margin-top: 18mm;
+      }
+
+      .product-strip img {
+        width: 100%;
+        height: 66mm;
+        object-fit: cover;
+        border-radius: 13mm;
+        border: 0.7mm solid rgba(0, 122, 61, 0.12);
+      }
+
+      .brand-note {
+        margin: 12mm 0 0;
+        color: var(--muted);
+        font-size: 13pt;
+        line-height: 1.45;
+        text-align: center;
+      }
+
+      .data-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10mm;
+        padding-top: 8mm;
+        padding-bottom: 26mm;
+      }
+
+      .data-chip {
+        min-height: 58mm;
+        padding: 10mm;
+        border: 0.7mm solid var(--line);
+        border-radius: 14mm;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 16px 34px rgba(5, 54, 28, 0.08);
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 4mm;
+        color: var(--green-800);
+        font-size: 10pt;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .data-chip strong {
+        display: block;
+        font-size: 14pt;
+        line-height: 1.28;
+      }
+
+      .section {
+        padding-top: 24mm;
+        padding-bottom: 24mm;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8mm;
+        margin: 0 0 14mm;
+      }
+
+      .section-title::before {
+        content: "";
+        width: 15mm;
+        height: 15mm;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--green-800), var(--mint-500));
+        box-shadow: 0 0 0 3mm rgba(0, 122, 61, 0.1);
+      }
+
+      .section-title h2 {
+        margin: 0;
+        font-size: 28pt;
+        line-height: 1;
+      }
+
+      .problem-solution {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16mm;
+      }
+
+      .panel {
+        min-height: 188mm;
+        padding: 16mm;
+        border: 0.8mm solid var(--line);
+        border-radius: 18mm;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 18px 46px rgba(6, 79, 42, 0.09);
+      }
+
+      .panel.problem {
+        border-left: 3mm solid var(--blue-700);
+      }
+
+      .panel.solution {
+        border-left: 3mm solid var(--green-800);
+      }
+
+      .panel h3 {
+        margin: 0 0 8mm;
+        color: var(--green-900);
+        font-size: 22pt;
+      }
+
+      .panel p,
+      .panel li {
+        color: var(--muted);
+        font-size: 17.2pt;
+        line-height: 1.5;
+      }
+
+      .panel ul {
+        margin: 8mm 0 0;
+        padding-left: 9mm;
+      }
+
+      .stack-section {
+        padding-top: 18mm;
+        padding-bottom: 20mm;
+        background:
+          linear-gradient(135deg, rgba(6, 79, 42, 0.96), rgba(0, 122, 61, 0.93) 52%, rgba(18, 103, 214, 0.9)),
+          var(--green-800);
+        color: white;
+      }
+
+      .stack-section .section-title::before {
+        background: white;
+        box-shadow: 0 0 0 3mm rgba(255, 255, 255, 0.12);
+      }
+
+      .stack-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10mm;
+      }
+
+      .stack-card {
+        padding: 12mm;
+        border: 0.7mm solid rgba(255, 255, 255, 0.24);
+        border-radius: 16mm;
+        background: rgba(255, 255, 255, 0.13);
+      }
+
+      .stack-card h3 {
+        margin: 0 0 8mm;
+        font-size: 18pt;
+      }
+
+      .tag-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4mm;
+      }
+
+      .tag {
+        padding: 3mm 5mm;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: white;
+        font-size: 11pt;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .benefits {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16mm;
+        align-items: stretch;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 9mm;
+      }
+
+      .metric {
+        min-height: 72mm;
+        padding: 10mm;
+        border-radius: 16mm;
+        background: white;
+        border: 0.7mm solid var(--line);
+        box-shadow: 0 14px 34px rgba(6, 79, 42, 0.08);
+      }
+
+      .metric strong {
+        display: block;
+        color: var(--green-800);
+        font-size: 24pt;
+      }
+
+      .metric span {
+        display: block;
+        margin-top: 3mm;
+        color: var(--muted);
+        font-size: 13.5pt;
+        line-height: 1.35;
+      }
+
+      .benefit-copy {
+        display: grid;
+        gap: 6mm;
+        padding: 16mm;
+        border-radius: 20mm;
+        background: linear-gradient(180deg, #ffffff, #eff8f2);
+        border: 0.8mm solid rgba(0, 122, 61, 0.14);
+      }
+
+      .benefit-item {
+        display: grid;
+        grid-template-columns: 13mm 1fr;
+        gap: 6mm;
+        align-items: start;
+        color: var(--muted);
+        font-size: 16.5pt;
+        line-height: 1.35;
+      }
+
+      .check {
+        display: grid;
+        width: 13mm;
+        height: 13mm;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--green-800);
+        color: white;
+        font-size: 12pt;
+        font-weight: 900;
+      }
+
+      .gallery {
+        padding-top: 20mm;
+        padding-bottom: 24mm;
+      }
+
+      .mockup-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 14mm;
+      }
+
+      .browser-mockup,
+      .phone-mockup {
+        overflow: hidden;
+        border-radius: 20mm;
+        border: 1mm solid #d7e6dc;
+        background: white;
+        box-shadow: 0 26px 68px rgba(8, 66, 36, 0.15);
+      }
+
+      .browser-top {
+        display: flex;
+        align-items: center;
+        gap: 3mm;
+        height: 20mm;
+        padding-inline: 9mm;
+        background: #edf5ef;
+      }
+
+      .browser-dot {
+        width: 5mm;
+        height: 5mm;
+        border-radius: 50%;
+        background: #b9c9bf;
+      }
+
+      .browser-body {
+        padding: 12mm;
+      }
+
+      .mini-hero {
+        display: grid;
+        grid-template-columns: 1fr 128mm;
+        gap: 10mm;
+        align-items: center;
+        padding: 11mm;
+        border-radius: 14mm;
+        background: linear-gradient(135deg, #f6fbf8, #e6f6ed);
+      }
+
+      .mini-title {
+        margin: 0 0 5mm;
+        font-size: 21pt;
+        line-height: 1.05;
+      }
+
+      .mini-lines {
+        display: grid;
+        gap: 3mm;
+      }
+
+      .mini-line {
+        height: 6mm;
+        border-radius: 999px;
+        background: #d7e6dc;
+      }
+
+      .mini-products {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8mm;
+        margin-top: 10mm;
+      }
+
+      .mini-product {
+        overflow: hidden;
+        border-radius: 13mm;
+        border: 0.6mm solid #d7e6dc;
+        background: white;
+      }
+
+      .mini-product img {
+        display: block;
+        width: 100%;
+        height: 54mm;
+        object-fit: cover;
+      }
+
+      .mini-product span {
+        display: block;
+        padding: 5mm;
+        font-size: 11pt;
+        font-weight: 900;
+      }
+
+      .dashboard-mock {
+        display: grid;
+        gap: 8mm;
+      }
+
+      .dash-card {
+        padding: 10mm;
+        border-radius: 15mm;
+        border: 0.6mm solid #d7e6dc;
+        background: #fbfdfb;
+      }
+
+      .dash-card h4 {
+        margin: 0 0 6mm;
+        font-size: 15pt;
+      }
+
+      .dash-row {
+        height: 8mm;
+        margin-top: 4mm;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #dff5ea, #eaf0ff);
+      }
+
+      .phone-mockup {
+        width: 205mm;
+        min-height: 365mm;
+        margin-inline: auto;
+        padding: 14mm;
+        border-radius: 31mm;
+        background: #111;
+      }
+
+      .phone-screen {
+        min-height: 336mm;
+        overflow: hidden;
+        border-radius: 22mm;
+        background: #f8fbf7;
+      }
+
+      .phone-header {
+        padding: 14mm 12mm 7mm;
+      }
+
+      .phone-logo {
+        width: 92mm;
+      }
+
+      .phone-card {
+        margin: 8mm;
+        padding: 10mm;
+        border-radius: 16mm;
+        background: white;
+        border: 0.6mm solid #dbe9df;
+      }
+
+      .phone-card h4 {
+        margin: 0 0 6mm;
+        color: var(--green-900);
+        font-size: 15pt;
+      }
+
+      .phone-chip {
+        display: inline-flex;
+        margin: 2mm 2mm 0 0;
+        padding: 3mm 5mm;
+        border-radius: 999px;
+        background: #e6f6ed;
+        color: var(--green-800);
+        font-size: 9.5pt;
+        font-weight: 900;
+      }
+
+      .caption-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 7mm;
+        margin-top: 12mm;
+      }
+
+      .caption {
+        padding: 5mm;
+        border-radius: 999px;
+        background: #ffffff;
+        border: 0.6mm solid #dbe9df;
+        color: var(--green-800);
+        font-size: 10.5pt;
+        font-weight: 900;
+        text-align: center;
+      }
+
+      .footer-band {
+        display: grid;
+        grid-template-columns: 1fr 120mm;
+        gap: 20mm;
+        min-height: 150mm;
+        padding-top: 20mm;
+        padding-bottom: 20mm;
+        color: white;
+        background:
+          linear-gradient(135deg, rgba(6, 79, 42, 0.98), rgba(0, 122, 61, 0.94) 62%, rgba(18, 103, 214, 0.9)),
+          var(--green-900);
+      }
+
+      .footer-band h2 {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 25pt;
+        font-style: italic;
+        line-height: 1.2;
+      }
+
+      .footer-band p {
+        max-width: 520mm;
+        margin: 8mm 0 0;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 14pt;
+        line-height: 1.45;
+      }
+
+      .qr {
+        display: grid;
+        place-items: center;
+        width: 108mm;
+        height: 108mm;
+        border: 4mm solid white;
+        border-radius: 8mm;
+        background:
+          linear-gradient(90deg, #111 10mm, transparent 10mm 18mm, #111 18mm 26mm, transparent 26mm),
+          linear-gradient(#111 10mm, transparent 10mm 18mm, #111 18mm 26mm, transparent 26mm),
+          white;
+        background-size: 28mm 28mm;
+        color: white;
+        font-size: 18pt;
+        font-weight: 900;
+        text-shadow: 0 2px 4px #000;
+      }
+
+      .qr-note {
+        margin-top: 6mm;
+        color: white;
+        font-size: 10pt;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      .print-note {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 3;
+        max-width: 360px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: #111;
+        color: white;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .print-note strong {
+        color: #9ff0bd;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: white;
+        }
+
+        .poster {
+          margin: 0;
+          box-shadow: none;
+        }
+
+        .print-note {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="poster" aria-label="Cartel del proyecto INHALEX">
+      <section class="top-band band">
+        <div class="top-grid">
+          <div class="logo-slot">
+            <div>
+              <strong>UTHH</strong>
+              <span>Reemplazar por logo oficial</span>
+            </div>
+          </div>
+
+          <div>
+            <p class="event-kicker">Encuentro Universitario Empresarial TI</p>
+            <h2 class="event-title">Innovación tecnológica aplicada a una empresa real</h2>
+            <p class="event-subtitle">
+              Universidad Tecnológica de la Huasteca Hidalguense<br />
+              Ingeniería y Desarrollo en Gestión del Software
+            </p>
+            <span class="institution-phrase">¡Educar para transformar tu futuro!</span>
+          </div>
+
+          <div class="event-mark">
+            <div>
+              <strong>2026</strong>
+              <span>Reemplazar por logo del evento o carrera TI</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hero band">
+        <div>
+          <span class="project-pill"><span class="dot"></span> Proyecto empresarial</span>
+          <h1>INHALEX: plataforma web para gestión comercial, catálogo e inventario</h1>
+          <p class="hero-copy">
+            Digitalización integral para una empresa de productos naturales y bienestar
+            aromático, conectando experiencia de cliente, operaciones internas y toma de decisiones.
+          </p>
+          <div class="quote">Creamos soluciones, no solo sistemas.</div>
+        </div>
+
+        <aside class="brand-card">
+          <img class="logo-inhalex" src="../../Client/public/images/NuevoLogo.png" alt="Logo INHALEX" />
+          <div class="product-strip">
+            <img src="../../Client/public/aromas/rosas.jpeg" alt="Rosas de Castilla" />
+            <img src="../../Client/public/aromas/eucalipto.jpeg" alt="Eucalipto" />
+            <img src="../../Client/public/aromas/menta.jpeg" alt="Menta" />
+          </div>
+          <p class="brand-note">
+            Productos aromáticos para respirar con más calma, claridad y bienestar.
+          </p>
+        </aside>
+      </section>
+
+      <section class="data-row band">
+        <div class="data-chip">
+          <span class="label">Estudiante</span>
+          <strong>Cristian David Resendez Sierra</strong>
+        </div>
+        <div class="data-chip">
+          <span class="label">Bina</span>
+          <strong>[Nombre del integrante]</strong>
+        </div>
+        <div class="data-chip">
+          <span class="label">Docente</span>
+          <strong>Juvencio Mendoza Castelán</strong>
+        </div>
+        <div class="data-chip">
+          <span class="label">Metodología</span>
+          <strong>Scrum + desarrollo incremental</strong>
+        </div>
+      </section>
+
+      <section class="section band">
+        <div class="section-title">
+          <h2>Problema real y solución tecnológica</h2>
+        </div>
+
+        <div class="problem-solution">
+          <article class="panel problem">
+            <h3>Problema detectado</h3>
+            <p>
+              INHALEX necesitaba centralizar la gestión de su catálogo, pedidos,
+              inventario y seguimiento al cliente. La administración manual dificultaba
+              conocer existencias reales, publicar promociones, recibir reportes y dar una
+              experiencia digital clara a los usuarios.
+            </p>
+            <ul>
+              <li>Información dispersa entre productos, stock y pedidos.</li>
+              <li>Seguimiento limitado para clientes y administradores.</li>
+              <li>Necesidad de una presencia digital más profesional.</li>
+            </ul>
+          </article>
+
+          <article class="panel solution">
+            <h3>Solución implementada</h3>
+            <p>
+              Se desarrolló una plataforma web full stack con catálogo público, bolsa de
+              compras, cuenta de cliente, favoritos, reseñas, avisos, reportes e interfaz
+              administrativa para gestionar productos, inventario, pedidos, ventas,
+              promociones y contenido institucional.
+            </p>
+            <ul>
+              <li>Experiencia pública atractiva y responsive.</li>
+              <li>Panel administrativo para operaciones comerciales.</li>
+              <li>Base de datos centralizada y módulos escalables.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="stack-section band">
+        <div class="section-title">
+          <h2>Stack tecnológico</h2>
+        </div>
+
+        <div class="stack-grid">
+          <article class="stack-card">
+            <h3>Frontend</h3>
+            <div class="tag-cloud">
+              <span class="tag">Next.js 16</span>
+              <span class="tag">React 19</span>
+              <span class="tag">TypeScript</span>
+              <span class="tag">Tailwind CSS</span>
+              <span class="tag">shadcn/ui</span>
+              <span class="tag">Radix UI</span>
+            </div>
+          </article>
+
+          <article class="stack-card">
+            <h3>Backend</h3>
+            <div class="tag-cloud">
+              <span class="tag">NestJS</span>
+              <span class="tag">Node.js</span>
+              <span class="tag">JWT</span>
+              <span class="tag">Passport</span>
+              <span class="tag">Mongoose</span>
+              <span class="tag">Class Validator</span>
+            </div>
+          </article>
+
+          <article class="stack-card">
+            <h3>Datos y servicios</h3>
+            <div class="tag-cloud">
+              <span class="tag">MongoDB</span>
+              <span class="tag">Cloudinary</span>
+              <span class="tag">Vercel Analytics</span>
+              <span class="tag">Arquitectura modular</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section band">
+        <div class="section-title">
+          <h2>Resultados y beneficios</h2>
+        </div>
+
+        <div class="benefits">
+          <div class="metric-grid">
+            <div class="metric">
+              <strong>+16</strong>
+              <span>Productos organizados por líneas, aromas y disponibilidad.</span>
+            </div>
+            <div class="metric">
+              <strong>9</strong>
+              <span>Módulos clave: catálogo, pedidos, inventario, reportes y más.</span>
+            </div>
+            <div class="metric">
+              <strong>24/7</strong>
+              <span>Catálogo digital disponible para clientes desde cualquier dispositivo.</span>
+            </div>
+            <div class="metric">
+              <strong>1</strong>
+              <span>Panel centralizado para administrar operaciones comerciales.</span>
+            </div>
+          </div>
+
+          <div class="benefit-copy">
+            <div class="benefit-item">
+              <span class="check">✓</span>
+              <span>Validación de inventario antes de confirmar pedidos.</span>
+            </div>
+            <div class="benefit-item">
+              <span class="check">✓</span>
+              <span>Historial de avisos, reseñas, reportes y direcciones para clientes.</span>
+            </div>
+            <div class="benefit-item">
+              <span class="check">✓</span>
+              <span>Gestión administrativa de productos, promociones, ventas y contenido.</span>
+            </div>
+            <div class="benefit-item">
+              <span class="check">✓</span>
+              <span>Experiencia profesional alineada a la identidad visual de INHALEX.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery band">
+        <div class="section-title">
+          <h2>Galería visual del sistema</h2>
+        </div>
+
+        <div class="mockup-grid">
+          <article class="browser-mockup">
+            <div class="browser-top">
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+              <span class="browser-dot"></span>
+            </div>
+            <div class="browser-body">
+              <div class="mini-hero">
+                <div>
+                  <h3 class="mini-title">Catálogo inteligente de aromas naturales</h3>
+                  <div class="mini-lines">
+                    <span class="mini-line" style="width: 96%"></span>
+                    <span class="mini-line" style="width: 82%"></span>
+                    <span class="mini-line" style="width: 68%"></span>
+                  </div>
+                </div>
+                <img src="../../Client/public/images/NuevoLogo.png" alt="INHALEX" style="width: 100%" />
+              </div>
+
+              <div class="mini-products">
+                <div class="mini-product">
+                  <img src="../../Client/public/products/vaporub.jpg" alt="Vaporub" />
+                  <span>Vaporub · 4.9 ★</span>
+                </div>
+                <div class="mini-product">
+                  <img src="../../Client/public/products/rosas-castilla.jpg" alt="Rosas de Castilla" />
+                  <span>Rosas · 4.5 ★</span>
+                </div>
+                <div class="mini-product">
+                  <img src="../../Client/public/products/menta.jpg" alt="Menta" />
+                  <span>Menta · Bolsa</span>
+                </div>
+              </div>
+
+              <div class="dashboard-mock" style="margin-top: 10mm">
+                <div class="dash-card">
+                  <h4>Panel administrativo</h4>
+                  <div class="dash-row" style="width: 88%"></div>
+                  <div class="dash-row" style="width: 76%"></div>
+                  <div class="dash-row" style="width: 92%"></div>
+                </div>
+                <div class="dash-card">
+                  <h4>Inventario, pedidos, ventas y reportes</h4>
+                  <div class="dash-row" style="width: 68%"></div>
+                  <div class="dash-row" style="width: 84%"></div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="phone-mockup">
+            <div class="phone-screen">
+              <div class="phone-header">
+                <img class="phone-logo" src="../../Client/public/images/NuevoLogo.png" alt="INHALEX" />
+              </div>
+              <div class="phone-card">
+                <h4>Mi cuenta</h4>
+                <span class="phone-chip">Avisos</span>
+                <span class="phone-chip">Reseñas</span>
+                <span class="phone-chip">Reportes</span>
+              </div>
+              <div class="phone-card">
+                <h4>Bolsa de compras</h4>
+                <div class="dash-row" style="width: 96%"></div>
+                <div class="dash-row" style="width: 78%"></div>
+                <div class="dash-row" style="width: 52%"></div>
+              </div>
+              <div class="phone-card">
+                <h4>Detalle de producto</h4>
+                <img src="../../Client/public/aromas/rosas.jpeg" alt="Rosas" style="width: 100%; height: 70mm; object-fit: cover; border-radius: 12mm" />
+                <span class="phone-chip">4.5 ★</span>
+                <span class="phone-chip">Agregar a la bolsa</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="caption-row">
+          <span class="caption">Catálogo público</span>
+          <span class="caption">Detalle con reseñas</span>
+          <span class="caption">Bolsa de compras</span>
+          <span class="caption">Cuenta del cliente</span>
+          <span class="caption">Panel admin</span>
+        </div>
+      </section>
+
+      <section class="footer-band band">
+        <div>
+          <h2>El software como puente entre la universidad y la empresa.</h2>
+          <p>
+            Agradecimiento a INHALEX y a la Universidad Tecnológica de la Huasteca
+            Hidalguense por impulsar proyectos tecnológicos aplicados a necesidades reales.
+          </p>
+          <p>
+            Empresa colaboradora: INHALEX · Carrera: Ingeniería y Desarrollo en Gestión del Software
+          </p>
+        </div>
+        <div>
+          <div class="qr">QR</div>
+          <div class="qr-note">Escanea para ver la demo o video del sistema</div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="print-note">
+      <strong>Para exportar:</strong> abre este archivo en Chrome/Edge, presiona Ctrl+P,
+      destino PDF, tamaño personalizado 80 x 180 cm o usar tamaño CSS, sin márgenes y
+      activar gráficos de fondo.
+    </aside>
+  </body>
+</html>

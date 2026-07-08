@@ -2,11 +2,12 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { Check, Star } from "lucide-react"
+import { Check } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { ProductDetailPurchase } from "@/components/products/product-detail-purchase"
+import { ProductRatingSummary } from "@/components/products/product-rating-summary"
 import { ProductReviewsPanel } from "@/components/products/product-reviews-panel"
 import {
   resolveProductDisplayImage,
@@ -160,25 +161,11 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 {product.name}
               </h1>
 
-              {typeof product.rating === "number" && (
-                <div className="mt-4 flex items-center gap-2">
-                  <div className="flex items-center gap-0.5 text-amber-500">
-                    {[...Array(5)].map((_, index) => (
-                      <Star
-                        key={index}
-                        className={`h-4 w-4 ${
-                          index < Math.floor(product.rating ?? 0)
-                            ? "fill-amber-500"
-                            : "text-muted-foreground/30"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {product.rating} - {product.reviews ?? 0} reseñas
-                  </span>
-                </div>
-              )}
+              <ProductRatingSummary
+                rating={product.rating}
+                reviews={product.reviews}
+                className="mt-4 rounded-full border border-amber-100 bg-amber-50/70 px-3 py-1.5"
+              />
 
               <div className="mt-5 flex flex-wrap gap-2">
                 <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[0.8rem] font-medium text-foreground shadow-sm">

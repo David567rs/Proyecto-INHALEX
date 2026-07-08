@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Minus, Plus, ShoppingBag } from "lucide-react"
 import { useState } from "react"
-import { useCart } from "@/components/cart/cart-provider"
+import { useOptionalCart } from "@/components/cart/cart-provider"
 import { Button } from "@/components/ui/button"
 import { FavoriteButton } from "@/components/favorites/favorite-button"
 import type { Product } from "@/lib/types/product"
@@ -13,7 +13,7 @@ interface ProductDetailPurchaseProps {
 }
 
 export function ProductDetailPurchase({ product }: ProductDetailPurchaseProps) {
-  const { addItem } = useCart()
+  const cart = useOptionalCart()
   const [quantity, setQuantity] = useState(1)
   const isUnavailable = !product.inStock && !product.allowBackorder
   const maxQuantity = product.allowBackorder
@@ -21,7 +21,9 @@ export function ProductDetailPurchase({ product }: ProductDetailPurchaseProps) {
     : Math.max(1, Math.min(product.stockAvailable ?? 10, 10))
 
   const handleAddToCart = () => {
-    addItem(product, quantity)
+    if (!cart) return
+
+    cart.addItem(product, quantity)
     setQuantity(1)
   }
 
