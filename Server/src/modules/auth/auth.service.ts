@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +23,8 @@ const ALEXA_LINK_CODE_TTL_MS = 10 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -149,21 +152,38 @@ export class AuthService {
     clientIp?: string,
   ) {
     const rateLimitKey = 'alexa-link';
-    this.authSecurityService.assertLoginAllowed(rateLimitKey, clientIp);
+    try {
+      this.authSecurityService.assertLoginAllowed(rateLimitKey, clientIp);
+    } catch (error) {
+      this.logger.warn(
+        `Alexa link bloqueado temporalmente ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(exchangeDto.code)}`,
+      );
+      throw error;
+    }
 
     let normalizedCode: string;
     try {
       normalizedCode = this.normalizeAlexaLinkCode(exchangeDto.code);
     } catch (error) {
+      this.logger.warn(
+        `Alexa link formato invalido ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(exchangeDto.code)}`,
+      );
       this.authSecurityService.registerFailedLogin(rateLimitKey, clientIp);
       throw error;
     }
+
+    this.logger.log(
+      `Alexa link intento ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(normalizedCode)}`,
+    );
 
     const user = await this.usersService.findByAlexaLinkCodeHash(
       this.hashAlexaLinkCode(normalizedCode),
     );
 
     if (!user) {
+      this.logger.warn(
+        `Alexa link codigo no encontrado o expirado ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(normalizedCode)}`,
+      );
       this.authSecurityService.registerFailedLogin(rateLimitKey, clientIp);
       throw new UnauthorizedException('Codigo de Alexa invalido o expirado');
     }
@@ -219,6 +239,17 @@ export class AuthService {
 
   private formatAlexaLinkCode(code: string): string {
     return code;
+  }
+
+  private maskAlexaLinkCode(code: string): string {
+    const normalizedCode = code.replace(/\D/g, '');
+
+    if (!normalizedCode) {
+      return 'empty';
+    }
+
+    return '*'.repeat(Math.max(0, normalizedCode.length - 2)) +
+      normalizedCode.slice(-2);
   }
 
   private normalizeAlexaLinkCode(code: string): string {

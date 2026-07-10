@@ -863,7 +863,13 @@ async function linkWithCode(handlerInput, codeInput) {
 
         console.log(
             'ERROR AL VINCULAR CUENTA:',
-            error.message
+            JSON.stringify({
+                message: error.message || '',
+                statusCode: error.statusCode || null,
+                endpoint: error.endpoint || '',
+                responseBody: error.responseBody || '',
+                codeMask: util.maskAccessCode(cleanCode)
+            })
         );
 
         renderDocument(

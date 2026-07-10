@@ -10,7 +10,7 @@ const PRODUCTS_TIMEOUT_MS = Number(
 );
 const ACCOUNT_TIMEOUT_MS = Number(
     process.env.INHALEX_ACCOUNT_TIMEOUT_MS ||
-    4500
+    7000
 );
 const ACCESS_CODE_LENGTH = 5;
 
@@ -517,6 +517,17 @@ function buildApiUrl(endpoint, query) {
     return url.toString();
 }
 
+function maskAccessCode(code) {
+    const cleanCode = normalizeAccessCode(code);
+
+    if (!cleanCode) {
+        return 'empty';
+    }
+
+    return '*'.repeat(Math.max(0, cleanCode.length - 2)) +
+        cleanCode.slice(-2);
+}
+
 function requestJson(method, endpoint, options) {
     const requestOptions = options || {};
     const payload =
@@ -597,6 +608,8 @@ function requestJson(method, endpoint, options) {
                     );
                     error.statusCode = response.statusCode;
                     error.responseBody = responseBody;
+                    error.endpoint = endpoint;
+                    error.url = url;
                     reject(error);
                     return;
                 }
@@ -651,6 +664,17 @@ async function requestFirstAvailable(method, endpoints, options) {
             );
         } catch (error) {
             lastError = error;
+
+            console.log(
+                'INHALEX_API_REQUEST_FAILED',
+                JSON.stringify({
+                    method: method,
+                    endpoint: endpoint,
+                    statusCode: error.statusCode || null,
+                    message: error.message || '',
+                    responseBody: error.responseBody || ''
+                })
+            );
 
             if (
                 error.statusCode !== 404 &&
@@ -1544,6 +1568,17 @@ function buildAccountQuery(account) {
 async function linkAlexaAccount(code, alexaUserId) {
     const cleanCode = normalizeAccessCode(code);
 
+    console.log(
+        'INHALEX_ALEXA_LINK_ATTEMPT',
+        JSON.stringify({
+            apiUrl: API_URL,
+            codeMask: maskAccessCode(cleanCode),
+            codeLength: cleanCode.length,
+            expectedLength: ACCESS_CODE_LENGTH,
+            alexaUserIdPresent: Boolean(alexaUserId)
+        })
+    );
+
     if (cleanCode.length !== ACCESS_CODE_LENGTH) {
         return {
             linked: false,
@@ -1789,6 +1824,7 @@ module.exports = {
     makeSlug,
     normalizeProduct,
     normalizeAccessCode,
+    maskAccessCode,
     normalizeAccountResponse,
     normalizeLine,
     softenHealthClaims,
