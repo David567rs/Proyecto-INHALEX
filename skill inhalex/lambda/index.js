@@ -404,10 +404,25 @@ function getRemoteItemProduct(item, products) {
         safeItem.nombre ||
         '';
 
-    return util.findProduct(
+    const matchedProduct = util.findProduct(
         products,
         candidate
     );
+
+    if (matchedProduct) {
+        return matchedProduct;
+    }
+
+    if (
+        safeItem.name ||
+        safeItem.nombre ||
+        safeItem.slug ||
+        safeItem.productSlug
+    ) {
+        return util.normalizeProduct(safeItem);
+    }
+
+    return null;
 }
 
 function mapRemoteItemsToProducts(items, products) {
@@ -460,11 +475,23 @@ async function loadRemoteFavorites(handlerInput, account) {
         const products = await getProducts(handlerInput);
         const remoteItems =
             await util.getRemoteFavorites(account);
+        const favorites =
+            mapRemoteItemsToProducts(
+                remoteItems,
+                products
+            );
 
-        return mapRemoteItemsToProducts(
-            remoteItems,
-            products
+        console.log(
+            'INHALEX_REMOTE_FAVORITES_LOADED',
+            JSON.stringify({
+                remoteCount: Array.isArray(remoteItems)
+                    ? remoteItems.length
+                    : 0,
+                mappedCount: favorites.length
+            })
         );
+
+        return favorites;
     } catch (error) {
         console.log(
             'ERROR AL CARGAR FAVORITOS REMOTOS:',
@@ -484,11 +511,23 @@ async function loadRemoteBag(handlerInput, account) {
         const products = await getProducts(handlerInput);
         const remoteItems =
             await util.getRemoteBag(account);
+        const bagItems =
+            mapRemoteItemsToProducts(
+                remoteItems,
+                products
+            );
 
-        return mapRemoteItemsToProducts(
-            remoteItems,
-            products
+        console.log(
+            'INHALEX_REMOTE_BAG_LOADED',
+            JSON.stringify({
+                remoteCount: Array.isArray(remoteItems)
+                    ? remoteItems.length
+                    : 0,
+                mappedCount: bagItems.length
+            })
         );
+
+        return bagItems;
     } catch (error) {
         console.log(
             'ERROR AL CARGAR BOLSA REMOTA:',
@@ -1147,7 +1186,14 @@ async function addFavorite(handlerInput, productInput) {
     } catch (error) {
         console.log(
             'ERROR AL GUARDAR FAVORITO:',
-            error.message
+            JSON.stringify({
+                message: error.message || '',
+                statusCode: error.statusCode || null,
+                endpoint: error.endpoint || '',
+                responseBody: error.responseBody || '',
+                productId: result.product.id || '',
+                productSlug: result.product.slug || ''
+            })
         );
 
         return handlerInput.responseBuilder
@@ -1268,7 +1314,14 @@ async function addToBag(handlerInput, productInput, quantityOverride) {
     } catch (error) {
         console.log(
             'ERROR AL AGREGAR A BOLSA:',
-            error.message
+            JSON.stringify({
+                message: error.message || '',
+                statusCode: error.statusCode || null,
+                endpoint: error.endpoint || '',
+                responseBody: error.responseBody || '',
+                productId: result.product.id || '',
+                productSlug: result.product.slug || ''
+            })
         );
 
         return handlerInput.responseBuilder

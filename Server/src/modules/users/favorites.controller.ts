@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { Types } from 'mongoose';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { FavoritesService } from './favorites.service';
@@ -55,15 +56,13 @@ export class FavoritesController {
       body.product && typeof body.product === 'object'
         ? (body.product as Record<string, unknown>)
         : {};
+    const productId = String(body.productId || product.id || product._id || '').trim();
+    const productSlug = String(
+      body.productSlug || body.slug || product.slug || '',
+    ).trim();
 
-    return String(
-      body.productId ||
-        body.productSlug ||
-        body.slug ||
-        product.id ||
-        product._id ||
-        product.slug ||
-        '',
-    );
+    return Types.ObjectId.isValid(productId)
+      ? productId
+      : productSlug || productId;
   }
 }

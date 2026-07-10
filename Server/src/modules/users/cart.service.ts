@@ -164,13 +164,23 @@ export class CartService {
   }
 
   private async resolveProduct(input: AddCartItemDto): Promise<ProductDocument> {
-    const productReference = String(
-      input.productId ||
-        input.productSlug ||
+    const productId = String(input.productId || '').trim();
+    const productSlug = String(
+      input.productSlug ||
         input.slug ||
-        this.extractEmbeddedProductReference(input.product) ||
+        this.extractEmbeddedProductReference(input.product, 'slug') ||
         '',
     ).trim();
+    const embeddedProductId = String(
+      this.extractEmbeddedProductReference(input.product, 'id'),
+    ).trim();
+    const productReference =
+      productId && Types.ObjectId.isValid(productId)
+        ? productId
+        : productSlug ||
+          (embeddedProductId && Types.ObjectId.isValid(embeddedProductId)
+            ? embeddedProductId
+            : productId || embeddedProductId);
 
     if (!productReference) {
       throw new BadRequestException('Product id is required');
@@ -192,7 +202,10 @@ export class CartService {
     return product;
   }
 
-  private extractEmbeddedProductReference(product: unknown): string {
+  private extractEmbeddedProductReference(
+    product: unknown,
+    preferredField: 'id' | 'slug' = 'id',
+  ): string {
     if (!product || typeof product !== 'object') {
       return '';
     }
@@ -203,9 +216,11 @@ export class CartService {
       slug?: unknown;
     };
 
-    return String(
-      embeddedProduct.id || embeddedProduct._id || embeddedProduct.slug || '',
-    );
+    if (preferredField === 'slug') {
+      return String(embeddedProduct.slug || '');
+    }
+
+    return String(embeddedProduct.id || embeddedProduct._id || '');
   }
 
   private async buildCartResponse(

@@ -1565,6 +1565,39 @@ function buildAccountQuery(account) {
     };
 }
 
+function isMongoObjectId(value) {
+    return /^[a-f0-9]{24}$/i.test(String(value || '').trim());
+}
+
+function buildRemoteProductPayload(product, extra) {
+    const safeProduct =
+        product && typeof product === 'object'
+            ? product
+            : {};
+    const slug = String(safeProduct.slug || '').trim();
+    const id = String(safeProduct.id || safeProduct._id || '').trim();
+    const payload = Object.assign(
+        {
+            productSlug: slug,
+            slug: slug,
+            product: {
+                slug: slug,
+                name: safeProduct.name,
+                price: safeProduct.price,
+                image: safeProduct.image
+            }
+        },
+        extra || {}
+    );
+
+    if (isMongoObjectId(id)) {
+        payload.productId = id;
+        payload.product.id = id;
+    }
+
+    return payload;
+}
+
 async function linkAlexaAccount(code, alexaUserId) {
     const cleanCode = normalizeAccessCode(code);
 
@@ -1700,18 +1733,7 @@ async function addRemoteFavorite(account, product) {
         {
             body: buildAccountPayload(
                 account,
-                {
-                    productId: product.id,
-                    productSlug: product.slug,
-                    slug: product.slug,
-                    product: {
-                        id: product.id,
-                        slug: product.slug,
-                        name: product.name,
-                        price: product.price,
-                        image: product.image
-                    }
-                }
+                buildRemoteProductPayload(product)
             ),
             accessToken: account && account.accessToken
         }
@@ -1725,22 +1747,15 @@ async function addRemoteBag(account, product, quantity) {
         {
             body: buildAccountPayload(
                 account,
-                {
-                    productId: product.id,
-                    productSlug: product.slug,
-                    slug: product.slug,
-                    quantity: Math.max(
-                        1,
-                        Math.round(Number(quantity || 1))
-                    ),
-                    product: {
-                        id: product.id,
-                        slug: product.slug,
-                        name: product.name,
-                        price: product.price,
-                        image: product.image
+                buildRemoteProductPayload(
+                    product,
+                    {
+                        quantity: Math.max(
+                            1,
+                            Math.round(Number(quantity || 1))
+                        )
                     }
-                }
+                )
             ),
             accessToken: account && account.accessToken
         }
