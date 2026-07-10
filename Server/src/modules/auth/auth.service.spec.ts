@@ -105,12 +105,11 @@ describe('AuthService - Alexa link code', () => {
     expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
       true,
-      undefined,
     );
     expect(authSecurityService.clearLoginFailures).not.toHaveBeenCalled();
   });
 
-  it('vincula el alexaUserId y permite recuperar un token fresco', async () => {
+  it('acepta alexaUserId sin exigir persistencia para iniciar sesion', async () => {
     const user = buildUser();
     usersService.findById.mockResolvedValue(user);
     usersService.storeAlexaLinkCode.mockResolvedValue(user);
@@ -123,7 +122,7 @@ describe('AuthService - Alexa link code', () => {
     usersService.clearAlexaLinkCode.mockResolvedValue(user);
     usersService.markLogin.mockResolvedValue(user);
 
-    await service.exchangeAlexaLinkCode(
+    const response = await service.exchangeAlexaLinkCode(
       {
         code: generated.code,
         alexaUserId: 'amzn1.ask.account.test-user',
@@ -131,23 +130,10 @@ describe('AuthService - Alexa link code', () => {
       '127.0.0.1',
     );
 
+    expect(response.accessToken).toBe('jwt-token');
     expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
       true,
-      expect.stringMatching(/^[a-f0-9]{64}$/),
-    );
-
-    usersService.findByAlexaUserIdHash.mockResolvedValue(user);
-
-    const profile = await service.getAlexaLinkedProfile(
-      'amzn1.ask.account.test-user',
-      '127.0.0.1',
-    );
-
-    expect(profile.accessToken).toBe('jwt-token');
-    expect(profile.user).not.toHaveProperty('passwordHash');
-    expect(usersService.findByAlexaUserIdHash).toHaveBeenCalledWith(
-      expect.stringMatching(/^[a-f0-9]{64}$/),
     );
   });
 

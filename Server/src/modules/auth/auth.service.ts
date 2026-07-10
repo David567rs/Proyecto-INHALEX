@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { createHash, createHmac, randomInt } from 'crypto';
+import { createHmac, randomInt } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
@@ -198,11 +198,7 @@ export class AuthService {
       throw new UnauthorizedException('Codigo de Alexa invalido o expirado');
     }
 
-    const alexaUserIdHash = exchangeDto.alexaUserId
-      ? this.hashAlexaUserId(this.normalizeAlexaUserId(exchangeDto.alexaUserId))
-      : undefined;
-
-    await this.usersService.clearAlexaLinkCode(user.id, true, alexaUserIdHash);
+    await this.usersService.clearAlexaLinkCode(user.id, true);
 
     const activeUser = (await this.usersService.markLogin(user.id)) ?? user;
     const accessToken = await this.generateAccessToken(activeUser);
@@ -292,7 +288,7 @@ export class AuthService {
   }
 
   private hashAlexaLinkCode(code: string): string {
-    return createHash('sha256')
+    return createHmac('sha256', this.getJwtSecret())
       .update(`alexa-link:${code}`)
       .digest('hex');
   }
