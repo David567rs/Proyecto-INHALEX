@@ -1,0 +1,570 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "inhalex bienestar",
+      "intents": [
+        {
+          "name": "ExploreLinesIntent",
+          "slots": [],
+          "samples": [
+            "explorar líneas",
+            "ver líneas",
+            "abrir líneas",
+            "mostrar líneas",
+            "muéstrame las líneas",
+            "quiero explorar las líneas",
+            "quiero ver las líneas",
+            "ver categorías",
+            "abrir categorías",
+            "muéstrame las categorías",
+            "explorar categorías",
+            "qué líneas tienen",
+            "cuáles son las líneas",
+            "enséñame las líneas de aromas",
+            "qué categorías tienen",
+            "qué familias de aromas tienen"
+          ]
+        },
+        {
+          "name": "LineIntent",
+          "slots": [
+            {
+              "name": "line",
+              "type": "LINEAS_INHALEX"
+            }
+          ],
+          "samples": [
+            "línea {line}",
+            "ver línea {line}",
+            "abrir línea {line}",
+            "mostrar línea {line}",
+            "muéstrame línea {line}",
+            "muéstrame la línea {line}",
+            "quiero ver línea {line}",
+            "quiero ver la línea {line}",
+            "productos de {line}",
+            "productos de línea {line}",
+            "muéstrame los productos de {line}",
+            "muéstrame los productos de línea {line}",
+            "aromas de {line}",
+            "aromas de línea {line}",
+            "explorar {line}",
+            "explorar línea {line}",
+            "enséñame {line}",
+            "enséñame línea {line}",
+            "qué hay en {line}",
+            "qué aromas hay en {line}"
+          ]
+        },
+        {
+          "name": "ShowCatalogIntent",
+          "slots": [],
+          "samples": [
+            "ver catálogo",
+            "abrir catálogo",
+            "mostrar catálogo",
+            "muéstrame el catálogo",
+            "quiero ver el catálogo",
+            "ver productos",
+            "abrir productos",
+            "mostrar productos",
+            "muéstrame los productos",
+            "quiero ver los productos",
+            "muéstrame los aromas",
+            "ver aromas",
+            "abrir aromas",
+            "qué productos tienen",
+            "qué aromas tienen",
+            "cuáles son los productos",
+            "enséñame todos los aromas",
+            "ver todo el catálogo",
+            "todos los productos",
+            "todos los aromas"
+          ]
+        },
+        {
+          "name": "BackToCatalogIntent",
+          "slots": [],
+          "samples": [
+            "volver al catálogo",
+            "regresar al catálogo",
+            "volver a catálogo",
+            "regresa al catálogo",
+            "atrás al catálogo",
+            "ir al catálogo",
+            "abrir el catálogo otra vez",
+            "ver el catálogo de nuevo",
+            "volver a todos los aromas",
+            "regresar a todos los aromas"
+          ]
+        },
+        {
+          "name": "OffersIntent",
+          "slots": [],
+          "samples": [
+            "ver ofertas",
+            "abrir ofertas",
+            "mostrar ofertas",
+            "ofertas",
+            "ofertas del día",
+            "promociones",
+            "ver promociones",
+            "abrir promociones",
+            "mostrar promociones",
+            "hay ofertas",
+            "hay promociones",
+            "qué ofertas tienen",
+            "qué promociones tienen",
+            "productos en oferta",
+            "aromas en oferta",
+            "muéstrame las ofertas",
+            "muéstrame promociones"
+          ]
+        },
+        {
+          "name": "ProductDetailIntent",
+          "slots": [
+            {
+              "name": "product",
+              "type": "PRODUCTOS_INHALEX"
+            }
+          ],
+          "samples": [
+            "muéstrame {product}",
+            "quiero ver {product}",
+            "ver {product}",
+            "abrir {product}",
+            "seleccionar {product}",
+            "dame información de {product}",
+            "dame detalles de {product}",
+            "para qué sirve {product}",
+            "ver detalle de {product}",
+            "ver detalles de {product}",
+            "información de {product}",
+            "quiero información de {product}",
+            "quiero conocer {product}",
+            "háblame de {product}",
+            "qué beneficios tiene {product}",
+            "beneficios de {product}",
+            "cuánto cuesta {product}",
+            "cuál es el precio de {product}",
+            "hay existencia de {product}",
+            "aroma {product}",
+            "detalle del aroma {product}",
+            "información del aroma {product}"
+          ]
+        },
+        {
+          "name": "AddFavoriteIntent",
+          "slots": [
+            {
+              "name": "product",
+              "type": "PRODUCTOS_INHALEX"
+            }
+          ],
+          "samples": [
+            "agregar a favoritos",
+            "añadir a favoritos",
+            "guardar en favoritos",
+            "guardar como favorito",
+            "agrega a favoritos",
+            "añade a favoritos",
+            "me gusta este aroma",
+            "guardar este aroma",
+            "agrega {product} a favoritos",
+            "añade {product} a favoritos",
+            "guardar {product} en favoritos",
+            "guardar {product} como favorito",
+            "agrega el aroma {product} a favoritos",
+            "añade el aroma {product} a mis favoritos",
+            "me gusta {product}"
+          ]
+        },
+        {
+          "name": "AddToBagIntent",
+          "slots": [
+            {
+              "name": "quantity",
+              "type": "AMAZON.NUMBER"
+            },
+            {
+              "name": "product",
+              "type": "PRODUCTOS_INHALEX"
+            }
+          ],
+          "samples": [
+            "agregar a la bolsa",
+            "añadir a la bolsa",
+            "agrega a la bolsa",
+            "añade a la bolsa",
+            "guardar en la bolsa",
+            "agrega este aroma a la bolsa",
+            "añade este aroma a la bolsa",
+            "agrega {product} a la bolsa",
+            "añade {product} a la bolsa",
+            "guardar {product} en la bolsa",
+            "agrega el aroma {product} a la bolsa",
+            "añade el aroma {product} a la bolsa",
+            "agrega {quantity} de {product} a la bolsa",
+            "añade {quantity} de {product} a la bolsa",
+            "quiero {quantity} de {product}",
+            "quiero agregar {quantity} de {product}",
+            "pon {product} en la bolsa",
+            "pon {quantity} de {product} en la bolsa"
+          ]
+        },
+        {
+          "name": "LinkAccountIntent",
+          "slots": [
+            {
+              "name": "code",
+              "type": "AMAZON.NUMBER"
+            }
+          ],
+          "samples": [
+            "vincular cuenta",
+            "conectar cuenta",
+            "enlazar cuenta",
+            "acceder con código",
+            "acceder con token",
+            "tengo un código",
+            "quiero vincular mi cuenta",
+            "mi código es {code}",
+            "el código es {code}",
+            "mi token es {code}",
+            "el token es {code}",
+            "código {code}",
+            "token {code}",
+            "vincular con {code}",
+            "acceder con {code}"
+          ]
+        },
+        {
+          "name": "ShowFavoritesIntent",
+          "slots": [],
+          "samples": [
+            "ver favoritos",
+            "abrir favoritos",
+            "mostrar favoritos",
+            "mis favoritos",
+            "ver mis favoritos",
+            "abrir mis favoritos",
+            "muéstrame mis favoritos",
+            "qué tengo en favoritos",
+            "aromas favoritos"
+          ]
+        },
+        {
+          "name": "ShowBagIntent",
+          "slots": [],
+          "samples": [
+            "ver bolsa",
+            "abrir bolsa",
+            "mostrar bolsa",
+            "mi bolsa",
+            "ver mi bolsa",
+            "abrir mi bolsa",
+            "muéstrame mi bolsa",
+            "qué tengo en la bolsa",
+            "productos en mi bolsa"
+          ]
+        },
+        {
+          "name": "AMAZON.PauseIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.ResumeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        }
+      ],
+      "types": [
+        {
+          "name": "LINEAS_INHALEX",
+          "values": [
+            {
+              "name": {
+                "value": "verde",
+                "synonyms": [
+                  "línea verde",
+                  "linea verde",
+                  "verde natural",
+                  "frescos",
+                  "herbales",
+                  "naturales"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "resfriado",
+                "synonyms": [
+                  "línea resfriado",
+                  "linea resfriado",
+                  "temporada de resfriado",
+                  "respiratoria",
+                  "aromas respiratorios"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "estimulante",
+                "synonyms": [
+                  "línea estimulante",
+                  "linea estimulante",
+                  "energía",
+                  "energia",
+                  "activadora",
+                  "aromas energizantes"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "insomnio",
+                "synonyms": [
+                  "línea insomnio",
+                  "linea insomnio",
+                  "descanso",
+                  "dormir",
+                  "sueño",
+                  "sueno",
+                  "relajante para dormir"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "ansiedad y estrés",
+                "synonyms": [
+                  "línea ansiedad y estrés",
+                  "linea ansiedad y estres",
+                  "ansiedad",
+                  "estrés",
+                  "estres",
+                  "calma",
+                  "relajación",
+                  "relajacion"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PRODUCTOS_INHALEX",
+          "values": [
+            {
+              "name": {
+                "value": "toronjil",
+                "synonyms": [
+                  "melisa",
+                  "aroma de toronjil",
+                  "esencia de toronjil",
+                  "toronjil natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "mirra y azafrán",
+                "synonyms": [
+                  "mirra",
+                  "azafrán",
+                  "azafran",
+                  "mirra azafrán",
+                  "mirra azafran",
+                  "mirra con azafrán",
+                  "mirra con azafran",
+                  "aroma de mirra y azafrán",
+                  "aroma de mirra y azafran"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "copal",
+                "synonyms": [
+                  "resina copal",
+                  "aroma de copal",
+                  "esencia de copal",
+                  "copal natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "anís estrella",
+                "synonyms": [
+                  "anis estrella",
+                  "anís",
+                  "anis",
+                  "anís estrellado",
+                  "anis estrellado",
+                  "aroma de anís estrella",
+                  "aroma de anis estrella"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "eucalipto",
+                "synonyms": [
+                  "eucalipto natural",
+                  "aroma de eucalipto",
+                  "esencia de eucalipto",
+                  "eucalipto fresco"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "lavanda",
+                "synonyms": [
+                  "floral lavanda",
+                  "aroma de lavanda",
+                  "esencia de lavanda",
+                  "lavanda natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "menta",
+                "synonyms": [
+                  "menta fresca",
+                  "aroma de menta",
+                  "esencia de menta",
+                  "menta natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "romero",
+                "synonyms": [
+                  "romero natural",
+                  "aroma de romero",
+                  "esencia de romero"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "canela",
+                "synonyms": [
+                  "canela natural",
+                  "aroma de canela",
+                  "esencia de canela"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "jengibre",
+                "synonyms": [
+                  "gingibre",
+                  "gengibre",
+                  "aroma de jengibre",
+                  "esencia de jengibre",
+                  "jengibre natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "café",
+                "synonyms": [
+                  "cafe",
+                  "cafecito",
+                  "aroma de café",
+                  "aroma de cafe",
+                  "esencia de café",
+                  "esencia de cafe"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "hierbabuena",
+                "synonyms": [
+                  "hierba buena",
+                  "aroma de hierbabuena",
+                  "esencia de hierbabuena",
+                  "hierbabuena natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "vaporub",
+                "synonyms": [
+                  "vaporizante",
+                  "vapo rub",
+                  "vapor rub",
+                  "aroma vaporub",
+                  "aroma de vaporub",
+                  "esencia vaporub"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "rosas de castilla",
+                "synonyms": [
+                  "rosas",
+                  "rosa de castilla",
+                  "rosas castilla",
+                  "aroma de rosas",
+                  "aroma de rosas de castilla",
+                  "esencia de rosas de castilla"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "bugambilia",
+                "synonyms": [
+                  "bugambilias",
+                  "aroma de bugambilia",
+                  "esencia de bugambilia",
+                  "bugambilia natural"
+                ]
+              }
+            },
+            {
+              "name": {
+                "value": "manzanilla",
+                "synonyms": [
+                  "manzanilla natural",
+                  "aroma de manzanilla",
+                  "esencia de manzanilla"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

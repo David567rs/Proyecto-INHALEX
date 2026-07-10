@@ -1,8 +1,10 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Post,
   Put,
   Req,
   UseGuards,
@@ -29,11 +31,39 @@ export class FavoritesController {
     return this.favoritesService.add(request.user.sub, productId);
   }
 
+  @Post()
+  addFromBody(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.favoritesService.add(
+      request.user.sub,
+      this.resolveProductReference(body),
+    );
+  }
+
   @Delete(':productId')
   remove(
     @Req() request: AuthenticatedRequest,
     @Param('productId') productId: string,
   ) {
     return this.favoritesService.remove(request.user.sub, productId);
+  }
+
+  private resolveProductReference(body: Record<string, unknown>): string {
+    const product =
+      body.product && typeof body.product === 'object'
+        ? (body.product as Record<string, unknown>)
+        : {};
+
+    return String(
+      body.productId ||
+        body.productSlug ||
+        body.slug ||
+        product.id ||
+        product._id ||
+        product.slug ||
+        '',
+    );
   }
 }

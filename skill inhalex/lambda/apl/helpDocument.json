@@ -1,0 +1,386 @@
+{
+  "type": "APL",
+  "version": "2023.3",
+  "theme": "light",
+  "mainTemplate": {
+    "parameters": [
+      "helpData"
+    ],
+    "item": {
+      "type": "Frame",
+      "width": "100vw",
+      "height": "100vh",
+      "background": "#F6FAF7",
+      "item": {
+        "type": "Container",
+        "width": "100%",
+        "height": "100%",
+        "items": [
+          {
+            "type": "Text",
+            "position": "absolute",
+            "right": "28dp",
+            "top": "18dp",
+            "width": "180dp",
+            "height": "24dp",
+            "text": "${helpData.userBadgeText}",
+            "fontSize": "12dp",
+            "fontWeight": "700",
+            "color": "#087A24",
+            "textAlign": "right",
+            "maxLines": 1
+          },
+          {
+            "type": "Image",
+            "position": "absolute",
+            "left": "38vw",
+            "top": "10dp",
+            "width": "240dp",
+            "height": "62dp",
+            "source": "${helpData.logo ? helpData.logo : 'https://res.cloudinary.com/doetag8zp/image/upload/v1782984136/NuevoLogo_bjfy2e.png'}",
+            "scale": "best-fit",
+            "align": "center"
+          },
+          {
+            "type": "Frame",
+            "position": "absolute",
+            "left": "8vw",
+            "top": "76dp",
+            "width": "84vw",
+            "height": "410dp",
+            "background": "#FFFFFF",
+            "borderColor": "#CBE4D1",
+            "borderWidth": "2dp",
+            "borderRadius": "26dp",
+            "item": {
+              "type": "Container",
+              "width": "100%",
+              "height": "100%",
+              "items": [
+                {
+                  "type": "Text",
+                  "position": "absolute",
+                  "left": "28dp",
+                  "right": "28dp",
+                  "top": "16dp",
+                  "height": "34dp",
+                  "text": "${helpData.title ? helpData.title : '¿Cómo puedo ayudarte?'}",
+                  "fontSize": "27dp",
+                  "lineHeight": "31dp",
+                  "fontWeight": "700",
+                  "color": "#087A24",
+                  "textAlign": "center",
+                  "maxLines": 1
+                },
+                {
+                  "type": "Text",
+                  "position": "absolute",
+                  "left": "42dp",
+                  "right": "42dp",
+                  "top": "56dp",
+                  "height": "40dp",
+                  "text": "${helpData.description ? helpData.description : 'Explora aromas, vincula tu cuenta con un código de 8 dígitos y sincroniza favoritos y bolsa.'}",
+                  "fontSize": "14dp",
+                  "lineHeight": "18dp",
+                  "color": "#5E6B61",
+                  "textAlign": "center",
+                  "maxLines": 2
+                },
+                {
+                  "type": "Frame",
+                  "position": "absolute",
+                  "left": "34dp",
+                  "right": "34dp",
+                  "top": "108dp",
+                  "height": "148dp",
+                  "background": "#ECF7EF",
+                  "borderColor": "#D4EAD9",
+                  "borderWidth": "1dp",
+                  "borderRadius": "20dp",
+                  "item": {
+                    "type": "Container",
+                    "width": "100%",
+                    "height": "100%",
+                    "items": [
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "left": "20dp",
+                        "right": "20dp",
+                        "top": "12dp",
+                        "height": "24dp",
+                        "text": "${helpData.commandTitle ? helpData.commandTitle : 'Ejemplos de comandos'}",
+                        "fontSize": "18dp",
+                        "fontWeight": "700",
+                        "color": "#087A24",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "left": "24dp",
+                        "top": "48dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandOne ? helpData.commandOne : 'Líneas: muéstrame las líneas'}",
+                        "fontSize": "13dp",
+                        "color": "#263329",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "right": "24dp",
+                        "top": "48dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandTwo ? helpData.commandTwo : 'Catálogo: abre el catálogo'}",
+                        "fontSize": "13dp",
+                        "color": "#263329",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "left": "24dp",
+                        "top": "78dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandThree ? helpData.commandThree : 'Aroma: muéstrame lavanda'}",
+                        "fontSize": "13dp",
+                        "color": "#263329",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "right": "24dp",
+                        "top": "78dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandFour ? helpData.commandFour : 'Bolsa: agregar a la bolsa'}",
+                        "fontSize": "13dp",
+                        "fontWeight": "700",
+                        "color": "#087A24",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "left": "24dp",
+                        "top": "108dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandFive ? helpData.commandFive : 'Favoritos: ver favoritos'}",
+                        "fontSize": "13dp",
+                        "color": "#263329",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "position": "absolute",
+                        "right": "24dp",
+                        "top": "108dp",
+                        "width": "46%",
+                        "height": "24dp",
+                        "text": "${helpData.commandSix ? helpData.commandSix : 'Volver: volver al catálogo'}",
+                        "fontSize": "13dp",
+                        "color": "#263329",
+                        "maxLines": 1
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "Frame",
+                  "position": "absolute",
+                  "left": "34dp",
+                  "right": "34dp",
+                  "top": "268dp",
+                  "height": "34dp",
+                  "background": "#F6FAF7",
+                  "borderColor": "#D5E7D9",
+                  "borderWidth": "1dp",
+                  "borderRadius": "17dp",
+                  "item": {
+                    "type": "Text",
+                    "width": "100%",
+                    "height": "100%",
+                    "text": "${helpData.loginNote ? helpData.loginNote : 'También puedes decir: mi código es 12345678.'}",
+                    "fontSize": "12dp",
+                    "lineHeight": "15dp",
+                    "color": "#5E6B61",
+                    "textAlign": "center",
+                    "textAlignVertical": "center",
+                    "maxLines": 2
+                  }
+                },
+                {
+                  "type": "Container",
+                  "position": "absolute",
+                  "left": "10%",
+                  "right": "10%",
+                  "top": "318dp",
+                  "height": "48dp",
+                  "spacing": "12dp",
+                  "direction": "row",
+                  "justifyContent": "center",
+                  "items": [
+                    {
+                      "type": "TouchWrapper",
+                      "width": "168dp",
+                      "height": "48dp",
+                      "onPress": [
+                        {
+                          "type": "SendEvent",
+                          "arguments": [
+                            "openLines"
+                          ]
+                        }
+                      ],
+                      "item": {
+                        "type": "Frame",
+                        "width": "100%",
+                        "height": "100%",
+                        "background": "#087A24",
+                        "borderRadius": "18dp",
+                        "item": {
+                          "type": "Text",
+                          "width": "100%",
+                          "height": "100%",
+                          "text": "${helpData.exploreButton ? helpData.exploreButton : 'Explorar líneas'}",
+                          "fontSize": "15dp",
+                          "fontWeight": "700",
+                          "color": "#FFFFFF",
+                          "textAlign": "center",
+                          "textAlignVertical": "center",
+                          "maxLines": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "TouchWrapper",
+                      "width": "146dp",
+                      "height": "48dp",
+                      "onPress": [
+                        {
+                          "type": "SendEvent",
+                          "arguments": [
+                            "openCatalog"
+                          ]
+                        }
+                      ],
+                      "item": {
+                        "type": "Frame",
+                        "width": "100%",
+                        "height": "100%",
+                        "background": "#FFFFFF",
+                        "borderColor": "#BFDCC6",
+                        "borderWidth": "2dp",
+                        "borderRadius": "18dp",
+                        "item": {
+                          "type": "Text",
+                          "width": "100%",
+                          "height": "100%",
+                          "text": "${helpData.catalogButton ? helpData.catalogButton : 'Ver catálogo'}",
+                          "fontSize": "15dp",
+                          "fontWeight": "700",
+                          "color": "#087A24",
+                          "textAlign": "center",
+                          "textAlignVertical": "center",
+                          "maxLines": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "TouchWrapper",
+                      "width": "156dp",
+                      "height": "48dp",
+                      "onPress": [
+                        {
+                          "type": "SendEvent",
+                          "arguments": [
+                            "openAccount"
+                          ]
+                        }
+                      ],
+                      "item": {
+                        "type": "Frame",
+                        "width": "100%",
+                        "height": "100%",
+                        "background": "#E5F3E8",
+                        "borderColor": "#CBE4D1",
+                        "borderWidth": "1dp",
+                        "borderRadius": "18dp",
+                        "item": {
+                          "type": "Text",
+                          "width": "100%",
+                          "height": "100%",
+                          "text": "${helpData.accountButton ? helpData.accountButton : 'Vincular'}",
+                          "fontSize": "14dp",
+                          "fontWeight": "700",
+                          "color": "#087A24",
+                          "textAlign": "center",
+                          "textAlignVertical": "center",
+                          "maxLines": 1
+                        }
+                      }
+                    },
+                    {
+                      "type": "TouchWrapper",
+                      "width": "136dp",
+                      "height": "48dp",
+                      "onPress": [
+                        {
+                          "type": "SendEvent",
+                          "arguments": [
+                            "openFavorites"
+                          ]
+                        }
+                      ],
+                      "item": {
+                        "type": "Frame",
+                        "width": "100%",
+                        "height": "100%",
+                        "background": "#FFFFFF",
+                        "borderColor": "#D5E7D9",
+                        "borderWidth": "1dp",
+                        "borderRadius": "18dp",
+                        "item": {
+                          "type": "Text",
+                          "width": "100%",
+                          "height": "100%",
+                          "text": "${helpData.favoritesButton ? helpData.favoritesButton : 'Favoritos'}",
+                          "fontSize": "15dp",
+                          "fontWeight": "700",
+                          "color": "#263329",
+                          "textAlign": "center",
+                          "textAlignVertical": "center",
+                          "maxLines": 1
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "Text",
+                  "position": "absolute",
+                  "left": "36dp",
+                  "right": "36dp",
+                  "top": "378dp",
+                  "height": "22dp",
+                  "text": "${helpData.footerText ? helpData.footerText : 'La informacion de esta skill es de bienestar general y no sustituye consejo medico profesional.'}",
+                  "fontSize": "11dp",
+                  "lineHeight": "14dp",
+                  "color": "#6F7B72",
+                  "textAlign": "center",
+                  "maxLines": 2
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

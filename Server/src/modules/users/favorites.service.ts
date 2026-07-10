@@ -53,15 +53,7 @@ export class FavoritesService {
   }
 
   async add(userId: string, productId: string): Promise<{ productId: string }> {
-    this.assertValidProductId(productId);
-
-    const product = await this.productModel
-      .findOne({
-        _id: productId,
-        status: ProductStatus.ACTIVE,
-      })
-      .select('_id')
-      .exec();
+    const product = await this.resolveActiveProduct(productId);
 
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -77,7 +69,7 @@ export class FavoritesService {
       throw new NotFoundException('User not found');
     }
 
-    return { productId };
+    return { productId: product.id || product._id.toString() };
   }
 
   async remove(
@@ -103,5 +95,23 @@ export class FavoritesService {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException('Invalid product id');
     }
+  }
+
+  private resolveActiveProduct(productIdOrSlug: string) {
+    const productReference = String(productIdOrSlug || '').trim();
+
+    if (!productReference) {
+      throw new BadRequestException('Invalid product id');
+    }
+
+    return this.productModel
+      .findOne({
+        ...(Types.ObjectId.isValid(productReference)
+          ? { _id: productReference }
+          : { slug: productReference.toLowerCase() }),
+        status: ProductStatus.ACTIVE,
+      })
+      .select('_id')
+      .exec();
   }
 }

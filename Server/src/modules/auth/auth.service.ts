@@ -17,7 +17,6 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserStatus } from '../users/enums/user-status.enum';
 import { AuthSecurityService } from './auth-security.service';
 
-const ALEXA_LINK_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const ALEXA_LINK_CODE_LENGTH = 8;
 const ALEXA_LINK_CODE_TTL_MS = 10 * 60 * 1000;
 
@@ -212,9 +211,7 @@ export class AuthService {
     let code = '';
 
     for (let index = 0; index < ALEXA_LINK_CODE_LENGTH; index += 1) {
-      code += ALEXA_LINK_CODE_ALPHABET[
-        randomInt(0, ALEXA_LINK_CODE_ALPHABET.length)
-      ];
+      code += randomInt(0, 10).toString();
     }
 
     return code;
@@ -225,11 +222,11 @@ export class AuthService {
   }
 
   private normalizeAlexaLinkCode(code: string): string {
-    const normalizedCode = code.replace(/[\s-]/g, '').toUpperCase();
+    const normalizedCode = code.replace(/\D/g, '');
 
     if (
       normalizedCode.length !== ALEXA_LINK_CODE_LENGTH ||
-      !/^[2-9A-HJ-NP-Z]+$/.test(normalizedCode)
+      !/^\d{8}$/.test(normalizedCode)
     ) {
       throw new BadRequestException('Codigo de Alexa invalido');
     }

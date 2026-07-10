@@ -64,6 +64,17 @@ export interface ShippingAddressResponse {
   isDefault: boolean;
 }
 
+@Schema({ _id: false, versionKey: false })
+export class UserCartItem {
+  @Prop({ required: true, type: Types.ObjectId, ref: 'Product' })
+  productId: Types.ObjectId;
+
+  @Prop({ required: true, min: 1, max: 25, default: 1 })
+  quantity: number;
+}
+
+export const UserCartItemSchema = SchemaFactory.createForClass(UserCartItem);
+
 @Schema({ timestamps: true, versionKey: false, collection: 'usuarios' })
 export class User {
   @Prop({ required: true, trim: true, minlength: 2, maxlength: 100 })
@@ -111,6 +122,9 @@ export class User {
 
   @Prop({ type: [ShippingAddressSchema], default: [], select: false })
   shippingAddresses: ShippingAddress[];
+
+  @Prop({ type: [UserCartItemSchema], default: [], select: false })
+  cartItems: UserCartItem[];
 
   @Prop({ select: false, index: true, sparse: true })
   alexaLinkCodeHash?: string;

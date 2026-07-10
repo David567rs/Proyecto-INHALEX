@@ -12,6 +12,15 @@ import {
   type ReactNode,
 } from "react"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/components/auth/auth-provider"
+import {
+  addRemoteCartItem,
+  clearRemoteCart,
+  listRemoteCart,
+  removeRemoteCartItem,
+  replaceRemoteCart,
+  updateRemoteCartItem,
+} from "@/lib/cart/cart-api"
 import {
   confirmOrder,
   type ConfirmedOrder,
@@ -118,6 +127,29 @@ function buildVisualCartSignature(items: CartItem[]) {
     .join("|")
 }
 
+function mergeCartItems(remoteItems: CartItem[], localItems: CartItem[]) {
+  const itemsById = new Map<string, CartItem>()
+
+  for (const item of remoteItems) {
+    itemsById.set(item.id, item)
+  }
+
+  for (const item of localItems) {
+    const remoteItem = itemsById.get(item.id)
+    if (!remoteItem) {
+      itemsById.set(item.id, item)
+      continue
+    }
+
+    itemsById.set(item.id, {
+      ...remoteItem,
+      quantity: Math.max(remoteItem.quantity, item.quantity),
+    })
+  }
+
+  return Array.from(itemsById.values())
+}
+
 function getOrCreateIdempotencyKey(items: CartItem[]): string {
   const cartSignature = buildCartSignature(items)
   try {
@@ -179,6 +211,7 @@ function buildIssueSignature(issues: DraftOrderIssue[]) {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user, isLoading: isAuthLoading } = useAuth()
   const [items, setItems] = useState<CartItem[]>([])
   const [preview, setPreview] = useState<DraftOrderPreview | null>(null)
   const [lastDraft, setLastDraft] = useState<ConfirmedOrder | null>(null)
@@ -187,6 +220,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [syncError, setSyncError] = useState("")
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const lastIssueSignatureRef = useRef("")
+  const itemsRef = useRef<CartItem[]>([])
+  const lastRemoteUserIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     startTransition(() => {
@@ -194,6 +229,100 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setIsReady(true)
     })
   }, [])
+
+  useEffect(() => {
+    itemsRef.current = items
+  }, [items])
+
+  const syncRemoteAction = useCallback(
+    async (action: (token: string) => Promise<CartItem[]>) => {
+      const token = getAccessToken()
+      if (!token || !user) return
+
+      try {
+        const remoteItems = await action(token)
+        startTransition(() => {
+          setItems(remoteItems)
+        })
+        setSyncError("")
+      } catch (error) {
+        setSyncError(
+          error instanceof Error
+            ? error.message
+            : "No pudimos sincronizar tu bolsa con tu cuenta.",
+        )
+      }
+    },
+    [user],
+  )
+
+  useEffect(() => {
+    if (!isReady || isAuthLoading) return
+
+    const token = getAccessToken()
+    const userId = user?._id ?? null
+
+    if (!token || !userId) {
+      lastRemoteUserIdRef.current = null
+      return
+    }
+
+    if (lastRemoteUserIdRef.current === userId) return
+    lastRemoteUserIdRef.current = userId
+
+    let isCancelled = false
+
+    const loadRemoteCart = async () => {
+      setIsSyncing(true)
+      try {
+        const remoteItems = await listRemoteCart(token)
+        const localItems = itemsRef.current
+        const mergedItems = mergeCartItems(remoteItems, localItems)
+        const remoteSignature = buildCartSignature(
+          remoteItems.map((item) => ({ id: item.id, quantity: item.quantity })),
+        )
+        const mergedSignature = buildCartSignature(
+          mergedItems.map((item) => ({ id: item.id, quantity: item.quantity })),
+        )
+
+        const finalItems =
+          localItems.length > 0 && remoteSignature !== mergedSignature
+            ? await replaceRemoteCart(
+                token,
+                mergedItems.map((item) => ({
+                  productId: item.id,
+                  quantity: item.quantity,
+                })),
+              )
+            : remoteItems
+
+        if (!isCancelled) {
+          startTransition(() => {
+            setItems(finalItems)
+          })
+          setSyncError("")
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setSyncError(
+            error instanceof Error
+              ? error.message
+              : "No pudimos cargar la bolsa guardada en tu cuenta.",
+          )
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsSyncing(false)
+        }
+      }
+    }
+
+    void loadRemoteCart()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isAuthLoading, isReady, user?._id])
 
   useEffect(() => {
     if (!isReady || typeof window === "undefined") return
@@ -302,32 +431,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
       title: "Agregado a la bolsa",
       description: `${product.name} ya esta listo en tu bolsa.`,
     })
-  }, [])
+
+    void syncRemoteAction((token) =>
+      addRemoteCartItem(token, product.id, safeQuantity),
+    )
+  }, [syncRemoteAction])
 
   const updateItemQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
       setItems((currentItems) => currentItems.filter((item) => item.id !== productId))
+      void syncRemoteAction((token) => removeRemoteCartItem(token, productId))
       return
     }
 
+    const safeQuantity = Math.max(1, Math.min(25, Math.floor(quantity)))
     setItems((currentItems) =>
       currentItems.map((item) =>
         item.id === productId
-          ? { ...item, quantity: Math.max(1, Math.min(25, Math.floor(quantity))) }
+          ? { ...item, quantity: safeQuantity }
           : item,
       ),
     )
-  }, [])
+
+    void syncRemoteAction((token) =>
+      updateRemoteCartItem(token, productId, safeQuantity),
+    )
+  }, [syncRemoteAction])
 
   const removeItem = useCallback((productId: string) => {
     setItems((currentItems) => currentItems.filter((item) => item.id !== productId))
-  }, [])
+    void syncRemoteAction((token) => removeRemoteCartItem(token, productId))
+  }, [syncRemoteAction])
 
   const clearCart = useCallback(() => {
     setItems([])
     setPreview(null)
     setSyncError("")
-  }, [])
+    void syncRemoteAction((token) => clearRemoteCart(token))
+  }, [syncRemoteAction])
 
   const createDraft = useCallback(
     async (payload: CreateDraftPayload) => {
@@ -358,6 +499,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setPreview(null)
         setSyncError("")
         setIsSheetOpen(false)
+        void syncRemoteAction((token) => clearRemoteCart(token))
 
         toast({
           title: "Pedido confirmado",
@@ -401,7 +543,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         throw error
       }
     },
-    [items, preview?.signature],
+    [items, preview?.signature, syncRemoteAction],
   )
 
   const value = useMemo<CartContextValue>(

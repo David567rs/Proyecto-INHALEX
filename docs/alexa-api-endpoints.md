@@ -28,7 +28,19 @@ Si el frontend esta en Vercel y consume una API externa, revisar en Vercel:
 Project Settings > Environment Variables > NEXT_PUBLIC_API_URL
 ```
 
-El valor de `NEXT_PUBLIC_API_URL` es la URL que debe usar la skill.
+El valor de `NEXT_PUBLIC_API_URL` ayuda a ubicar el backend publico que debe usar la skill.
+
+Si configuras `INHALEX_API_URL` en Alexa Hosted y dejas los endpoints como `/api/...`, usa el dominio raiz sin repetir `/api`:
+
+```txt
+INHALEX_API_URL=https://TU-DOMINIO-PUBLICO-DEL-BACKEND
+INHALEX_LINK_ENDPOINTS=/api/auth/alexa/exchange
+INHALEX_PROFILE_ENDPOINTS=/api/auth/me
+INHALEX_FAVORITES_ENDPOINTS=/api/favorites
+INHALEX_BAG_ENDPOINTS=/api/cart
+```
+
+Si prefieres poner `/api` dentro de `INHALEX_API_URL`, entonces los endpoints personalizados tendrian que ir sin `/api` para evitar URLs duplicadas como `/api/api/cart`.
 
 Importante para Alexa:
 
@@ -139,7 +151,7 @@ Respuesta:
 
 ```json
 {
-  "code": "ABCD-2345",
+  "code": "1234-5678",
   "expiresAt": "2026-07-08T18:00:00.000Z",
   "expiresInSeconds": 600
 }
@@ -151,6 +163,7 @@ Notas:
 El codigo expira en 10 minutos.
 El codigo es de un solo uso.
 En base de datos solo se guarda hasheado.
+El formato visible es de 8 digitos, separado como 1234-5678 para facilitar lectura.
 ```
 
 ### Cancelar codigo temporal de Alexa
@@ -191,7 +204,7 @@ Body:
 
 ```json
 {
-  "code": "ABCD-2345"
+  "code": "1234-5678"
 }
 ```
 
@@ -387,23 +400,103 @@ Respuesta:
 
 ## Bolsa / carrito
 
-Importante:
+La bolsa ya puede persistirse en backend para usuarios autenticados. Esto permite que la web y Alexa compartan los productos guardados en la cuenta.
+
+Todos estos endpoints requieren token:
 
 ```txt
-Actualmente no existe un carrito persistido en backend tipo /api/cart/items.
+Authorization: Bearer <accessToken>
 ```
 
-La bolsa del frontend se guarda en `localStorage`. El backend solo recibe una lista de productos y cantidades para:
+### Ver bolsa persistida
 
-1. Validar inventario.
-2. Calcular subtotal.
-3. Generar firma de previsualizacion.
-4. Confirmar pedido.
+```txt
+GET /api/cart
+```
 
-Para Alexa hay dos opciones:
+Respuesta:
 
-1. La skill guarda la bolsa en su propia sesion/base de datos y llama a los endpoints de pedidos.
-2. Se implementa un modulo nuevo en el backend: `/api/cart`, `/api/cart/items`, etc.
+```json
+{
+  "items": [
+    {
+      "productId": "id_producto",
+      "quantity": 1,
+      "subtotal": 60,
+      "product": {
+        "_id": "id_producto",
+        "name": "Rosas de Castilla",
+        "slug": "rosas-de-castilla",
+        "price": 60,
+        "currency": "MXN"
+      }
+    }
+  ],
+  "totalItems": 1,
+  "subtotal": 60,
+  "currency": "MXN"
+}
+```
+
+### Agregar producto a bolsa persistida
+
+```txt
+POST /api/cart
+```
+
+Body:
+
+```json
+{
+  "productId": "id_producto",
+  "quantity": 1
+}
+```
+
+### Reemplazar bolsa completa
+
+```txt
+PUT /api/cart
+```
+
+Body:
+
+```json
+{
+  "items": [
+    {
+      "productId": "id_producto",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+### Actualizar cantidad
+
+```txt
+PATCH /api/cart/:productId
+```
+
+Body:
+
+```json
+{
+  "quantity": 2
+}
+```
+
+### Eliminar producto
+
+```txt
+DELETE /api/cart/:productId
+```
+
+### Vaciar bolsa
+
+```txt
+DELETE /api/cart
+```
 
 ### Ver / validar bolsa
 
@@ -467,61 +560,6 @@ Respuesta:
   "needsManualReview": false,
   "signature": "preview_signature"
 }
-```
-
-### Agregar producto a bolsa
-
-```txt
-No existe endpoint directo.
-```
-
-Forma actual:
-
-La skill debe agregar el producto a su arreglo local y despues llamar:
-
-```txt
-POST /api/orders/draft/preview
-```
-
-Ejemplo de bolsa interna de la skill:
-
-```json
-{
-  "items": [
-    {
-      "productId": "id_producto",
-      "quantity": 1
-    }
-  ]
-}
-```
-
-### Actualizar cantidad
-
-```txt
-No existe endpoint directo.
-```
-
-Forma actual:
-
-La skill modifica `quantity` en su bolsa interna y vuelve a llamar:
-
-```txt
-POST /api/orders/draft/preview
-```
-
-### Eliminar producto
-
-```txt
-No existe endpoint directo.
-```
-
-Forma actual:
-
-La skill elimina el item de su bolsa interna y vuelve a llamar:
-
-```txt
-POST /api/orders/draft/preview
 ```
 
 ### Confirmar pedido
@@ -609,7 +647,11 @@ DELETE /api/favorites/:productId
 5. Bolsa:
 
 ```txt
-La skill mantiene items en sesion y valida con POST /api/orders/draft/preview
+GET /api/cart
+POST /api/cart
+PATCH /api/cart/:productId
+DELETE /api/cart/:productId
+POST /api/orders/draft/preview para validar inventario antes de confirmar
 ```
 
 6. Confirmar:
@@ -618,15 +660,14 @@ La skill mantiene items en sesion y valida con POST /api/orders/draft/preview
 POST /api/orders/confirm
 ```
 
-## Nota tecnica importante
-
-Si tu compañera necesita endpoints exactamente como:
+## Variables recomendadas en Alexa Hosted
 
 ```txt
-POST /api/cart/items
-PATCH /api/cart/items/:productId
-DELETE /api/cart/items/:productId
-GET /api/cart
+INHALEX_API_URL=https://TU-DOMINIO-PUBLICO-DEL-BACKEND
+INHALEX_LINK_ENDPOINTS=/api/auth/alexa/exchange
+INHALEX_PROFILE_ENDPOINTS=/api/auth/me
+INHALEX_FAVORITES_ENDPOINTS=/api/favorites
+INHALEX_BAG_ENDPOINTS=/api/cart
 ```
 
-entonces hay que implementar un modulo de carrito persistente en el backend, porque actualmente esa parte solo existe del lado del frontend.
+Con esa configuracion, la skill consume el backend real para vincular cuenta, perfil, favoritos y bolsa persistida.

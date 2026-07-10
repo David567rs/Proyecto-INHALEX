@@ -1,0 +1,16 @@
+{
+  "name": "inhalex-bienestar",
+  "version": "1.0.0",
+  "description": "Skill de INHALEX Bienestar con APL y conexión a backend",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/util.test.js",
+    "check": "node --check index.js && node --check util.js"
+  },
+  "author": "INHALEX",
+  "license": "MIT",
+  "dependencies": {
+    "ask-sdk-core": "^2.14.0",
+    "ask-sdk-model": "^1.82.0"
+  }
+}

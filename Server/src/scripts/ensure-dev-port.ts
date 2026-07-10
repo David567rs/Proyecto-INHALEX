@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 
@@ -11,6 +12,12 @@ const rootHints = [
 ];
 const entryHints = ['src/main.ts', 'src\\main.ts', 'dist/main.js', 'dist\\main.js'];
 const runtimeHints = ['ts-node/register', 'tsconfig-paths/register', 'newrelic'];
+
+type ProcessInfo = {
+  pid: number;
+  parentPid: number | null;
+  commandLine: string;
+};
 
 function run(command: string) {
   try {
@@ -60,15 +67,46 @@ function getListeningPids(targetPort: number) {
 }
 
 function getCommandLine(pid: number) {
+  return getProcessInfo(pid).commandLine;
+}
+
+function getProcessInfo(pid: number): ProcessInfo {
   if (process.platform === 'win32') {
     const output = run(
-      `powershell -NoProfile -Command "(Get-CimInstance Win32_Process -Filter \\"ProcessId = ${pid}\\").CommandLine"`,
+      `powershell -NoProfile -Command "$process = Get-CimInstance Win32_Process -Filter 'ProcessId = ${pid}'; if ($process) { $process | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json -Compress }"`,
     );
 
-    return output.replace(/\r?\n/g, ' ').trim();
+    if (!output) {
+      return { pid, parentPid: null, commandLine: '' };
+    }
+
+    const parsed = JSON.parse(output) as {
+      ProcessId?: number;
+      ParentProcessId?: number;
+      CommandLine?: string | null;
+    };
+
+    return {
+      pid: Number(parsed.ProcessId ?? pid),
+      parentPid: Number.isFinite(Number(parsed.ParentProcessId))
+        ? Number(parsed.ParentProcessId)
+        : null,
+      commandLine: String(parsed.CommandLine ?? '').replace(/\r?\n/g, ' ').trim(),
+    };
   }
 
-  return run(`ps -o command= -p ${pid}`);
+  const output = run(`ps -o pid=,ppid=,command= -p ${pid}`);
+  const match = output.match(/^\s*(\d+)\s+(\d+)\s+(.+)$/);
+
+  if (!match) {
+    return { pid, parentPid: null, commandLine: output.trim() };
+  }
+
+  return {
+    pid: Number(match[1]),
+    parentPid: Number(match[2]),
+    commandLine: match[3].trim(),
+  };
 }
 
 function isOwnBackend(commandLine: string) {
@@ -81,6 +119,44 @@ function isOwnBackend(commandLine: string) {
   );
 
   return hasKnownEntry && (hasKnownRuntime || rootHints.some((hint) => normalized.includes(hint.toLowerCase())));
+}
+
+function isOwnBackendWrapper(commandLine: string) {
+  const normalized = commandLine.toLowerCase();
+  const hasProjectRoot = rootHints.some((hint) =>
+    normalized.includes(hint.toLowerCase()),
+  );
+  const looksLikeDevRunner =
+    normalized.includes('start:dev') ||
+    normalized.includes('node --watch') ||
+    normalized.includes('ensure-dev-port');
+
+  return hasProjectRoot && looksLikeDevRunner;
+}
+
+function findBackendKillTarget(pid: number): ProcessInfo {
+  const visited = new Set<number>();
+  let current = getProcessInfo(pid);
+  let target = current;
+
+  while (current.parentPid && !visited.has(current.parentPid)) {
+    visited.add(current.pid);
+
+    const parent = getProcessInfo(current.parentPid);
+
+    if (!parent.commandLine) {
+      break;
+    }
+
+    if (!isOwnBackend(parent.commandLine) && !isOwnBackendWrapper(parent.commandLine)) {
+      break;
+    }
+
+    target = parent;
+    current = parent;
+  }
+
+  return target;
 }
 
 function killProcess(pid: number) {
@@ -113,18 +189,18 @@ function main() {
     return;
   }
 
-  const ownBackendPids: number[] = [];
+  const ownBackendProcesses: ProcessInfo[] = [];
   const externalPids: Array<{ pid: number; commandLine: string }> = [];
 
   for (const pid of pids) {
-    const commandLine = getCommandLine(pid);
+    const processInfo = getProcessInfo(pid);
 
-    if (isOwnBackend(commandLine)) {
-      ownBackendPids.push(pid);
+    if (isOwnBackend(processInfo.commandLine)) {
+      ownBackendProcesses.push(findBackendKillTarget(pid));
       continue;
     }
 
-    externalPids.push({ pid, commandLine });
+    externalPids.push({ pid, commandLine: processInfo.commandLine });
   }
 
   if (externalPids.length > 0) {
@@ -144,15 +220,19 @@ function main() {
     process.exit(1);
   }
 
+  const ownBackendPids = Array.from(
+    new Map(ownBackendProcesses.map((processInfo) => [processInfo.pid, processInfo])).values(),
+  );
+
   if (ownBackendPids.length === 0) {
     return;
   }
 
-  for (const pid of ownBackendPids) {
+  for (const processInfo of ownBackendPids) {
     console.log(
-      `[start:dev] Cerrando instancia previa del backend en el puerto ${port} (PID ${pid})...`,
+      `[start:dev] Cerrando instancia previa del backend en el puerto ${port} (PID ${processInfo.pid})...`,
     );
-    killProcess(pid);
+    killProcess(processInfo.pid);
   }
 
   if (!waitUntilPortIsFree(port)) {

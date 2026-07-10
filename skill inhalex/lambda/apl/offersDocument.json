@@ -1,0 +1,199 @@
+{
+  "type": "APL",
+  "version": "1.8",
+  "theme": "dark",
+  "mainTemplate": {
+    "parameters": [
+      "offersData"
+    ],
+    "item": {
+      "type": "Container",
+      "width": "100vw",
+      "height": "100vh",
+      "backgroundColor": "#2D160F",
+      "padding": "24dp",
+      "items": [
+        {
+          "type": "Text",
+          "text": "${offersData.title}",
+          "fontSize": "44dp",
+          "fontWeight": "700",
+          "color": "#F5E7C8"
+        },
+        {
+          "type": "Text",
+          "text": "${offersData.subtitle}",
+          "fontSize": "22dp",
+          "color": "#D6B56D",
+          "spacing": "4dp"
+        },
+        {
+          "type": "Text",
+          "text": "${offersData.instruction}",
+          "fontSize": "18dp",
+          "color": "#F5E7C8",
+          "spacing": "8dp"
+        },
+        {
+          "type": "Sequence",
+          "when": "${offersData.products.length > 0}",
+          "width": "100%",
+          "height": "68vh",
+          "scrollDirection": "vertical",
+          "spacing": "18dp",
+          "paddingTop": "18dp",
+          "data": "${offersData.products}",
+          "item": {
+            "type": "TouchWrapper",
+            "onPress": [
+              {
+                "type": "SendEvent",
+                "arguments": [
+                  "openDetail",
+                  "${data.slug}"
+                ]
+              }
+            ],
+            "item": {
+              "type": "Frame",
+              "backgroundColor": "#4A2418",
+              "borderRadius": "20dp",
+              "padding": "16dp",
+              "item": {
+                "type": "Container",
+                "direction": "row",
+                "items": [
+                  {
+                    "type": "Image",
+                    "source": "${data.image}",
+                    "width": "150dp",
+                    "height": "150dp",
+                    "scale": "best-fill",
+                    "borderRadius": "16dp"
+                  },
+                  {
+                    "type": "Container",
+                    "paddingLeft": "20dp",
+                    "grow": 1,
+                    "items": [
+                      {
+                        "type": "Text",
+                        "text": "${data.name}",
+                        "fontSize": "30dp",
+                        "fontWeight": "700",
+                        "color": "#FFFFFF",
+                        "maxLines": 1
+                      },
+                      {
+                        "type": "Text",
+                        "text": "${data.description}",
+                        "fontSize": "20dp",
+                        "color": "#E8E8E8",
+                        "maxLines": 2,
+                        "spacing": "6dp"
+                      },
+                      {
+                        "type": "Text",
+                        "text": "Antes: $${data.price} ${data.currency}",
+                        "fontSize": "20dp",
+                        "color": "#C9C9C9",
+                        "spacing": "8dp"
+                      },
+                      {
+                        "type": "Text",
+                        "text": "Oferta: $${data.offerPrice} ${data.currency}",
+                        "fontSize": "28dp",
+                        "fontWeight": "700",
+                        "color": "#FFD36A",
+                        "spacing": "2dp"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "Frame",
+          "when": "${offersData.products.length == 0}",
+          "height": "68vh",
+          "backgroundColor": "#4A2418",
+          "borderRadius": "20dp",
+          "padding": "28dp",
+          "item": {
+            "type": "Text",
+            "text": "${offersData.emptyText}",
+            "fontSize": "24dp",
+            "color": "#FFFFFF",
+            "textAlign": "center",
+            "textAlignVertical": "center",
+            "maxLines": 4
+          }
+        },
+        {
+          "type": "Container",
+          "direction": "row",
+          "justifyContent": "center",
+          "spacing": "28dp",
+          "items": [
+            {
+              "type": "TouchWrapper",
+              "onPress": [
+                {
+                  "type": "SendEvent",
+                  "arguments": [
+                    "openCatalog"
+                  ]
+                }
+              ],
+              "item": {
+                "type": "Frame",
+                "backgroundColor": "#D6B56D",
+                "borderRadius": "14dp",
+                "paddingLeft": "24dp",
+                "paddingRight": "24dp",
+                "paddingTop": "12dp",
+                "paddingBottom": "12dp",
+                "item": {
+                  "type": "Text",
+                  "text": "Ver catálogo",
+                  "fontSize": "22dp",
+                  "fontWeight": "700",
+                  "color": "#2D160F"
+                }
+              }
+            },
+            {
+              "type": "TouchWrapper",
+              "onPress": [
+                {
+                  "type": "SendEvent",
+                  "arguments": [
+                    "openHelp"
+                  ]
+                }
+              ],
+              "item": {
+                "type": "Frame",
+                "backgroundColor": "#FFFFFF",
+                "borderRadius": "14dp",
+                "paddingLeft": "24dp",
+                "paddingRight": "24dp",
+                "paddingTop": "12dp",
+                "paddingBottom": "12dp",
+                "item": {
+                  "type": "Text",
+                  "text": "Ayuda",
+                  "fontSize": "22dp",
+                  "fontWeight": "700",
+                  "color": "#2D160F"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
