@@ -218,7 +218,7 @@
           "slots": [
             {
               "name": "code",
-              "type": "AMAZON.NUMBER"
+              "type": "AMAZON.SearchQuery"
             }
           ],
           "samples": [
@@ -229,12 +229,21 @@
             "acceder con token",
             "tengo un código",
             "quiero vincular mi cuenta",
+            "mi codigo es {code}",
             "mi código es {code}",
+            "el codigo es {code}",
             "el código es {code}",
             "mi token es {code}",
             "el token es {code}",
+            "codigo {code}",
             "código {code}",
             "token {code}",
+            "es {code}",
+            "son {code}",
+            "usar {code}",
+            "usar codigo {code}",
+            "vincular codigo {code}",
+            "vincular con el codigo {code}",
             "vincular con {code}",
             "acceder con {code}"
           ]

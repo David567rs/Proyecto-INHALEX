@@ -68,7 +68,7 @@ describe('AuthService - Alexa link code', () => {
 
     const response = await service.generateAlexaLinkCode('user-id');
 
-    expect(response.code).toMatch(/^\d{4}-\d{4}$/);
+    expect(response.code).toMatch(/^[1-9]\d{4}$/);
     expect(response.expiresInSeconds).toBe(600);
     expect(usersService.storeAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
@@ -113,7 +113,7 @@ describe('AuthService - Alexa link code', () => {
 
   it('rechaza codigos con formato invalido', async () => {
     await expect(
-      service.exchangeAlexaLinkCode({ code: 'ABCD-EFGH' }, '127.0.0.1'),
+      service.exchangeAlexaLinkCode({ code: 'ABCD' }, '127.0.0.1'),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(authSecurityService.registerFailedLogin).toHaveBeenCalledWith(

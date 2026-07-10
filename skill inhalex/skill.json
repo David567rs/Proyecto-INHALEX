@@ -136,7 +136,7 @@
           "summary": "Explora aromas naturales INHALEX por línea, catálogo y ofertas."
         }
       },
-      "testingInstructions": "Prueba: abre la skill, di \"explorar líneas\", \"línea verde\", \"ver catálogo\", \"muéstrame lavanda\", \"vincular cuenta\", \"mi código es 12345678\", \"agregar a favoritos\", \"agregar a la bolsa\", \"ver favoritos\", \"ver mi bolsa\", \"volver al catálogo\" y \"ayuda\". En dispositivos con pantalla, valida que los botones APL naveguen entre inicio, líneas, catálogo, detalle, cuenta, favoritos, bolsa y ayuda."
+      "testingInstructions": "Prueba: abre la skill, di \"explorar líneas\", \"línea verde\", \"ver catálogo\", \"muéstrame lavanda\", \"vincular cuenta\", \"mi código es cinco dos cuatro cero uno\", \"agregar a favoritos\", \"agregar a la bolsa\", \"ver favoritos\", \"ver mi bolsa\", \"volver al catálogo\" y \"ayuda\". En dispositivos con pantalla, valida que los botones APL naveguen entre inicio, líneas, catálogo, detalle, cuenta, favoritos, bolsa y ayuda."
     }
   }
 }

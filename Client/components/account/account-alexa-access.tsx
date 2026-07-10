@@ -28,6 +28,27 @@ function formatRemaining(seconds: number) {
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
 }
 
+const DIGIT_WORDS: Record<string, string> = {
+  "0": "cero",
+  "1": "uno",
+  "2": "dos",
+  "3": "tres",
+  "4": "cuatro",
+  "5": "cinco",
+  "6": "seis",
+  "7": "siete",
+  "8": "ocho",
+  "9": "nueve",
+}
+
+function getAlexaSpokenCode(code?: string) {
+  return String(code ?? "")
+    .replace(/\D/g, "")
+    .split("")
+    .map((digit) => DIGIT_WORDS[digit] ?? digit)
+    .join(" ")
+}
+
 export function AccountAlexaAccess() {
   const { toast } = useToast()
   const [linkCode, setLinkCode] = useState<AlexaLinkCodeResponse | null>(null)
@@ -168,7 +189,7 @@ export function AccountAlexaAccess() {
               Codigo de vinculacion
             </p>
             <p className="mt-1 font-mono text-2xl font-semibold tracking-[0.2em] text-foreground">
-              {hasActiveCode ? linkCode?.code : "---- ----"}
+              {hasActiveCode ? linkCode?.code : "-----"}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -227,6 +248,14 @@ export function AccountAlexaAccess() {
             <span>Disponible cuando necesites vincular la skill.</span>
           )}
         </div>
+        {hasActiveCode ? (
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            Dilo en Alexa:{" "}
+            <span className="font-medium text-foreground">
+              mi codigo es {getAlexaSpokenCode(linkCode?.code)}
+            </span>
+          </p>
+        ) : null}
       </div>
     </section>
   )

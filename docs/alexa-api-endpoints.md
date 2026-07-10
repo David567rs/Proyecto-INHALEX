@@ -151,7 +151,7 @@ Respuesta:
 
 ```json
 {
-  "code": "1234-5678",
+  "code": "52401",
   "expiresAt": "2026-07-08T18:00:00.000Z",
   "expiresInSeconds": 600
 }
@@ -163,7 +163,8 @@ Notas:
 El codigo expira en 10 minutos.
 El codigo es de un solo uso.
 En base de datos solo se guarda hasheado.
-El formato visible es de 8 digitos, separado como 1234-5678 para facilitar lectura.
+El formato visible es de 5 digitos, sin guion, para que Alexa no lo interprete como una resta.
+Recomendacion: decirlo digito por digito, por ejemplo: "mi codigo es cinco dos cuatro cero uno".
 ```
 
 ### Cancelar codigo temporal de Alexa
@@ -204,7 +205,7 @@ Body:
 
 ```json
 {
-  "code": "1234-5678"
+  "code": "52401"
 }
 ```
 

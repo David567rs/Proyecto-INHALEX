@@ -30,9 +30,9 @@ function accountDataSource(account, state) {
                 : 'Vincula tu cuenta',
             subtitle: linked
                 ? 'Tu perfil de INHALEX ya está conectado con Alexa.'
-                : 'Di tu código temporal de 8 dígitos para conectar favoritos y bolsa.',
+                : 'Di tu código temporal de 5 dígitos para conectar favoritos y bolsa.',
             codeHint:
-                'Puedes decir: mi código es 12345678',
+                'Puedes decir: mi código es cinco dos cuatro cero uno',
             statusText:
                 safeState.statusText ||
                 (

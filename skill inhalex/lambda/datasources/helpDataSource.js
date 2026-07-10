@@ -7,7 +7,7 @@ function helpDataSource() {
             logo: util.LOGO_URL,
             title: '¿Cómo puedo ayudarte?',
             description:
-                'Explora aromas, vincula tu cuenta con un código de 8 dígitos y sincroniza favoritos y bolsa.',
+                'Explora aromas, vincula tu cuenta con un código de 5 dígitos y sincroniza favoritos y bolsa.',
             commandTitle: 'Ejemplos de comandos',
             commandExamples:
                 '• Muéstrame las líneas   • Línea verde\n' +
@@ -21,7 +21,7 @@ function helpDataSource() {
             commandFive: 'Favoritos: ver favoritos',
             commandSix: 'Bolsa: ver mi bolsa',
             loginNote:
-                'También puedes decir: mi código es 12345678.',
+                'También puedes decir: mi código es cinco dos cuatro cero uno.',
             exploreButton: 'Explorar líneas',
             catalogButton: 'Ver catálogo',
             accountButton: 'Vincular cuenta',

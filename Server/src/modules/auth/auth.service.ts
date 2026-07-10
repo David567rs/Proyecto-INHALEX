@@ -17,7 +17,7 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserStatus } from '../users/enums/user-status.enum';
 import { AuthSecurityService } from './auth-security.service';
 
-const ALEXA_LINK_CODE_LENGTH = 8;
+const ALEXA_LINK_CODE_LENGTH = 5;
 const ALEXA_LINK_CODE_TTL_MS = 10 * 60 * 1000;
 
 @Injectable()
@@ -208,9 +208,9 @@ export class AuthService {
   }
 
   private createAlexaLinkCode(): string {
-    let code = '';
+    let code = randomInt(1, 10).toString();
 
-    for (let index = 0; index < ALEXA_LINK_CODE_LENGTH; index += 1) {
+    for (let index = 1; index < ALEXA_LINK_CODE_LENGTH; index += 1) {
       code += randomInt(0, 10).toString();
     }
 
@@ -218,7 +218,7 @@ export class AuthService {
   }
 
   private formatAlexaLinkCode(code: string): string {
-    return `${code.slice(0, 4)}-${code.slice(4)}`;
+    return code;
   }
 
   private normalizeAlexaLinkCode(code: string): string {
@@ -226,7 +226,7 @@ export class AuthService {
 
     if (
       normalizedCode.length !== ALEXA_LINK_CODE_LENGTH ||
-      !/^\d{8}$/.test(normalizedCode)
+      !new RegExp(`^\\d{${ALEXA_LINK_CODE_LENGTH}}$`).test(normalizedCode)
     ) {
       throw new BadRequestException('Codigo de Alexa invalido');
     }

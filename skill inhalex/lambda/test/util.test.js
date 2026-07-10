@@ -63,8 +63,23 @@ assert.deepStrictEqual(
 );
 
 assert.strictEqual(
-    util.normalizeAccessCode('12 34-56 78'),
-    '12345678'
+    util.normalizeAccessCode('12 34-5'),
+    '12345'
+);
+
+assert.strictEqual(
+    util.normalizeAccessCode('cinco dos cuatro cero uno'),
+    '52401'
+);
+
+assert.strictEqual(
+    util.normalizeAccessCode('mi código es cinco dos cuatro cero uno'),
+    '52401'
+);
+
+assert.strictEqual(
+    util.normalizeAccessCode('cincuenta y dos mil cuatrocientos uno'),
+    '52401'
 );
 
 const account = util.normalizeAccountResponse({

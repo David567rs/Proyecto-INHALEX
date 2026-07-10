@@ -43,7 +43,7 @@ function bagDataSource(items, account) {
                 : 'Cuenta no vinculada',
             emptyText: linked
                 ? 'Agrega aromas desde Alexa o desde la página.'
-                : 'Usa tu código temporal de 8 dígitos para conectar tu cuenta.',
+                : 'Usa tu código temporal de 5 dígitos para conectar tu cuenta.',
             totalText: '$' + total.toFixed(2) + ' MXN',
             items: safeItems.map(function(item) {
                 const quantity = Math.max(

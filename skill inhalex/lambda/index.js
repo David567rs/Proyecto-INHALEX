@@ -99,6 +99,23 @@ function saveSessionAccount(handlerInput, account) {
     return sessionAttributes.account;
 }
 
+function setAwaitingLinkCode(handlerInput, awaiting) {
+    const sessionAttributes =
+        handlerInput.attributesManager.getSessionAttributes();
+
+    sessionAttributes.awaitingLinkCode = Boolean(awaiting);
+    handlerInput.attributesManager.setSessionAttributes(
+        sessionAttributes
+    );
+}
+
+function isAwaitingLinkCode(handlerInput) {
+    const sessionAttributes =
+        handlerInput.attributesManager.getSessionAttributes();
+
+    return Boolean(sessionAttributes.awaitingLinkCode);
+}
+
 async function syncAccount(handlerInput, forceRefresh) {
     const sessionAttributes =
         handlerInput.attributesManager.getSessionAttributes();
@@ -282,6 +299,26 @@ function getQuantitySlotValue(handlerInput) {
         : null;
 }
 
+function getRawRequestText(handlerInput) {
+    const request =
+        handlerInput.requestEnvelope.request || {};
+    const intent = request.intent || {};
+    const slots = intent.slots || {};
+    const slotValues = Object.keys(slots)
+        .map(function(slotName) {
+            return slots[slotName] && slots[slotName].value;
+        })
+        .filter(Boolean);
+
+    return [
+        request.inputTranscript,
+        intent.name,
+        slotValues.join(' ')
+    ]
+        .filter(Boolean)
+        .join(' ');
+}
+
 function getCodeSlotValue(handlerInput) {
     return (
         getResolvedSlotValue(
@@ -292,6 +329,7 @@ function getCodeSlotValue(handlerInput) {
             handlerInput.requestEnvelope,
             'code'
         ) ||
+        getRawRequestText(handlerInput) ||
         ''
     );
 }
@@ -707,17 +745,19 @@ async function showAccount(handlerInput, state) {
         .speak(
             account.linked
                 ? 'Tu cuenta de INHALEX ya está vinculada. Puedes decir ver favoritos o ver mi bolsa.'
-                : 'Para vincular tu cuenta, genera un código temporal de ocho dígitos en tu página de INHALEX y di: mi código es, seguido del código.'
+                : 'Para vincular tu cuenta, genera un código temporal de cinco dígitos en tu página de INHALEX y di: mi código es, seguido del código.'
         )
         .reprompt(
             account.linked
                 ? 'Puedes decir ver favoritos, ver mi bolsa o ver catálogo.'
-                : 'Cuando tengas el código, di: mi código es, seguido de los ocho dígitos.'
+                : 'Cuando tengas el código, di: mi código es, y después los cinco dígitos.'
         )
         .getResponse();
 }
 
 async function promptLinkToken(handlerInput) {
+    setAwaitingLinkCode(handlerInput, true);
+
     const account =
         await syncAccount(handlerInput);
 
@@ -729,17 +769,17 @@ async function promptLinkToken(handlerInput) {
             account,
             {
                 statusText:
-                    'Estoy lista. Di tu código de 8 dígitos para vincular la skill.'
+                    'Estoy lista. Di tu código de 5 dígitos para vincular la skill.'
             }
         )
     );
 
     return handlerInput.responseBuilder
         .speak(
-            'Claro. Dime el código de ocho dígitos que generaste en la página. Por ejemplo: mi código es uno dos tres cuatro cinco seis siete ocho.'
+            'Claro. Dime el código de cinco dígitos que generaste en la página, separado número por número. Por ejemplo: mi código es cinco dos cuatro cero uno.'
         )
         .reprompt(
-            'Di: mi código es, seguido de los ocho dígitos.'
+            'Di: mi código es, y después cada dígito por separado.'
         )
         .getResponse();
 }
@@ -748,7 +788,9 @@ async function linkWithCode(handlerInput, codeInput) {
     const cleanCode =
         util.normalizeAccessCode(codeInput);
 
-    if (cleanCode.length !== 8) {
+    if (cleanCode.length !== util.ACCESS_CODE_LENGTH) {
+        setAwaitingLinkCode(handlerInput, true);
+
         renderDocument(
             handlerInput,
             'accountInvalidCodeToken',
@@ -757,7 +799,7 @@ async function linkWithCode(handlerInput, codeInput) {
                 getSessionAccount(handlerInput),
                 {
                     errorText:
-                        'El código debe tener 8 dígitos.',
+                        'El código debe tener 5 dígitos.',
                     statusText:
                         'Vuelve a decir el código que aparece en tu página.'
                 }
@@ -766,10 +808,10 @@ async function linkWithCode(handlerInput, codeInput) {
 
         return handlerInput.responseBuilder
             .speak(
-                'El código debe tener ocho dígitos. Intenta decirlo de nuevo, por ejemplo: mi código es uno dos tres cuatro cinco seis siete ocho.'
+                'El código debe tener cinco dígitos. Intenta decirlo número por número, por ejemplo: mi código es cinco dos cuatro cero uno.'
             )
             .reprompt(
-                'Di: mi código es, seguido de los ocho dígitos.'
+                'Di: mi código es, y después cada dígito por separado.'
             )
             .getResponse();
     }
@@ -790,6 +832,8 @@ async function linkWithCode(handlerInput, codeInput) {
                 handlerInput,
                 linkedAccount
             );
+
+        setAwaitingLinkCode(handlerInput, false);
 
         renderDocument(
             handlerInput,
@@ -815,6 +859,8 @@ async function linkWithCode(handlerInput, codeInput) {
             )
             .getResponse();
     } catch (error) {
+        setAwaitingLinkCode(handlerInput, true);
+
         console.log(
             'ERROR AL VINCULAR CUENTA:',
             error.message
@@ -863,7 +909,7 @@ async function showFavorites(handlerInput) {
 
         return handlerInput.responseBuilder
             .speak(
-                'Para ver tus favoritos primero necesitas vincular tu cuenta con un código temporal de ocho dígitos.'
+                'Para ver tus favoritos primero necesitas vincular tu cuenta con un código temporal de cinco dígitos.'
             )
             .reprompt(
                 'Puedes decir vincular cuenta o ver catálogo.'
@@ -916,7 +962,7 @@ async function showBag(handlerInput) {
 
         return handlerInput.responseBuilder
             .speak(
-                'Para sincronizar tu bolsa primero necesitas vincular tu cuenta con un código temporal de ocho dígitos.'
+                'Para sincronizar tu bolsa primero necesitas vincular tu cuenta con un código temporal de cinco dígitos.'
             )
             .reprompt(
                 'Puedes decir vincular cuenta o ver catálogo.'
@@ -1068,7 +1114,7 @@ async function addFavorite(handlerInput, productInput) {
             .speak(
                 'Para guardar ' +
                 result.product.name +
-                ' en favoritos, primero vincula tu cuenta con el código temporal de ocho dígitos.'
+                ' en favoritos, primero vincula tu cuenta con el código temporal de cinco dígitos.'
             )
             .reprompt(
                 'Puedes decir vincular cuenta o ver catálogo.'
@@ -1156,7 +1202,7 @@ async function addToBag(handlerInput, productInput, quantityOverride) {
 
         return handlerInput.responseBuilder
             .speak(
-                'Para agregar productos a tu bolsa y verlos también en la página, primero vincula tu cuenta con el código temporal de ocho dígitos.'
+                'Para agregar productos a tu bolsa y verlos también en la página, primero vincula tu cuenta con el código temporal de cinco dígitos.'
             )
             .reprompt(
                 'Puedes decir vincular cuenta o ver catálogo.'
@@ -1496,7 +1542,7 @@ const LinkAccountIntentHandler = {
         const code =
             getCodeSlotValue(handlerInput);
 
-        if (util.normalizeAccessCode(code).length === 8) {
+        if (util.normalizeAccessCode(code).length === util.ACCESS_CODE_LENGTH) {
             return linkWithCode(
                 handlerInput,
                 code
@@ -1914,7 +1960,28 @@ const FallbackIntentHandler = {
         );
     },
 
-    handle(handlerInput) {
+    async handle(handlerInput) {
+        if (isAwaitingLinkCode(handlerInput)) {
+            const possibleCode =
+                getRawRequestText(handlerInput);
+
+            if (util.normalizeAccessCode(possibleCode).length === util.ACCESS_CODE_LENGTH) {
+                return linkWithCode(
+                    handlerInput,
+                    possibleCode
+                );
+            }
+
+            return handlerInput.responseBuilder
+                .speak(
+                    'No pude leer el código completo. Dilo número por número, por ejemplo: mi código es cinco dos cuatro cero uno.'
+                )
+                .reprompt(
+                    'Di: mi código es, y después cada dígito por separado.'
+                )
+                .getResponse();
+        }
+
         return handlerInput.responseBuilder
             .speak(
                 'No entendí eso. Puedes decir explorar líneas, línea verde, ver catálogo, vincular cuenta, ver favoritos, ver mi bolsa o ayuda.'
