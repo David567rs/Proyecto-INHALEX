@@ -798,7 +798,7 @@ async function promptLinkToken(handlerInput) {
     setAwaitingLinkCode(handlerInput, true);
 
     const account =
-        await syncAccount(handlerInput);
+        await syncAccount(handlerInput, true);
 
     renderDocument(
         handlerInput,
@@ -1137,7 +1137,7 @@ async function addFavorite(handlerInput, productInput) {
     }
 
     const account =
-        await syncAccount(handlerInput);
+        await syncAccount(handlerInput, true);
 
     if (!account.linked) {
         renderDocument(
@@ -1236,7 +1236,7 @@ async function addToBag(handlerInput, productInput, quantityOverride) {
             : 1;
 
     const account =
-        await syncAccount(handlerInput);
+        await syncAccount(handlerInput, true);
 
     if (!account.linked) {
         renderDocument(

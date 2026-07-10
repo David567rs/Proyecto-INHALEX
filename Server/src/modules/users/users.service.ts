@@ -99,9 +99,21 @@ export class UsersService {
       .exec();
   }
 
+  async findByAlexaUserIdHash(
+    alexaUserIdHash: string,
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findOne({
+        alexaUserIdHash,
+        status: UserStatus.ACTIVE,
+      })
+      .exec();
+  }
+
   async clearAlexaLinkCode(
     userId: string,
     markLinked = false,
+    alexaUserIdHash?: string,
   ): Promise<UserDocument | null> {
     const update: Record<string, unknown> = {
       $unset: {
@@ -113,7 +125,28 @@ export class UsersService {
     if (markLinked) {
       update.$set = {
         alexaLinkedAt: new Date(),
+        ...(alexaUserIdHash ? { alexaUserIdHash } : {}),
       };
+    }
+
+    if (alexaUserIdHash) {
+      await this.userModel
+        .updateMany(
+          {
+            _id: {
+              $ne: Types.ObjectId.isValid(userId)
+                ? new Types.ObjectId(userId)
+                : userId,
+            },
+            alexaUserIdHash,
+          },
+          {
+            $unset: {
+              alexaUserIdHash: '',
+            },
+          },
+        )
+        .exec();
     }
 
     return this.userModel

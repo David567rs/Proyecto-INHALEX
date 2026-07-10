@@ -112,6 +112,28 @@ export class AuthService {
     return this.sanitizeUser(user);
   }
 
+  async getAlexaLinkedProfile(alexaUserId: string, clientIp?: string) {
+    const normalizedAlexaUserId = this.normalizeAlexaUserId(alexaUserId);
+    const user = await this.usersService.findByAlexaUserIdHash(
+      this.hashAlexaUserId(normalizedAlexaUserId),
+    );
+
+    if (!user) {
+      this.logger.warn(
+        `Alexa profile no vinculado ip=${clientIp ?? 'desconocida'}`,
+      );
+      throw new UnauthorizedException('Cuenta de Alexa no vinculada');
+    }
+
+    const activeUser = (await this.usersService.markLogin(user.id)) ?? user;
+    const accessToken = await this.generateAccessToken(activeUser);
+
+    return {
+      accessToken,
+      user: this.sanitizeUser(activeUser),
+    };
+  }
+
   async generateAlexaLinkCode(userId: string) {
     const user = await this.usersService.findById(userId);
 
@@ -189,7 +211,11 @@ export class AuthService {
     }
 
     this.authSecurityService.clearLoginFailures(rateLimitKey, clientIp);
-    await this.usersService.clearAlexaLinkCode(user.id, true);
+    const alexaUserIdHash = exchangeDto.alexaUserId
+      ? this.hashAlexaUserId(this.normalizeAlexaUserId(exchangeDto.alexaUserId))
+      : undefined;
+
+    await this.usersService.clearAlexaLinkCode(user.id, true, alexaUserIdHash);
 
     const activeUser = (await this.usersService.markLogin(user.id)) ?? user;
     const accessToken = await this.generateAccessToken(activeUser);
@@ -265,9 +291,28 @@ export class AuthService {
     return normalizedCode;
   }
 
+  private normalizeAlexaUserId(alexaUserId: string): string {
+    const normalizedAlexaUserId = String(alexaUserId || '').trim();
+
+    if (
+      normalizedAlexaUserId.length < 10 ||
+      normalizedAlexaUserId.length > 300
+    ) {
+      throw new BadRequestException('Alexa user id invalido');
+    }
+
+    return normalizedAlexaUserId;
+  }
+
   private hashAlexaLinkCode(code: string): string {
     return createHmac('sha256', this.getJwtSecret())
       .update(`alexa-link:${code}`)
+      .digest('hex');
+  }
+
+  private hashAlexaUserId(alexaUserId: string): string {
+    return createHmac('sha256', this.getJwtSecret())
+      .update(`alexa-user:${alexaUserId}`)
       .digest('hex');
   }
 

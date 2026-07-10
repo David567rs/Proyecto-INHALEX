@@ -28,10 +28,11 @@ const LINK_ENDPOINTS = parseEndpointList(
 const PROFILE_ENDPOINTS = parseEndpointList(
     process.env.INHALEX_PROFILE_ENDPOINTS,
     [
-        '/api/auth/me',
+        '/api/auth/alexa/profile',
         '/api/alexa/profile',
         '/api/alexa/me',
-        '/api/auth/alexa/me'
+        '/api/auth/alexa/me',
+        '/api/auth/me'
     ]
 );
 
@@ -1624,7 +1625,9 @@ async function linkAlexaAccount(code, alexaUserId) {
         LINK_ENDPOINTS,
         {
             body: {
-                code: cleanCode
+                code: cleanCode,
+                alexaUserId: alexaUserId || '',
+                source: 'alexa'
             }
         }
     );

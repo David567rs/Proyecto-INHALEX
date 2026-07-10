@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -33,6 +34,17 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Req() request: AuthenticatedRequest) {
     return this.authService.getProfile(request.user.sub);
+  }
+
+  @Get('alexa/profile')
+  getAlexaLinkedProfile(
+    @Query('alexaUserId') alexaUserId: string,
+    @Req() request: Request,
+  ) {
+    return this.authService.getAlexaLinkedProfile(
+      alexaUserId,
+      this.resolveClientIp(request),
+    );
   }
 
   @Post('alexa/link-code')

@@ -132,6 +132,9 @@ export class User {
   @Prop({ select: false, index: true })
   alexaLinkCodeExpiresAt?: Date;
 
+  @Prop({ select: false, index: true, sparse: true })
+  alexaUserIdHash?: string;
+
   @Prop()
   alexaLinkedAt?: Date;
 }
@@ -143,6 +146,7 @@ UserSchema.set('toJSON', {
     delete ret.passwordHash;
     delete ret.alexaLinkCodeHash;
     delete ret.alexaLinkCodeExpiresAt;
+    delete ret.alexaUserIdHash;
     return ret;
   },
 });

@@ -38,6 +38,7 @@ describe('AuthService - Alexa link code', () => {
       findById: jest.fn(),
       storeAlexaLinkCode: jest.fn(),
       findByAlexaLinkCodeHash: jest.fn(),
+      findByAlexaUserIdHash: jest.fn(),
       clearAlexaLinkCode: jest.fn(),
       markLogin: jest.fn(),
     };
@@ -104,10 +105,52 @@ describe('AuthService - Alexa link code', () => {
     expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
       true,
+      undefined,
     );
     expect(authSecurityService.clearLoginFailures).toHaveBeenCalledWith(
       'alexa-link',
       '127.0.0.1',
+    );
+  });
+
+  it('vincula el alexaUserId y permite recuperar un token fresco', async () => {
+    const user = buildUser();
+    usersService.findById.mockResolvedValue(user);
+    usersService.storeAlexaLinkCode.mockResolvedValue(user);
+    const generated = await service.generateAlexaLinkCode('user-id');
+    const storedHash = usersService.storeAlexaLinkCode.mock.calls[0][1];
+
+    usersService.findByAlexaLinkCodeHash.mockImplementation((hash: string) =>
+      Promise.resolve(hash === storedHash ? user : null),
+    );
+    usersService.clearAlexaLinkCode.mockResolvedValue(user);
+    usersService.markLogin.mockResolvedValue(user);
+
+    await service.exchangeAlexaLinkCode(
+      {
+        code: generated.code,
+        alexaUserId: 'amzn1.ask.account.test-user',
+      },
+      '127.0.0.1',
+    );
+
+    expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
+      'user-id',
+      true,
+      expect.stringMatching(/^[a-f0-9]{64}$/),
+    );
+
+    usersService.findByAlexaUserIdHash.mockResolvedValue(user);
+
+    const profile = await service.getAlexaLinkedProfile(
+      'amzn1.ask.account.test-user',
+      '127.0.0.1',
+    );
+
+    expect(profile.accessToken).toBe('jwt-token');
+    expect(profile.user).not.toHaveProperty('passwordHash');
+    expect(usersService.findByAlexaUserIdHash).toHaveBeenCalledWith(
+      expect.stringMatching(/^[a-f0-9]{64}$/),
     );
   });
 
