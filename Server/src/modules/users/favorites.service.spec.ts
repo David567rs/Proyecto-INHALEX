@@ -71,6 +71,21 @@ describe('FavoritesService', () => {
     );
   });
 
+  it('acepta referencias fallback de Alexa resolviendolas por slug', async () => {
+    const productId = new Types.ObjectId();
+    productModel.findOne.mockReturnValue(selectResult({ _id: productId }));
+    userModel.findByIdAndUpdate.mockReturnValue(execResult({ id: 'user-id' }));
+
+    await expect(
+      service.add(new Types.ObjectId().toString(), 'fallback-lavanda'),
+    ).resolves.toEqual({ productId: productId.toString() });
+
+    expect(productModel.findOne).toHaveBeenCalledWith({
+      slug: 'lavanda',
+      status: expect.any(String),
+    });
+  });
+
   it('rechaza identificadores de producto invalidos', async () => {
     await expect(
       service.remove(new Types.ObjectId().toString(), 'invalid-product-id'),

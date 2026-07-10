@@ -174,13 +174,14 @@ export class CartService {
     const embeddedProductId = String(
       this.extractEmbeddedProductReference(input.product, 'id'),
     ).trim();
-    const productReference =
+    const rawProductReference =
       productId && Types.ObjectId.isValid(productId)
         ? productId
         : productSlug ||
           (embeddedProductId && Types.ObjectId.isValid(embeddedProductId)
             ? embeddedProductId
             : productId || embeddedProductId);
+    const productReference = this.normalizeProductReference(rawProductReference);
 
     if (!productReference) {
       throw new BadRequestException('Product id is required');
@@ -309,5 +310,18 @@ export class CartService {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException('Invalid product id');
     }
+  }
+
+  private normalizeProductReference(productIdOrSlug: string): string {
+    const productReference = String(productIdOrSlug || '').trim();
+
+    if (Types.ObjectId.isValid(productReference)) {
+      return productReference;
+    }
+
+    return productReference
+      .toLowerCase()
+      .replace(/^fallback-/, '')
+      .replace(/\s+/g, '-');
   }
 }

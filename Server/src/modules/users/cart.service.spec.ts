@@ -112,4 +112,30 @@ describe('CartService', () => {
     expect(response.totalItems).toBe(3);
     expect(response.items).toHaveLength(1);
   });
+
+  it('agrega productos enviados por Alexa con referencia fallback usando slug', async () => {
+    const userId = new Types.ObjectId().toString();
+    const productId = new Types.ObjectId();
+    const product = buildProduct(productId);
+
+    productModel.findOne.mockReturnValue(execResult(product));
+    userModel.findById.mockReturnValue(selectResult({ cartItems: [] }));
+    userModel.findByIdAndUpdate.mockReturnValue(
+      selectResult({
+        cartItems: [{ productId, quantity: 1 }],
+      }),
+    );
+    productModel.find.mockReturnValue(execResult([product]));
+
+    const response = await service.add(userId, {
+      productId: 'fallback-lavanda',
+      quantity: 1,
+    });
+
+    expect(productModel.findOne).toHaveBeenCalledWith({
+      slug: 'lavanda',
+      status: expect.any(String),
+    });
+    expect(response.totalItems).toBe(1);
+  });
 });

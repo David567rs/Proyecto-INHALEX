@@ -98,7 +98,7 @@ export class FavoritesService {
   }
 
   private resolveActiveProduct(productIdOrSlug: string) {
-    const productReference = String(productIdOrSlug || '').trim();
+    const productReference = this.normalizeProductReference(productIdOrSlug);
 
     if (!productReference) {
       throw new BadRequestException('Invalid product id');
@@ -113,5 +113,18 @@ export class FavoritesService {
       })
       .select('_id')
       .exec();
+  }
+
+  private normalizeProductReference(productIdOrSlug: string): string {
+    const productReference = String(productIdOrSlug || '').trim();
+
+    if (Types.ObjectId.isValid(productReference)) {
+      return productReference;
+    }
+
+    return productReference
+      .toLowerCase()
+      .replace(/^fallback-/, '')
+      .replace(/\s+/g, '-');
   }
 }
