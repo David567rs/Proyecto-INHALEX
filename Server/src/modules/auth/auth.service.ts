@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { createHmac, randomInt } from 'crypto';
+import { createHash, createHmac, randomInt } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
@@ -292,7 +292,7 @@ export class AuthService {
   }
 
   private hashAlexaLinkCode(code: string): string {
-    return createHmac('sha256', this.getJwtSecret())
+    return createHash('sha256')
       .update(`alexa-link:${code}`)
       .digest('hex');
   }
