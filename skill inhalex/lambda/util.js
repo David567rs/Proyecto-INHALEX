@@ -1,8 +1,9 @@
 const https = require('https');
 
-const API_URL =
+const API_URL = normalizeBaseApiUrl(
     process.env.INHALEX_API_URL ||
-    'https://inhalex-backend.onrender.com';
+    'https://inhalex-backend.onrender.com'
+);
 const PRODUCTS_ENDPOINT = '/api/products';
 const PRODUCTS_TIMEOUT_MS = Number(
     process.env.INHALEX_PRODUCTS_TIMEOUT_MS ||
@@ -475,6 +476,13 @@ function parseEndpointList(value, fallback) {
             return endpoint.trim();
         })
         .filter(Boolean);
+}
+
+function normalizeBaseApiUrl(value) {
+    const rawValue = String(value || '').trim();
+    const withoutTrailingSlash = rawValue.replace(/\/+$/, '');
+
+    return withoutTrailingSlash.replace(/\/api$/i, '');
 }
 
 function normalizeEndpoint(endpoint) {

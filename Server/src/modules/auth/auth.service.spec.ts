@@ -107,10 +107,7 @@ describe('AuthService - Alexa link code', () => {
       true,
       undefined,
     );
-    expect(authSecurityService.clearLoginFailures).toHaveBeenCalledWith(
-      'alexa-link',
-      '127.0.0.1',
-    );
+    expect(authSecurityService.clearLoginFailures).not.toHaveBeenCalled();
   });
 
   it('vincula el alexaUserId y permite recuperar un token fresco', async () => {
@@ -159,9 +156,6 @@ describe('AuthService - Alexa link code', () => {
       service.exchangeAlexaLinkCode({ code: 'ABCD' }, '127.0.0.1'),
     ).rejects.toBeInstanceOf(BadRequestException);
 
-    expect(authSecurityService.registerFailedLogin).toHaveBeenCalledWith(
-      'alexa-link',
-      '127.0.0.1',
-    );
+    expect(authSecurityService.registerFailedLogin).not.toHaveBeenCalled();
   });
 });

@@ -173,16 +173,6 @@ export class AuthService {
     exchangeDto: ExchangeAlexaLinkCodeDto,
     clientIp?: string,
   ) {
-    const rateLimitKey = 'alexa-link';
-    try {
-      this.authSecurityService.assertLoginAllowed(rateLimitKey, clientIp);
-    } catch (error) {
-      this.logger.warn(
-        `Alexa link bloqueado temporalmente ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(exchangeDto.code)}`,
-      );
-      throw error;
-    }
-
     let normalizedCode: string;
     try {
       normalizedCode = this.normalizeAlexaLinkCode(exchangeDto.code);
@@ -190,7 +180,6 @@ export class AuthService {
       this.logger.warn(
         `Alexa link formato invalido ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(exchangeDto.code)}`,
       );
-      this.authSecurityService.registerFailedLogin(rateLimitKey, clientIp);
       throw error;
     }
 
@@ -206,11 +195,9 @@ export class AuthService {
       this.logger.warn(
         `Alexa link codigo no encontrado o expirado ip=${clientIp ?? 'desconocida'} code=${this.maskAlexaLinkCode(normalizedCode)}`,
       );
-      this.authSecurityService.registerFailedLogin(rateLimitKey, clientIp);
       throw new UnauthorizedException('Codigo de Alexa invalido o expirado');
     }
 
-    this.authSecurityService.clearLoginFailures(rateLimitKey, clientIp);
     const alexaUserIdHash = exchangeDto.alexaUserId
       ? this.hashAlexaUserId(this.normalizeAlexaUserId(exchangeDto.alexaUserId))
       : undefined;
