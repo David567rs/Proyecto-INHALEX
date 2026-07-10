@@ -1591,11 +1591,7 @@ async function linkAlexaAccount(code, alexaUserId) {
         LINK_ENDPOINTS,
         {
             body: {
-                code: cleanCode,
-                token: cleanCode,
-                alexaCode: cleanCode,
-                alexaUserId: alexaUserId || '',
-                source: 'alexa'
+                code: cleanCode
             }
         }
     );
