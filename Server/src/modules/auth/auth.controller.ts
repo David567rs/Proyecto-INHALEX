@@ -59,6 +59,12 @@ export class AuthController {
     return this.authService.revokeAlexaLinkCode(request.user.sub);
   }
 
+  @Delete('alexa/session')
+  @UseGuards(JwtAuthGuard)
+  unlinkAlexaAccount(@Req() request: AuthenticatedRequest) {
+    return this.authService.unlinkAlexaAccount(request.user.sub);
+  }
+
   @Post('alexa/exchange')
   exchangeAlexaLinkCode(
     @Body() exchangeDto: ExchangeAlexaLinkCodeDto,

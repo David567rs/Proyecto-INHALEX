@@ -169,6 +169,16 @@ export class AuthService {
     return { revoked: true };
   }
 
+  async unlinkAlexaAccount(userId: string) {
+    const user = await this.usersService.unlinkAlexaAccount(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    return { unlinked: true };
+  }
+
   async exchangeAlexaLinkCode(
     exchangeDto: ExchangeAlexaLinkCodeDto,
     clientIp?: string,

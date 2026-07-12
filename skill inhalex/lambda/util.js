@@ -56,6 +56,13 @@ const BAG_ENDPOINTS = parseEndpointList(
     ]
 );
 
+const UNLINK_ENDPOINTS = parseEndpointList(
+    process.env.INHALEX_UNLINK_ENDPOINTS,
+    [
+        '/api/auth/alexa/session'
+    ]
+);
+
 const WELLNESS_DISCLAIMER =
     'La informacion de esta skill es de bienestar general y no sustituye consejo medico profesional.';
 
@@ -1650,22 +1657,58 @@ async function getAlexaProfile(account) {
         account && typeof account === 'object'
             ? account
             : {};
-    const profileEndpoints = safeAccount.accessToken
-        ? ['/api/auth/me'].concat(
-            PROFILE_ENDPOINTS.filter(function(endpoint) {
-                return normalizeEndpoint(endpoint) !== '/api/auth/me';
-            })
-        )
-        : PROFILE_ENDPOINTS.filter(function(endpoint) {
-            return normalizeEndpoint(endpoint) !== '/api/auth/me';
-        });
+    const profileEndpoints = PROFILE_ENDPOINTS.filter(function(endpoint) {
+        return normalizeEndpoint(endpoint) !== '/api/auth/me';
+    });
+
+    if (safeAccount.accessToken) {
+        try {
+            const data = await requestJson(
+                'GET',
+                '/api/auth/me',
+                {
+                    query: buildAccountQuery(safeAccount),
+                    accessToken: safeAccount.accessToken
+                }
+            );
+
+            const profile = normalizeAccountResponse(data);
+
+            return Object.assign(
+                {},
+                profile,
+                {
+                    accessToken:
+                        profile.accessToken ||
+                        safeAccount.accessToken ||
+                        '',
+                    alexaUserId: safeAccount.alexaUserId || ''
+                }
+            );
+        } catch (error) {
+            if (
+                error.statusCode !== 401 &&
+                error.statusCode !== 403
+            ) {
+                throw error;
+            }
+
+            console.log(
+                'INHALEX_ALEXA_TOKEN_REFRESH_REQUIRED',
+                JSON.stringify({
+                    statusCode: error.statusCode || null,
+                    alexaUserIdPresent: Boolean(safeAccount.alexaUserId)
+                })
+            );
+        }
+    }
 
     const data = await requestFirstAvailable(
         'GET',
         profileEndpoints,
         {
             query: buildAccountQuery(safeAccount),
-            accessToken: safeAccount.accessToken
+            accessToken: ''
         }
     );
 
@@ -1796,6 +1839,17 @@ async function addRemoteBag(account, product, quantity) {
     );
 }
 
+async function unlinkAlexaAccount(account) {
+    return requestFirstAvailable(
+        'DELETE',
+        UNLINK_ENDPOINTS,
+        {
+            query: buildAccountQuery(account),
+            accessToken: account && account.accessToken
+        }
+    );
+}
+
 function buildLines(products) {
     const lineIds = [
         'linea-verde',
@@ -1864,6 +1918,7 @@ module.exports = {
     getRemoteBag,
     addRemoteFavorite,
     addRemoteBag,
+    unlinkAlexaAccount,
 
     normalizeText,
     makeSlug,

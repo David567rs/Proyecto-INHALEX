@@ -156,6 +156,25 @@ export class UsersService {
       .exec();
   }
 
+  async unlinkAlexaAccount(userId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findByIdAndUpdate(
+        userId,
+        {
+          $unset: {
+            alexaLinkCodeHash: '',
+            alexaLinkCodeExpiresAt: '',
+            alexaUserIdHash: '',
+            alexaLinkedAt: '',
+          },
+        },
+        {
+          returnDocument: 'after',
+        },
+      )
+      .exec();
+  }
+
   async listAll(): Promise<UserDocument[]> {
     return this.userModel.find().sort({ createdAt: -1 }).exec();
   }

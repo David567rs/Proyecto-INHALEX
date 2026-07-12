@@ -99,6 +99,21 @@ function saveSessionAccount(handlerInput, account) {
     return sessionAttributes.account;
 }
 
+function clearSessionAccount(handlerInput) {
+    const sessionAttributes =
+        handlerInput.attributesManager.getSessionAttributes();
+
+    sessionAttributes.account = getGuestAccount(handlerInput);
+    sessionAttributes.awaitingLinkCode = false;
+    sessionAttributes.accountSyncAttempted = true;
+
+    handlerInput.attributesManager.setSessionAttributes(
+        sessionAttributes
+    );
+
+    return sessionAttributes.account;
+}
+
 function setAwaitingLinkCode(handlerInput, awaiting) {
     const sessionAttributes =
         handlerInput.attributesManager.getSessionAttributes();
@@ -790,6 +805,56 @@ async function showAccount(handlerInput, state) {
             account.linked
                 ? 'Puedes decir ver favoritos, ver mi bolsa o ver catálogo.'
                 : 'Cuando tengas el código, di: mi código es, y después los cinco dígitos.'
+        )
+        .getResponse();
+}
+
+async function logoutAccount(handlerInput) {
+    const account = await syncAccount(handlerInput, true);
+    let remoteUnlinked = false;
+
+    if (account.linked && account.accessToken) {
+        try {
+            await util.unlinkAlexaAccount(account);
+            remoteUnlinked = true;
+        } catch (error) {
+            console.log(
+                'ERROR AL CERRAR SESION ALEXA:',
+                JSON.stringify({
+                    message: error.message || '',
+                    statusCode: error.statusCode || null,
+                    endpoint: error.endpoint || '',
+                    responseBody: error.responseBody || ''
+                })
+            );
+        }
+    }
+
+    const guestAccount = clearSessionAccount(handlerInput);
+
+    renderDocument(
+        handlerInput,
+        'accountLogoutToken',
+        accountDocument,
+        accountDataSource(
+            guestAccount,
+            {
+                statusText:
+                    remoteUnlinked || !account.linked
+                        ? 'Sesion cerrada. Tus favoritos y tu bolsa siguen guardados.'
+                        : 'Cerre la sesion local. Si la cuenta aparece de nuevo, vuelve a intentar cerrar sesion.'
+            }
+        )
+    );
+
+    return handlerInput.responseBuilder
+        .speak(
+            remoteUnlinked || !account.linked
+                ? 'Listo, cerre la sesion de INHALEX en Alexa. Tus favoritos y tu bolsa no se borraron. Para volver a usarlos, vincula tu cuenta con un codigo nuevo.'
+                : 'Cerre la sesion de esta conversacion, pero no pude desvincularla por completo del backend. Puedes intentarlo de nuevo en un momento.'
+        )
+        .reprompt(
+            'Puedes decir vincular cuenta, ver catalogo o salir.'
         )
         .getResponse();
 }
@@ -1646,6 +1711,23 @@ const ShowBagIntentHandler = {
     }
 };
 
+const LogoutAccountIntentHandler = {
+    canHandle(handlerInput) {
+        return (
+            Alexa.getRequestType(
+                handlerInput.requestEnvelope
+            ) === 'IntentRequest' &&
+            Alexa.getIntentName(
+                handlerInput.requestEnvelope
+            ) === 'LogoutAccountIntent'
+        );
+    },
+
+    async handle(handlerInput) {
+        return logoutAccount(handlerInput);
+    }
+};
+
 const PauseIntentHandler = {
     canHandle(handlerInput) {
         return (
@@ -1780,6 +1862,14 @@ const APLUserEventHandler = {
             action === 'goBag'
         ) {
             return showBag(handlerInput);
+        }
+
+        if (
+            action === 'logoutAccount' ||
+            action === 'unlinkAccount' ||
+            action === 'closeAccountSession'
+        ) {
+            return logoutAccount(handlerInput);
         }
 
         if (
@@ -2129,6 +2219,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         LinkAccountIntentHandler,
         ShowFavoritesIntentHandler,
         ShowBagIntentHandler,
+        LogoutAccountIntentHandler,
         PauseIntentHandler,
         ResumeIntentHandler,
         APLUserEventHandler,

@@ -279,6 +279,27 @@
           ]
         },
         {
+          "name": "LogoutAccountIntent",
+          "slots": [],
+          "samples": [
+            "cerrar sesión",
+            "cerrar sesion",
+            "cerrar mi sesión",
+            "cerrar mi sesion",
+            "cerrar sesión de mi cuenta",
+            "cerrar sesion de mi cuenta",
+            "salir de mi cuenta",
+            "desvincular cuenta",
+            "desvincular mi cuenta",
+            "quitar mi cuenta",
+            "desconectar cuenta",
+            "desconectar mi cuenta",
+            "cerrar acceso de alexa",
+            "quitar acceso de alexa",
+            "desvincular alexa"
+          ]
+        },
+        {
           "name": "AMAZON.PauseIntent",
           "samples": []
         },
