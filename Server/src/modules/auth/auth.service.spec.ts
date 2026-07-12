@@ -105,11 +105,12 @@ describe('AuthService - Alexa link code', () => {
     expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
       true,
+      undefined,
     );
     expect(authSecurityService.clearLoginFailures).not.toHaveBeenCalled();
   });
 
-  it('acepta alexaUserId sin exigir persistencia para iniciar sesion', async () => {
+  it('acepta alexaUserId y guarda una huella segura para sincronizar despues', async () => {
     const user = buildUser();
     usersService.findById.mockResolvedValue(user);
     usersService.storeAlexaLinkCode.mockResolvedValue(user);
@@ -134,6 +135,7 @@ describe('AuthService - Alexa link code', () => {
     expect(usersService.clearAlexaLinkCode).toHaveBeenCalledWith(
       'user-id',
       true,
+      expect.stringMatching(/^[a-f0-9]{64}$/),
     );
   });
 

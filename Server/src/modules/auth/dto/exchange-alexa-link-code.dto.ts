@@ -21,7 +21,7 @@ export class ExchangeAlexaLinkCodeDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(300)
   alexaUserId?: string;
 
   @IsOptional()

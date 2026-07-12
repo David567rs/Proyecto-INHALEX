@@ -1520,6 +1520,8 @@ function normalizeAccountResponse(data) {
             [
                 'userId',
                 'usuarioId',
+                'id',
+                '_id',
                 'data.userId',
                 'data.usuarioId'
             ]
@@ -1648,17 +1650,38 @@ async function getAlexaProfile(account) {
         account && typeof account === 'object'
             ? account
             : {};
+    const profileEndpoints = safeAccount.accessToken
+        ? ['/api/auth/me'].concat(
+            PROFILE_ENDPOINTS.filter(function(endpoint) {
+                return normalizeEndpoint(endpoint) !== '/api/auth/me';
+            })
+        )
+        : PROFILE_ENDPOINTS.filter(function(endpoint) {
+            return normalizeEndpoint(endpoint) !== '/api/auth/me';
+        });
 
     const data = await requestFirstAvailable(
         'GET',
-        PROFILE_ENDPOINTS,
+        profileEndpoints,
         {
             query: buildAccountQuery(safeAccount),
             accessToken: safeAccount.accessToken
         }
     );
 
-    return normalizeAccountResponse(data);
+    const profile = normalizeAccountResponse(data);
+
+    return Object.assign(
+        {},
+        profile,
+        {
+            accessToken:
+                profile.accessToken ||
+                safeAccount.accessToken ||
+                '',
+            alexaUserId: safeAccount.alexaUserId || ''
+        }
+    );
 }
 
 function extractRemoteItems(data, keys) {
