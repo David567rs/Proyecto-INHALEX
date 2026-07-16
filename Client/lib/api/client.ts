@@ -125,7 +125,7 @@ export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
-  const { body, token, headers, ...rest } = options
+  const { body, token, headers, credentials, ...rest } = options
   const requestUrl = `${API_BASE_URL}${path}`
   const requestInit: RequestInit = {
     ...rest,
@@ -136,6 +136,7 @@ export async function apiRequest<T>(
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
+    credentials: credentials ?? "include",
   }
 
   await ensureLocalApiReady()

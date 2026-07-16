@@ -15,10 +15,16 @@ export function registerRequest(payload: RegisterInput): Promise<AuthResponse> {
   })
 }
 
-export function meRequest(token: string): Promise<AuthUser> {
+export function meRequest(token?: string | null): Promise<AuthUser> {
   return apiRequest<AuthUser>("/auth/me", {
     method: "GET",
-    token,
+    ...(token ? { token } : {}),
+  })
+}
+
+export function logoutRequest(): Promise<void> {
+  return apiRequest<void>("/auth/logout", {
+    method: "POST",
   })
 }
 

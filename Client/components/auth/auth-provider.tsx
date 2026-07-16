@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { loginRequest, meRequest, registerRequest } from "@/lib/auth/auth-api"
+import { loginRequest, logoutRequest, meRequest, registerRequest } from "@/lib/auth/auth-api"
 import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth/token-storage"
 import type { AuthUser, LoginInput, RegisterInput } from "@/lib/auth/types"
 
@@ -31,10 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = useCallback(async () => {
     const token = getAccessToken()
-    if (!token) {
-      setUser(null)
-      return
-    }
 
     try {
       const profile = await meRequest(token)
@@ -69,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    void logoutRequest().catch(() => undefined)
     clearAccessToken()
     setUser(null)
   }, [])

@@ -138,6 +138,7 @@ async function downloadAdminFile(
       Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
+    credentials: "include",
   })
 
   if (!response.ok) {

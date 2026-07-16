@@ -4,6 +4,7 @@ interface IntegerEnvOptions {
 }
 
 const NODE_ENVS = new Set(['development', 'test', 'production']);
+const COOKIE_SAME_SITE_VALUES = new Set(['lax', 'strict', 'none']);
 const PRODUCTION_REQUIRED_KEYS = ['MONGODB_URI', 'JWT_SECRET', 'CORS_ORIGIN'];
 
 function readOptionalString(
@@ -61,6 +62,25 @@ export function validateEnv(config: Record<string, unknown>) {
   validateIntegerEnv(config, errors, 'AUTH_FAILED_WINDOW_MINUTES', { min: 1 });
   validateIntegerEnv(config, errors, 'AUTH_LOCK_MINUTES', { min: 1 });
   validateIntegerEnv(config, errors, 'AUTH_RATE_STALE_MINUTES', { min: 1 });
+
+  const authCookieSecure = readOptionalString(config, 'AUTH_COOKIE_SECURE');
+  if (
+    authCookieSecure &&
+    !['true', 'false'].includes(authCookieSecure.toLowerCase())
+  ) {
+    errors.push('AUTH_COOKIE_SECURE debe ser true o false.');
+  }
+
+  const authCookieSameSite = readOptionalString(
+    config,
+    'AUTH_COOKIE_SAME_SITE',
+  );
+  if (
+    authCookieSameSite &&
+    !COOKIE_SAME_SITE_VALUES.has(authCookieSameSite.toLowerCase())
+  ) {
+    errors.push('AUTH_COOKIE_SAME_SITE debe ser lax, strict o none.');
+  }
 
   if (nodeEnv === 'production') {
     for (const key of PRODUCTION_REQUIRED_KEYS) {
