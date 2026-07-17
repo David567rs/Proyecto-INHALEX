@@ -4,11 +4,15 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Request, Response } from 'express';
 import { Observable, catchError, tap, throwError } from 'rxjs';
-import type { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
+import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { UsersService } from '../users/users.service';
 import { AuditService } from './audit.service';
+
+type AuditableRequest = Request & {
+  user?: JwtPayload;
+};
 
 const SENSITIVE_KEYS = new Set([
   'password',
@@ -73,7 +77,7 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle();
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const request = context.switchToHttp().getRequest<AuditableRequest>();
     const response = context.switchToHttp().getResponse<Response>();
     const path = request.originalUrl ?? request.url ?? '';
 
@@ -155,7 +159,7 @@ export class AuditInterceptor implements NestInterceptor {
     return !path.startsWith('/api/admin/audit');
   }
 
-  private resolveRoute(request: AuthenticatedRequest, path: string): string {
+  private resolveRoute(request: AuditableRequest, path: string): string {
     const baseUrl = request.baseUrl ?? '';
     const routePath = request.route?.path ?? '';
     if (routePath) return `${baseUrl}${routePath}`;
