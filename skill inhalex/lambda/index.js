@@ -658,7 +658,8 @@ async function showCatalog(
     handlerInput,
     products,
     title,
-    subtitle
+    subtitle,
+    spokenMessage
 ) {
     await syncAccount(handlerInput);
 
@@ -703,9 +704,12 @@ async function showCatalog(
 
     return handlerInput.responseBuilder
         .speak(
-            catalogTitle === 'Catálogo INHALEX'
-                ? 'Aquí tienes el catálogo de INHALEX.'
-                : 'Estos son los productos de ' + catalogTitle + '.'
+            spokenMessage ||
+            (
+                catalogTitle === 'Catálogo INHALEX'
+                    ? 'Aquí tienes el catálogo de INHALEX.'
+                    : 'Estos son los productos de ' + catalogTitle + '.'
+            )
         )
         .reprompt(
             'Puedes tocar un producto, decir el nombre de un aroma, pedir ofertas o volver al inicio.'
@@ -1550,6 +1554,51 @@ const OffersIntentHandler = {
     }
 };
 
+async function handleProductDetailRequest(handlerInput) {
+    const productName =
+        Alexa.getSlotValue(
+            handlerInput.requestEnvelope,
+            'product'
+        ) ||
+        getResolvedSlotValue(
+            handlerInput,
+            'product'
+        ) || '';
+
+    let products = [];
+
+    try {
+        products = await getProducts(handlerInput);
+    } catch (error) {
+        console.log(
+            'ERROR AL BUSCAR PRODUCTO:',
+            error.message
+        );
+
+        products = util.getFallbackProducts();
+    }
+
+    const product = util.findProduct(
+        products,
+        productName
+    );
+
+    if (!product) {
+        return showCatalog(
+            handlerInput,
+            products,
+            'Catálogo INHALEX',
+            'Aromas disponibles actualmente',
+            util.buildUnavailableProductSpeech(productName)
+        );
+    }
+
+    return showDetail(
+        handlerInput,
+        product
+    );
+}
+
 const ProductDetailIntentHandler = {
     canHandle(handlerInput) {
         return (
@@ -1563,34 +1612,24 @@ const ProductDetailIntentHandler = {
     },
 
     async handle(handlerInput) {
-        const productName =
-            getResolvedSlotValue(
-                handlerInput,
-                'product'
-            ) || '';
+        return handleProductDetailRequest(handlerInput);
+    }
+};
 
-        let products = [];
-
-        try {
-            products = await getProducts(handlerInput);
-        } catch (error) {
-            console.log(
-                'ERROR AL BUSCAR PRODUCTO:',
-                error.message
-            );
-
-            products = [];
-        }
-
-        const product = util.findProduct(
-            products,
-            productName
+const ProductNameIntentHandler = {
+    canHandle(handlerInput) {
+        return (
+            Alexa.getRequestType(
+                handlerInput.requestEnvelope
+            ) === 'IntentRequest' &&
+            Alexa.getIntentName(
+                handlerInput.requestEnvelope
+            ) === 'ProductNameIntent'
         );
+    },
 
-        return showDetail(
-            handlerInput,
-            product
-        );
+    async handle(handlerInput) {
+        return handleProductDetailRequest(handlerInput);
     }
 };
 
@@ -2214,6 +2253,7 @@ exports.handler = Alexa.SkillBuilders.custom()
         BackToCatalogIntentHandler,
         OffersIntentHandler,
         ProductDetailIntentHandler,
+        ProductNameIntentHandler,
         AddFavoriteIntentHandler,
         AddToBagIntentHandler,
         LinkAccountIntentHandler,

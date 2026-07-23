@@ -9,6 +9,12 @@ export type OrderStatus =
   | "cancelled"
   | "completed"
 
+export type CustomerReceiptStatus =
+  | "not_required"
+  | "pending"
+  | "confirmed"
+  | "issue_reported"
+
 export interface DraftOrderPreviewItem {
   productId: string
   productName: string
@@ -82,6 +88,23 @@ export interface ConfirmedOrder extends DraftOrderPreview {
   createdAt?: string
 }
 
+export interface CustomerReceiptOrder {
+  id: string
+  reference: string
+  status: OrderStatus
+  customerReceiptStatus: CustomerReceiptStatus
+  totalItems: number
+  subtotal: number
+  currency: string
+  completedAt?: string
+  customerReceiptRequestedAt?: string
+  customerReceiptConfirmedAt?: string
+  customerReceiptIssueReportedAt?: string
+  customerReceiptIssueNote?: string
+  customerReceiptReportId?: string
+  items: DraftOrderPreviewItem[]
+}
+
 export function previewOrderDraft(payload: {
   items: Array<{ productId: string; quantity: number }>
 }): Promise<DraftOrderPreview> {
@@ -112,5 +135,36 @@ export function confirmOrder(
     headers: {
       "Idempotency-Key": idempotencyKey,
     },
+  })
+}
+
+export function listReceiptConfirmationOrders(
+  token: string,
+): Promise<CustomerReceiptOrder[]> {
+  return apiRequest<CustomerReceiptOrder[]>("/orders/me/receipt-confirmations", {
+    method: "GET",
+    token,
+  })
+}
+
+export function confirmOrderReceipt(
+  orderId: string,
+  token: string,
+): Promise<CustomerReceiptOrder> {
+  return apiRequest<CustomerReceiptOrder>(`/orders/${orderId}/receipt/confirm`, {
+    method: "PATCH",
+    token,
+  })
+}
+
+export function reportOrderReceiptIssue(
+  orderId: string,
+  payload: { note?: string },
+  token: string,
+): Promise<CustomerReceiptOrder> {
+  return apiRequest<CustomerReceiptOrder>(`/orders/${orderId}/receipt/report`, {
+    method: "PATCH",
+    body: payload,
+    token,
   })
 }

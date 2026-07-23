@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/components/cart/cart-provider"
+import { BasketRecommendationCard } from "@/components/cart/basket-recommendation-card"
 import { resolveProductDisplayImage } from "@/lib/products/product-images"
 import { cn } from "@/lib/utils"
 
@@ -47,10 +48,15 @@ export function CartSheet() {
     subtotal,
     isSheetOpen,
     setSheetOpen,
+    addItem,
     updateItemQuantity,
     removeItem,
     syncError,
     isSyncing,
+    recommendation,
+    recommendationModel,
+    recommendationSource,
+    isRecommendationLoading,
   } = useCart()
 
   return (
@@ -92,7 +98,7 @@ export function CartSheet() {
               </p>
               <SheetClose asChild>
                 <Button asChild className="mt-6 rounded-full px-6 shadow-[0_20px_40px_-24px_rgba(16,112,58,0.45)]">
-                  <Link href="/">Explorar catalogo</Link>
+                  <Link href="/productos">Explorar catálogo</Link>
                 </Button>
               </SheetClose>
             </div>
@@ -215,6 +221,14 @@ export function CartSheet() {
                   </article>
                 )
               })}
+              <BasketRecommendationCard
+                variant="compact"
+                recommendation={recommendation}
+                model={recommendationModel}
+                source={recommendationSource}
+                isLoading={isRecommendationLoading}
+                onAdd={addItem}
+              />
             </div>
           )}
         </div>
@@ -255,7 +269,7 @@ export function CartSheet() {
             </SheetClose>
             <SheetClose asChild>
               <Button variant="ghost" className="rounded-full" asChild>
-                <Link href="/">Seguir explorando</Link>
+                <Link href="/productos">Seguir explorando</Link>
               </Button>
             </SheetClose>
           </div>

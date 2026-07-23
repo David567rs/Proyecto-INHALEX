@@ -15,6 +15,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ReportsModule } from './modules/reports/reports.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { IntelligenceModule } from './modules/intelligence/intelligence.module';
 import { validateEnv } from './config/env.validation';
 
 @Module({
@@ -42,6 +43,7 @@ import { validateEnv } from './config/env.validation';
     ReviewsModule,
     ReportsModule,
     SalesModule,
+    IntelligenceModule,
     CompanyContentModule,
     AuditModule,
   ],

@@ -120,9 +120,9 @@
         "es-MX": {
           "description": "INHALEX Bienestar te permite explorar aromas naturales por líneas, consultar el catálogo, revisar ofertas activas y conocer detalles de cada producto mediante voz o pantalla táctil con APL. La información presentada es de bienestar general y no sustituye consejo médico profesional.",
           "examplePhrases": [
-            "Alexa, abre inhalex bienestar",
-            "Alexa, pide a inhalex bienestar ver catálogo",
-            "Alexa, pide a inhalex bienestar línea verde"
+            "Alexa, abre respiro que alivia",
+            "Alexa, pide a respiro que alivia ver catálogo",
+            "Alexa, pide a respiro que alivia línea verde"
           ],
           "keywords": [
             "bienestar",

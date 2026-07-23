@@ -13,13 +13,13 @@ export const DEFAULT_COMPANY_CONTENT: CompanyContent = {
   },
   about: {
     mission:
-      "En INHALEX nos comprometemos a proporcionar soluciones naturales y efectivas para la salud y el bienestar de nuestros clientes. Nuestro enfoque integra conocimiento tradicional, seleccion de ingredientes y procesos de calidad para ofrecer una alternativa confiable que mejore la calidad de vida de las personas.",
+      "En INHALEX desarrollamos una experiencia digital para explorar y adquirir inhaladores aromáticos de uso personal. Organizamos el catálogo por líneas, presentamos información clara y acompañamos al cliente desde la elección hasta el seguimiento de su pedido.",
     vision:
-      "Ser una empresa lider en el mercado de productos naturales y bienestar, reconocida por su innovacion, calidad y compromiso con la salud de las personas en Mexico y mas alla, construyendo relaciones de confianza a largo plazo con clientes y comunidad.",
+      "Consolidar a INHALEX como una propuesta mexicana de comercio digital reconocida por su identidad, facilidad de uso e innovación en la experiencia de compra de productos aromáticos personales.",
     values: [
-      "Innovacion",
+      "Innovación",
       "Calidad",
-      "Salud y bienestar",
+      "Bienestar personal",
       "Confianza y credibilidad",
     ],
   },
@@ -27,7 +27,7 @@ export const DEFAULT_COMPANY_CONTENT: CompanyContent = {
     {
       question: "Como elijo la linea adecuada?",
       answer:
-        "Puedes empezar por la seccion de lineas. Cada una agrupa aromas con una intencion mas clara, por ejemplo descanso, frescura botanica o alivio respiratorio.",
+        "Puedes empezar por la sección de líneas. Cada una agrupa aromas con una intención más clara, por ejemplo descanso, frescura botánica o calidez aromática.",
     },
     {
       question: "Las imagenes del catalogo corresponden a aromas reales?",

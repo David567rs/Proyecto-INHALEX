@@ -38,6 +38,88 @@ export interface SalesOverview {
   }>;
 }
 
+export type MonthlyDemandInventoryStatus =
+  | "ready"
+  | "warning"
+  | "critical"
+  | "untracked";
+
+export interface MonthlyDemandForecast {
+  model: {
+    name: string;
+    version: string;
+    isSynthetic: boolean;
+    generatedAt: string;
+    trainingPeriod: {
+      startMonth: string;
+      endMonth: string;
+      trainingRows: number;
+      validationRows: number;
+    };
+    metrics: {
+      mae: number;
+      rmse: number;
+      r2: number;
+      baselineMae: number;
+      improvementPct?: number;
+    };
+  };
+  targetMonth: string;
+  freshness: {
+    currentMonth: string;
+    targetMonth: string;
+    generatedAt: string;
+    isStale: boolean;
+  };
+  summary: {
+    predictedUnits: number;
+    recommendedReorder: number;
+    atRiskProducts: number;
+    untrackedProducts: number;
+    totalProducts: number;
+    unresolvedProducts: number;
+  };
+  items: MonthlyDemandForecastItem[];
+}
+
+export interface MonthlyDemandForecastItem {
+  product: {
+    id: string;
+    slug: string;
+    name: string;
+    category: string;
+    image?: string;
+    presentation?: string;
+  };
+  history: Array<{
+    month: string;
+    units: number;
+  }>;
+  features: {
+    demandLag1m: number;
+    demandLag2m: number;
+    demandLag3m: number;
+    averageDemand3m: number;
+    ordersLag1m: number;
+    averagePriceLag1m?: number | null;
+    averageRatingAsOf?: number | null;
+    reviewCountAsOf: number;
+    monthNumber: number;
+  };
+  prediction: {
+    units: number;
+    lower: number;
+    upper: number;
+  };
+  inventory: {
+    stockAvailable: number | null;
+    stockMin: number;
+    targetStock: number;
+    recommendedReorder: number | null;
+    status: MonthlyDemandInventoryStatus;
+  };
+}
+
 export interface DepletionChartPoint {
   date: string
   label: string
@@ -170,6 +252,14 @@ export class AdminSalesAPI {
       `/sales/overview?${params}`,
       { method: "GET", token },
     );
+  }
+
+  static async getMonthlyDemandForecast(): Promise<MonthlyDemandForecast> {
+    const token = await this.getToken();
+    return apiRequest<MonthlyDemandForecast>("/sales/demand-forecast", {
+      method: "GET",
+      token,
+    });
   }
 
   static async getDepletionForecast(

@@ -1,0 +1,835 @@
+INHALEX
+GUION DETALLADO PARA EXPONER LAS PROPUESTAS 2 Y 3
+Adaptación a MongoDB y a los datasets actuales del proyecto
+
+======================================================================
+0. IDEA GENERAL QUE DEBES DEJAR CLARA
+======================================================================
+
+Las diapositivas siguen la estructura que pidió el profesor:
+
+1. A la izquierda se muestra de qué colecciones de MongoDB salen los datos.
+2. En el centro se explica cómo se extraen y transforman.
+3. A la derecha se presenta el Dataset o DataFrame que recibe el modelo.
+4. Finalmente se indica qué se predice o qué se analiza.
+
+INHALEX no utiliza tablas relacionales. Utiliza documentos de MongoDB. Por
+eso no se muestran tablas con PK y FK obligatorias. Cuando dos documentos se
+relacionan, se habla de una relación lógica por identificador.
+
+Ejemplo:
+
+    pedidos.items[].productId = String(productos._id)
+
+Esto significa que el identificador guardado en cada artículo del pedido
+permite localizar el documento del producto correspondiente.
+
+Los valores de ejemplo de ambas diapositivas sí provienen de los CSV
+sintéticos actuales del proyecto. Son datos académicos generados para INHALEX;
+no son ventas reales ni datos personales de clientes reales.
+
+Por precisión: las tablas de la derecha son extractos de los CSV sintéticos
+actuales. Los bloques de MongoDB de la izquierda muestran cómo se extraerán las
+mismas variables desde la base operativa al integrar los modelos. No se afirma
+que los CSV actuales hayan sido descargados directamente de MongoDB.
+
+
+======================================================================
+PROPUESTA 2. PREDICCIÓN MENSUAL DE DEMANDA
+======================================================================
+
+1. RESUMEN EN UNA SOLA FRASE
+----------------------------
+
+La propuesta utiliza el historial mensual de solicitudes de cada producto
+para estimar cuántas unidades se solicitarán durante el siguiente mes.
+
+
+2. TIPO DE APRENDIZAJE
+----------------------
+
+Es REGRESIÓN SUPERVISADA o REGRESIÓN NUMÉRICA.
+
+Es supervisada porque durante el entrenamiento cada fila contiene:
+
+- Variables predictoras X: información que ya se conocía antes del mes que se
+  desea estimar.
+- Variable objetivo Y: la demanda que realmente ocurrió en ese mes histórico.
+
+Es regresión porque Y es una cantidad numérica. Por ejemplo, el modelo podría
+producir 55 unidades para Lavanda. No se desea elegir una clase como "alta" o
+"baja"; se desea estimar directamente una cantidad.
+
+Aunque las unidades son un conteo entero, académicamente se puede tratar el
+problema como regresión porque el modelo estima una magnitud numérica. Al usar
+el resultado en el sistema se redondearía a una cantidad entera no negativa.
+
+
+3. COLECCIONES MONGODB UTILIZADAS
+---------------------------------
+
+COLECCIÓN: pedidos
+
+Es la fuente principal porque registra qué productos fueron solicitados,
+cuántas unidades se pidieron y en qué fecha ocurrió el pedido.
+
+Campos mostrados en la diapositiva:
+
+- status
+  Estado del pedido. Para construir la demanda se conservan únicamente:
+
+      pending_review
+      confirmed
+      completed
+
+  Se excluyen:
+
+      draft
+      cancelled
+
+  La razón es que un borrador todavía no representa una solicitud formal y un
+  pedido cancelado ya no representa demanda vigente. La variable se utiliza
+  para filtrar; no se introduce como número al modelo.
+
+- createdAt
+  Fecha y hora de creación del pedido. A partir de esta fecha se obtiene el mes
+  al que pertenece la solicitud. Por ejemplo, cualquier fecha entre el 1 y el
+  30 de junio de 2026 se agrupa como 2026-06.
+
+- items[].productId
+  Representación textual del identificador del producto dentro del arreglo
+  items del pedido. En el esquema real este campo es string, mientras que
+  productos._id es ObjectId. Los corchetes [] indican que un pedido puede
+  contener varios artículos. No es una colección separada llamada
+  detallepedidos; cada artículo está anidado dentro del mismo documento pedido.
+
+- items[].requestedQuantity
+  Número de unidades solicitadas de ese producto en ese pedido. Es el valor que
+  se suma para obtener la demanda mensual.
+
+COLECCIÓN: productos
+
+Se utiliza para convertir el identificador técnico en información legible del
+catálogo.
+
+- _id
+  Identificador real del documento de producto en MongoDB.
+
+- name
+  Nombre comercial del producto, por ejemplo Lavanda o Eucalipto.
+
+RELACIÓN LÓGICA:
+
+    pedidos.items[].productId = String(productos._id)
+
+No se presenta como una FK obligatoria porque MongoDB no es una base de datos
+relacional. Para la unión se convierte productos._id a texto, o bien se usa una
+conversión equivalente en una agregación de MongoDB.
+
+El pedido también conserva items[].productName como snapshot del nombre en el
+momento de la compra. Por tanto, ese snapshot podría usarse para un reporte
+histórico. En esta propuesta se conserva la colección productos para validar la
+identidad y mostrar el nombre vigente del catálogo; no se afirma que sea la
+única forma posible de recuperar el nombre.
+
+
+4. POR QUÉ NO APARECE UNA COLECCIÓN detallepedidos
+--------------------------------------------------
+
+En el ejemplo relacional del compañero, un pedido y sus productos se guardan
+en tablas separadas: pedidos y detallepedidos. En INHALEX el equivalente al
+detalle está embebido en:
+
+    pedidos.items[]
+
+Por eso el proceso debe "desanidar" o hacer unwind de items[]. Esto convierte
+un documento con varios productos en varias filas temporales, una por artículo.
+
+Ejemplo conceptual:
+
+Documento original:
+
+    pedido A
+    items = [Lavanda: 2 unidades, Eucalipto: 1 unidad]
+
+Después de desanidar:
+
+    pedido A | Lavanda   | 2
+    pedido A | Eucalipto | 1
+
+
+5. TRANSFORMACIÓN HASTA LLEGAR AL DATASET
+-----------------------------------------
+
+Paso 1. Filtrar pedidos válidos
+
+Se conservan únicamente los pedidos cuyo status sea pending_review, confirmed
+o completed.
+
+Paso 2. Desanidar items[]
+
+Cada producto de un pedido se convierte en un registro temporal. Así se puede
+trabajar de forma tabular en un DataFrame de pandas.
+
+Paso 3. Relacionar el producto
+
+items[].productId se relaciona con String(productos._id) para recuperar
+productos.name. La conversión de tipo es necesaria porque productId es string y
+_id es ObjectId.
+
+Paso 4. Crear el mes
+
+MongoDB guarda las fechas en UTC. Antes de asignar el mes, createdAt se convierte
+a la zona America/Mexico_City para que un pedido cercano a medianoche no termine
+en el mes equivocado. Después se transforma a YYYY-MM. Por ejemplo:
+
+    2026-06-18T14:30:00  ->  2026-06
+
+Paso 5. Agrupar por producto y mes y completar meses sin solicitudes
+
+Para cada combinación producto-mes se suman las unidades solicitadas:
+
+    demanda del mes = suma de items[].requestedQuantity
+
+Los meses con cero solicitudes también deben conservarse. Si se eliminaran,
+el modelo aprendería únicamente de los meses con ventas y quedaría sesgado.
+Para lograrlo se crea primero la cuadrícula completa producto x mes y se coloca
+Y igual a cero cuando no existió ningún pedido válido. Esto también garantiza
+que cada rezago represente un mes calendario consecutivo y no simplemente la
+observación anterior disponible.
+
+Paso 6. Crear los rezagos
+
+Para cada producto se ordenan los meses cronológicamente. Después se desplaza
+la demanda histórica para crear:
+
+- demanda_lag_1m: unidades del mes inmediatamente anterior.
+- demanda_lag_2m: unidades de dos meses antes.
+- demanda_lag_3m: unidades de tres meses antes.
+
+En pandas la idea equivale a agrupar por product_id, ordenar por mes y aplicar
+shift(1), shift(2) y shift(3).
+
+Paso 7. Definir Y
+
+La demanda del propio mes objetivo se guarda como:
+
+    Y_unidades_solicitadas_mes
+
+Durante el entrenamiento Y es conocida porque se trabaja con meses históricos.
+Cuando se prediga un mes futuro, Y todavía no existirá y será la salida del
+modelo.
+
+
+6. GRANULARIDAD DEL DATASET
+---------------------------
+
+Cada fila representa UN PRODUCTO y UN MES OBJETIVO.
+
+No representa un pedido individual ni un cliente. Por ejemplo, todas las
+solicitudes de Lavanda de junio se resumen en una sola fila de Lavanda para
+2026-06.
+
+El archivo completo contiene:
+
+- 16 productos.
+- 18 meses por producto.
+- 288 filas base: 16 x 18.
+- 240 filas entrenables con tres meses previos completos: 16 x 15.
+
+Los primeros tres meses de cada producto no pueden tener simultáneamente M-1,
+M-2 y M-3. Por eso se conservan para trazabilidad, pero no forman parte del
+entrenamiento del modelo base de tres rezagos.
+
+
+7. VARIABLES QUE APARECEN EN LA TABLA
+-------------------------------------
+
+VARIABLES DE IDENTIFICACIÓN O CONTROL
+
+- product_id
+  Identifica el producto. En los CSV sintéticos se usa una llave como
+  SYN-PROD-006. No es una cantidad y no debe tratarse como si 006 fuera mayor
+  que 005. En MongoDB items[].productId contiene la representación textual del
+  ObjectId del producto; el seeder relaciona la llave sintética con el producto
+  local.
+
+- producto
+  Nombre legible obtenido de productos.name. Sirve para mostrar e interpretar
+  la fila. En el modelo base no se convierte el nombre en una magnitud.
+
+- mes_objetivo
+  Mes cuya demanda aparece en Y. Los meses con eventos se detectan a partir de
+  pedidos.createdAt normalizado a la zona local; después se completa un
+  calendario producto-mes para incluir también los meses sin pedidos.
+
+- fecha_corte, columna de trazabilidad del CSV completo
+  Último día cuya información puede utilizarse para formar X. Corresponde al
+  día anterior al inicio de mes_objetivo. Por ejemplo, para mes_objetivo
+  2026-06 la fecha_corte es 2026-05-31. No aparece en la tabla simplificada ni
+  entra como número al modelo, pero permite comprobar que no hay fuga temporal.
+
+VARIABLES PREDICTORAS X
+
+- demanda_lag_1m
+  Demanda del producto durante el mes anterior al mes objetivo.
+
+- demanda_lag_2m
+  Demanda del producto dos meses antes del mes objetivo.
+
+- demanda_lag_3m
+  Demanda del producto tres meses antes del mes objetivo.
+
+VARIABLE OBJETIVO Y
+
+- Y_unidades_solicitadas_mes
+  Suma de requestedQuantity del producto dentro de pedidos válidos durante el
+  mes objetivo. Por tanto, representa demanda solicitada no cancelada, no todos
+  los intentos de pedido. Es la cantidad que el modelo aprende a estimar.
+
+
+8. CÓMO EXPLICAR UNA FILA REAL DEL CSV SINTÉTICO
+------------------------------------------------
+
+Fila de Lavanda con mes_objetivo 2026-06:
+
+    product_id                      SYN-PROD-006
+    producto                        Lavanda
+    mes_objetivo                    2026-06
+    demanda_lag_1m                  46
+    demanda_lag_2m                  51
+    demanda_lag_3m                  55
+    Y_unidades_solicitadas_mes      55
+
+Explicación oral:
+
+"Esta fila se utiliza para aprender a estimar junio de 2026. Antes de comenzar
+junio ya sabíamos que Lavanda tuvo 46 unidades solicitadas en mayo, 51 en abril
+y 55 en marzo. En el histórico sabemos que en junio se solicitaron realmente
+55 unidades válidas, y ese 55 funciona como la Y histórica observada durante el
+entrenamiento. No es una predicción ya producida por el modelo."
+
+Otro ejemplo mostrado:
+
+    Eucalipto | 2026-06 | M-1=50 | M-2=26 | M-3=29 | Y=34
+
+El significado es el mismo: el modelo recibe los tres meses anteriores y trata
+de aproximarse a las 34 unidades que ocurrieron en junio.
+
+
+9. POR QUÉ LA DIAPOSITIVA NO MUESTRA LAS 17 COLUMNAS DEL CSV COMPLETO
+--------------------------------------------------------------------
+
+El archivo dataset_prediccion_demanda.csv conserva columnas adicionales de
+trazabilidad y posibles experimentos, como fecha_corte, categoria, promedio de
+tres meses, precio, cantidad de pedidos, rating, reseñas, número de mes y
+metadatos de generación.
+
+La diapositiva define deliberadamente un MODELO BASE SIMPLE que solo utiliza
+M-1, M-2 y M-3 como X. Por eso la tabla muestra exactamente las columnas
+seleccionadas para ese modelo base, además de sus controles y de Y. Las demás
+columnas no se están usando silenciosamente; quedaron fuera de esta versión
+para que la propuesta sea clara y fácil de defender.
+
+Si después se desea comparar un modelo ampliado, esas variables pueden añadirse
+y se tendría que explicar su origen en una versión posterior de la propuesta.
+
+
+10. CÓMO EVITAR FUGA DE INFORMACIÓN
+-----------------------------------
+
+Una fuga ocurriría si para estimar junio se utilizara información generada en
+junio o después de junio como parte de X. Esta propuesta evita la fuga porque
+solo utiliza M-1, M-2 y M-3.
+
+La división entre entrenamiento y prueba debe ser cronológica, nunca aleatoria.
+Por ejemplo, se entrena con los meses anteriores y se evalúa con los últimos
+meses. Así se reproduce la situación real de predecir el futuro.
+
+
+11. MODELO POSIBLE Y EVALUACIÓN
+-------------------------------
+
+La diapositiva compromete el tipo de problema, no un resultado ya entrenado.
+Una implementación profesional podría comparar:
+
+- Regresión lineal como línea base fácil de interpretar.
+- Random Forest Regressor para aprender relaciones no lineales.
+
+Las métricas más fáciles de explicar serían:
+
+- MAE: error absoluto promedio en unidades.
+- RMSE: penaliza más los errores grandes.
+
+Ejemplo de interpretación de MAE:
+
+"Un MAE de 4 significaría que la predicción se equivoca, en promedio, por
+aproximadamente cuatro unidades por producto-mes."
+
+No debes afirmar una métrica concreta hasta entrenar y evaluar formalmente.
+
+
+12. UTILIDAD EN INHALEX
+-----------------------
+
+Después de estimar la demanda del mes siguiente, el administrador puede
+compararla con el stock actual para decidir cuánto reabastecer.
+
+El stock actual NO se usa como si fuera historial de demanda. Se consulta
+después de predecir. Ejemplo:
+
+    demanda estimada para agosto = 30
+    stock disponible              = 12
+    faltante orientativo          = 18
+
+El beneficio esperado es reducir faltantes y también evitar comprar demasiado
+inventario de productos con baja demanda.
+
+
+13. GUION CORTO PARA DECIR DURANTE LA EXPOSICIÓN
+------------------------------------------------
+
+"La propuesta 2 es una regresión numérica para predecir la demanda mensual de
+cada producto. En MongoDB no tenemos una tabla detallepedidos; los artículos
+están anidados en pedidos.items[]. Primero conservamos pedidos válidos,
+desanidamos sus productos, los relacionamos con la colección productos y
+sumamos requestedQuantity por producto y mes. Después generamos tres variables
+X: la demanda de uno, dos y tres meses atrás. Cada fila representa un producto
+y un mes objetivo. La variable Y es el total de unidades solicitadas durante
+ese mes. Por ejemplo, para Lavanda en junio el modelo recibe 46, 51 y 55 como
+historial, y durante el entrenamiento compara su estimación con las 55 unidades
+que realmente aparecen en el dataset sintético. Esto serviría para anticipar
+el reabastecimiento del siguiente mes."
+
+
+14. PREGUNTAS POSIBLES DEL PROFESOR Y RESPUESTAS
+------------------------------------------------
+
+P: ¿Por qué predecir un mes y no un día?
+R: Porque las ventas diarias pueden ser muy irregulares y hay pocos eventos por
+   producto. La agregación mensual ofrece una señal más estable y además se
+   alinea con la planeación de compras y reabastecimiento.
+
+P: ¿Qué significa lag?
+R: Significa rezago. Es el valor histórico desplazado. lag_1m es el mes
+   anterior, lag_2m son dos meses atrás y lag_3m son tres meses atrás.
+
+P: ¿Qué representa Y?
+R: La cantidad total de unidades solicitadas del producto en el mes objetivo.
+
+P: ¿De dónde sale mes_objetivo?
+R: Los meses con eventos se derivan de pedidos.createdAt en la zona horaria
+   local. Después se crea el calendario completo producto-mes para incluir
+   también filas con demanda cero.
+
+P: ¿De dónde sale Y?
+R: De sumar pedidos.items[].requestedQuantity del producto durante el mes, solo
+   para pedidos con estados válidos.
+
+P: ¿Por qué no se usa cancelled?
+R: Porque representa una solicitud anulada y no debería convertirse en una
+   necesidad final de inventario.
+
+P: ¿Por qué sí se incluye pending_review?
+R: Porque la variable está definida como demanda solicitada, no solo como venta
+   entregada. Si el objetivo comercial cambiara a ventas concluidas, se podría
+   restringir el filtro únicamente a completed.
+
+P: ¿product_id es una variable numérica?
+R: No. Es una llave de control. Sirve para mantener juntas las filas del mismo
+   producto y relacionarlas con MongoDB, pero no se interpreta por magnitud.
+
+P: ¿Los datos son reales?
+R: Los valores mostrados proceden del dataset sintético actual de INHALEX. Son
+   coherentes con el esquema real, pero no representan ventas reales.
+
+P: ¿Ya está entrenado el modelo?
+R: Esta diapositiva presenta la propuesta y el dataset preparado. El siguiente
+   paso es entrenar, validar cronológicamente y comparar algoritmos.
+
+
+======================================================================
+PROPUESTA 3. SEGMENTACIÓN DE CLIENTES
+======================================================================
+
+1. RESUMEN EN UNA SOLA FRASE
+----------------------------
+
+La propuesta agrupa automáticamente a los clientes que presentan patrones de
+compra parecidos según recencia, frecuencia y monto gastado.
+
+
+2. TIPO DE APRENDIZAJE
+----------------------
+
+Es CLUSTERING NO SUPERVISADO con K-Means.
+
+No existe una variable Y porque no se le entrega al algoritmo una respuesta
+correcta ni una clase previa. El algoritmo recibe las variables de conducta y
+descubre grupos por similitud.
+
+No debe confundirse con clasificación:
+
+- Clasificación: ya existiría una etiqueta correcta para cada cliente y el
+  modelo aprendería a reproducirla.
+- Clustering: no hay etiquetas previas; primero se forman grupos numéricos y
+  después se interpretan.
+
+
+3. COLECCIONES MONGODB UTILIZADAS
+---------------------------------
+
+COLECCIÓN: usuarios
+
+- _id
+  Identifica de manera única al usuario registrado. Se utiliza para relacionar
+  sus pedidos. No se emplean nombre, correo, teléfono ni dirección en el
+  clustering.
+
+COLECCIÓN: pedidos
+
+- customerUserId
+  Identificador del usuario que realizó el pedido. Permite agrupar todos sus
+  pedidos bajo el mismo cliente. En el esquema es opcional, por lo que antes de
+  agrupar deben excluirse los pedidos cuyo customerUserId no exista o sea nulo;
+  así no se mezclan pedidos de invitados bajo un identificador vacío.
+
+- status
+  Se utiliza para conservar únicamente pedidos completed. Para RFM interesa el
+  comportamiento de compras efectivamente completadas.
+
+- createdAt
+  Fecha del pedido. Permite encontrar la compra más reciente y calcular la
+  recencia.
+
+- subtotal
+  Importe del pedido en MXN. Se suma para calcular el monto acumulado del
+  cliente al integrar el proceso con MongoDB. El CSV sintético actual no fue
+  extraído de MongoDB: su generador suma operational-seed.orders.total. Al usar
+  la base real se utilizará el campo equivalente pedidos.subtotal.
+
+RELACIÓN LÓGICA:
+
+    usuarios._id.toString() = pedidos.customerUserId
+
+De nuevo, no se presenta como PK/FK obligatoria. Es una unión lógica por
+identificador entre documentos de MongoDB. La conversión es necesaria porque
+usuarios._id es ObjectId y customerUserId es string. En una agregación también
+se podría utilizar $toString o $toObjectId con validación previa.
+
+
+4. TRANSFORMACIÓN HASTA LLEGAR AL DATASET RFM
+---------------------------------------------
+
+Paso 1. Definir una fecha de corte
+
+La fotografía actual del dataset utiliza:
+
+    30/06/2026
+
+Todas las variables se calculan como existían en esa fecha.
+
+Paso 2. Filtrar pedidos completados
+
+Se conservan los documentos cuyo status sea completed y cuyo customerUserId
+exista. En una fotografía histórica también debe comprobarse que createdAt no
+sea posterior a la fecha de corte y que el pedido ya se hubiera completado en
+esa fecha. Si solo se consulta el status actual, podría incluirse por error un
+pedido que se completó después del corte. Los datos sintéticos actuales ya son
+coherentes con su fecha de corte.
+
+Paso 3. Agrupar por cliente
+
+Todos los pedidos con el mismo customerUserId se reúnen para producir una sola
+fila por cliente comprador.
+
+Paso 4. Calcular RFM
+
+RFM significa:
+
+- R = Recency o recencia.
+- F = Frequency o frecuencia.
+- M = Monetary o monto monetario.
+
+Fórmulas conceptuales:
+
+    recency_days = fecha_de_corte - createdAt_del_último_pedido_completed
+
+    frequency_orders = cantidad_de_pedidos_completed_del_cliente
+
+    monetary_value = suma_de_subtotal_de_pedidos_completed_del_cliente
+
+Paso 5. Transformar y estandarizar
+
+Antes de K-Means se aplica log1p y StandardScaler a las tres variables.
+
+- log1p reduce la asimetría causada por clientes con frecuencias o montos mucho
+  más altos que el resto.
+- StandardScaler coloca las variables en una escala comparable.
+
+Esto evita que monetary_value domine el agrupamiento solamente porque sus
+números son más grandes que los de frequency_orders.
+
+
+5. GRANULARIDAD DEL DATASET
+---------------------------
+
+Cada fila representa UN CLIENTE COMPRADOR a la fecha de corte.
+
+La tabla mostrada contiene 300 clientes sintéticos. El CSV completo tiene más
+columnas, pero esta vista selecciona exactamente tres variables RFM para el
+K-Means presentado. customer_key es únicamente el identificador de la fila.
+
+
+6. VARIABLES QUE APARECEN EN LA TABLA
+-------------------------------------
+
+CONTROL
+
+- customer_key
+  Llave sintética seudonimizada del cliente, por ejemplo SYN-CUST-0008.
+  Representa la relación con usuarios._id, pero no contiene nombre ni correo.
+  Se excluye de K-Means: el número 0008 no significa que ese cliente sea mayor
+  o mejor que 0005.
+
+VARIABLES X PARA AGRUPAMIENTO
+
+- recency_days
+  Cantidad de días entre createdAt del último pedido que tiene status completed
+  y la fecha de corte. El generador actual no usa completedAt para esta fórmula.
+  Un valor pequeño indica que el cliente compró recientemente. Un valor grande
+  indica que lleva mucho tiempo sin comprar.
+
+- frequency_orders
+  Número de pedidos completed del cliente. Un valor alto indica mayor
+  recurrencia.
+
+- monetary_value
+  Suma del importe de los pedidos completed del cliente. En el CSV sintético se
+  calcula con orders.total; en una extracción MongoDB se calculará con
+  pedidos.subtotal. La tabla muestra valores en MXN sin símbolo para conservar
+  el número exacto del CSV.
+
+VARIABLE Y
+
+No existe. Los segmentos son la salida del proceso de clustering.
+
+
+7. CÓMO EXPLICAR LAS FILAS REALES DEL CSV SINTÉTICO
+---------------------------------------------------
+
+Ejemplo 1:
+
+    customer_key       SYN-CUST-0008
+    recency_days       14
+    frequency_orders   12
+    monetary_value     1188.0
+
+Explicación:
+
+"Al 30 de junio de 2026, este cliente llevaba 14 días desde su última compra,
+tenía 12 pedidos completados y había acumulado 1,188 pesos. Por tener recencia
+baja y frecuencia y gasto altos, probablemente quedaría cerca de un grupo
+activo o de alto valor. El nombre definitivo se asigna después de analizar el
+clúster completo."
+
+Ejemplo 2:
+
+    customer_key       SYN-CUST-0001
+    recency_days       381
+    frequency_orders   2
+    monetary_value     180.0
+
+Explicación:
+
+"Este cliente lleva 381 días sin comprar, solo tiene dos pedidos y ha gastado
+180 pesos. Es probable que aparezca cerca de un grupo en riesgo, pero no se le
+pone esa etiqueta antes de ejecutar K-Means."
+
+Los otros ejemplos de la diapositiva también coinciden exactamente con el CSV:
+
+    SYN-CUST-0003 | 10 días | 1 pedido  | 180.0 MXN
+    SYN-CUST-0005 | 32 días | 10 pedidos | 1002.0 MXN
+
+
+8. CÓMO FUNCIONA K-MEANS DE FORMA SENCILLA
+------------------------------------------
+
+1. Se selecciona un número k de grupos.
+2. K-Means coloca k centros iniciales.
+3. Cada cliente se asigna al centro más cercano según sus variables RFM
+   estandarizadas.
+4. Se recalcula el centro promedio de cada grupo.
+5. La asignación y el recálculo se repiten hasta estabilizarse.
+
+La salida inicial no dice "Leales" o "En riesgo". Produce identificadores como:
+
+    clúster 0
+    clúster 1
+    clúster 2
+    clúster 3
+
+Después se estudian los promedios de recencia, frecuencia y monto de cada
+clúster y entonces se le asigna un nombre comercial comprensible.
+
+
+9. GRUPOS ESPERADOS Y SU INTERPRETACIÓN
+---------------------------------------
+
+La diapositiva presenta cuatro perfiles esperados para explicar la utilidad:
+
+- Leales o de alto valor
+  Recencia baja, frecuencia alta y monto alto. Podrían recibir recompensas,
+  preventas o beneficios de fidelidad.
+
+- Nuevos o prometedores
+  Compra reciente, pero todavía con poca historia. Se busca motivar una segunda
+  o tercera compra.
+
+- Ocasionales
+  Compran con poca frecuencia o con gasto moderado. Pueden responder a campañas
+  puntuales o promociones por categoría.
+
+- En riesgo
+  Recencia alta: llevan tiempo sin comprar. Podrían recibir una campaña de
+  recuperación.
+
+IMPORTANTE: estos nombres son perfiles esperados, no clases preasignadas. El
+número adecuado de grupos debe validarse con métodos como silhouette y codo,
+además de revisar que los grupos sean útiles para el negocio. Si los datos
+respaldaran tres o cinco grupos en lugar de cuatro, la interpretación tendría
+que ajustarse.
+
+
+10. POR QUÉ LA DIAPOSITIVA SOLO USA RFM
+---------------------------------------
+
+dataset_segmentacion_clientes.csv conserva otras variables conductuales para
+experimentos posteriores, pero la libreta actual selecciona exactamente:
+
+    recency_days
+    frequency_orders
+    monetary_value
+
+La diapositiva muestra ese modelo RFM base para que cada variable mostrada tenga
+una función clara y defendible. No se afirma que favoritos, reseñas o categorías
+entren al K-Means de esta versión.
+
+Si después se ampliara el modelo, habría que añadir esas colecciones y variables
+a una nueva versión de la diapositiva y justificar su tratamiento.
+
+
+11. EVALUACIÓN DEL CLUSTERING
+----------------------------
+
+Como no hay Y, no se mide accuracy. Algunas evaluaciones apropiadas son:
+
+- Silhouette score: indica qué tan compactos y separados están los grupos.
+- Método del codo: ayuda a elegir un k razonable.
+- Interpretación de centroides: permite saber si los grupos tienen sentido
+  comercial.
+- Tamaño de los grupos: evita crear segmentos demasiado pequeños o inútiles.
+
+No debes decir que un k específico ya es definitivo hasta terminar la
+validación. Los cuatro nombres de la diapositiva comunican la intención de
+negocio.
+
+
+12. UTILIDAD EN INHALEX
+-----------------------
+
+El administrador podría consultar el segmento de cada cliente para aplicar
+acciones distintas:
+
+- Premios de fidelidad para clientes de alto valor.
+- Incentivos para que clientes nuevos repitan compra.
+- Promociones relevantes para clientes ocasionales.
+- Campañas de recuperación para clientes con recencia alta.
+
+La segmentación ayuda a no enviar la misma promoción a todos los clientes.
+
+
+13. GUION CORTO PARA DECIR DURANTE LA EXPOSICIÓN
+------------------------------------------------
+
+"La propuesta 3 es clustering no supervisado con K-Means. Utilizamos usuarios
+y pedidos mediante la relación lógica usuarios._id convertido a texto igual a
+pedidos.customerUserId. Conservamos pedidos completed con usuario registrado y
+agrupamos por cliente para formar una fila por comprador. Calculamos RFM:
+recencia son los días desde createdAt del último pedido completed, frecuencia es
+la cantidad de pedidos completados y monto es el importe acumulado. customer_key
+solo identifica la fila y no entra al algoritmo. Antes de K-Means transformamos
+y estandarizamos las tres variables para que el monto no domine por su escala.
+Aquí no existe una Y ni clases
+previas: K-Means crea grupos numéricos y después interpretamos sus promedios.
+Esperamos encontrar perfiles como leales, nuevos, ocasionales y en riesgo para
+aplicar promociones y campañas diferentes."
+
+
+14. PREGUNTAS POSIBLES DEL PROFESOR Y RESPUESTAS
+------------------------------------------------
+
+P: ¿Qué significa RFM?
+R: Recencia, frecuencia y monto monetario.
+
+P: ¿Qué es recencia?
+R: Los días transcurridos desde createdAt del último pedido cuyo estado es
+   completed hasta la fecha de corte. Menos días significa una compra más
+   reciente.
+
+P: ¿Por qué no existe variable Y?
+R: Porque es aprendizaje no supervisado. No hay una etiqueta correcta de
+   segmento; el algoritmo descubre los grupos.
+
+P: ¿Por qué no es clasificación?
+R: Porque no existen clases conocidas con las cuales entrenar. Los nombres de
+   los segmentos se asignan después de estudiar los grupos obtenidos.
+
+P: ¿customer_key entra a K-Means?
+R: No. Solo sirve para identificar a qué cliente corresponde cada fila.
+
+P: ¿Por qué se estandarizan los datos?
+R: Porque el monto puede estar en cientos o miles y la frecuencia en unidades.
+   Sin escalado, el monto dominaría la distancia usada por K-Means.
+
+P: ¿Por qué solo pedidos completed?
+R: Porque RFM busca resumir compras efectivamente concluidas y gasto acumulado
+   real, no borradores o cancelaciones.
+
+P: ¿Los cuatro grupos están garantizados?
+R: No. Son grupos esperados con utilidad comercial. El número k debe validarse
+   con silhouette, codo e interpretación del negocio.
+
+P: ¿De dónde sale monetary_value?
+R: En el CSV sintético sale de sumar orders.total. Al integrar la extracción
+   con MongoDB se usará el campo operativo equivalente pedidos.subtotal para
+   todos los pedidos completed del cliente.
+
+P: ¿Los datos son reales?
+R: Son valores exactos de nuestro CSV sintético. Respetan la estructura del
+   sistema, pero no representan clientes reales.
+
+
+======================================================================
+ACLARACIÓN FINAL SOBRE LAS LLAVES SYN
+======================================================================
+
+SYN significa synthetic o sintético.
+
+- SYN-PROD-006 identifica un producto dentro de los artefactos analíticos.
+- SYN-CUST-0008 identifica un cliente sintético de manera seudonimizada.
+
+Estas llaves facilitan relacionar archivos sin exponer ObjectId, nombre o
+correo. En producción se usarían los identificadores reales de MongoDB durante
+la extracción y después podrían seudonimizarse antes de entrenar.
+
+
+======================================================================
+CIERRE RECOMENDADO
+======================================================================
+
+"Las dos propuestas parten de documentos reales del diseño de INHALEX y no de
+tablas inventadas. La libreta de Jupyter se encarga de convertir los documentos
+anidados de MongoDB en DataFrames. En la propuesta 2 construye una fila por
+producto-mes y una Y numérica para regresión. En la propuesta 3 construye una
+fila por cliente, sin Y, para descubrir segmentos con K-Means."

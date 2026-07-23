@@ -639,14 +639,15 @@ export function AdminSalesDepletionForecast({
       <div className="flex flex-col gap-3 border-b border-border/60 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Prediccion operativa
+            Inventario de materia prima
           </p>
           <h4 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
-            Prediccion de agotamiento
+            Proyección de materia prima
           </h4>
           <p className="mt-1 text-sm text-muted-foreground">
-            Estima el agotamiento de materia prima aplicando un modelo
-            exponencial sobre el historial observado del producto.
+            Proyecta cuándo la materia prima alcanzaría su nivel crítico
+            mediante una curva exponencial sobre el consumo observado. Este
+            cálculo es independiente del pronóstico mensual de demanda.
           </p>
         </div>
 

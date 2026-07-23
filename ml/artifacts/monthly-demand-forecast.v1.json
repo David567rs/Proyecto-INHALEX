@@ -1,0 +1,782 @@
+{
+  "schemaVersion": "1.0",
+  "model": {
+    "name": "Regresión Ridge",
+    "version": "1.0.0",
+    "isSynthetic": true,
+    "generatedAt": "2026-07-23T11:23:45.737742+00:00",
+    "datasetSha256": "e056e81df63b0e0568629062c0bab199dbe92f671fb8e7f76970658a08e7199f",
+    "alpha": 50.0,
+    "trainingPeriod": {
+      "startMonth": "2025-04",
+      "endMonth": "2026-06",
+      "trainingRows": 192,
+      "validationRows": 48,
+      "finalTrainingRows": 240
+    },
+    "metrics": {
+      "mae": 8.3657,
+      "rmse": 10.5702,
+      "r2": 0.2319,
+      "baselineMae": 9.7708,
+      "improvementPct": 14.3813,
+      "intervalQuantile": 0.9,
+      "residualRadius": 18.0858
+    }
+  },
+  "targetMonth": "2026-07",
+  "items": [
+    {
+      "slug": "anis-estrella",
+      "productName": "Anís Estrella",
+      "category": "linea-ansiedad-estres",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 18
+        },
+        {
+          "month": "2026-02",
+          "units": 13
+        },
+        {
+          "month": "2026-03",
+          "units": 14
+        },
+        {
+          "month": "2026-04",
+          "units": 7
+        },
+        {
+          "month": "2026-05",
+          "units": 28
+        },
+        {
+          "month": "2026-06",
+          "units": 20
+        }
+      ],
+      "features": {
+        "demandLag1m": 20,
+        "demandLag2m": 28,
+        "demandLag3m": 7,
+        "averageDemand3m": 18.3333,
+        "ordersLag1m": 17,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2174,
+        "reviewCountAsOf": 23,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 25,
+        "lower": 7,
+        "upper": 43
+      }
+    },
+    {
+      "slug": "bugambilia",
+      "productName": "Bugambilia",
+      "category": "linea-resfriado",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 22
+        },
+        {
+          "month": "2026-02",
+          "units": 21
+        },
+        {
+          "month": "2026-03",
+          "units": 11
+        },
+        {
+          "month": "2026-04",
+          "units": 20
+        },
+        {
+          "month": "2026-05",
+          "units": 18
+        },
+        {
+          "month": "2026-06",
+          "units": 31
+        }
+      ],
+      "features": {
+        "demandLag1m": 31,
+        "demandLag2m": 18,
+        "demandLag3m": 20,
+        "averageDemand3m": 23.0,
+        "ordersLag1m": 28,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.3,
+        "reviewCountAsOf": 30,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 33,
+        "lower": 15,
+        "upper": 52
+      }
+    },
+    {
+      "slug": "cafe",
+      "productName": "Café",
+      "category": "linea-estimulante",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 3
+        },
+        {
+          "month": "2026-02",
+          "units": 16
+        },
+        {
+          "month": "2026-03",
+          "units": 19
+        },
+        {
+          "month": "2026-04",
+          "units": 16
+        },
+        {
+          "month": "2026-05",
+          "units": 26
+        },
+        {
+          "month": "2026-06",
+          "units": 30
+        }
+      ],
+      "features": {
+        "demandLag1m": 30,
+        "demandLag2m": 26,
+        "demandLag3m": 16,
+        "averageDemand3m": 24.0,
+        "ordersLag1m": 23,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.4762,
+        "reviewCountAsOf": 21,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 30,
+        "lower": 12,
+        "upper": 48
+      }
+    },
+    {
+      "slug": "canela",
+      "productName": "Canela",
+      "category": "linea-resfriado",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 16
+        },
+        {
+          "month": "2026-02",
+          "units": 24
+        },
+        {
+          "month": "2026-03",
+          "units": 24
+        },
+        {
+          "month": "2026-04",
+          "units": 18
+        },
+        {
+          "month": "2026-05",
+          "units": 27
+        },
+        {
+          "month": "2026-06",
+          "units": 35
+        }
+      ],
+      "features": {
+        "demandLag1m": 35,
+        "demandLag2m": 27,
+        "demandLag3m": 18,
+        "averageDemand3m": 26.6667,
+        "ordersLag1m": 29,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2759,
+        "reviewCountAsOf": 29,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 35,
+        "lower": 17,
+        "upper": 53
+      }
+    },
+    {
+      "slug": "copal",
+      "productName": "Copal",
+      "category": "linea-estimulante",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 9
+        },
+        {
+          "month": "2026-02",
+          "units": 6
+        },
+        {
+          "month": "2026-03",
+          "units": 17
+        },
+        {
+          "month": "2026-04",
+          "units": 8
+        },
+        {
+          "month": "2026-05",
+          "units": 32
+        },
+        {
+          "month": "2026-06",
+          "units": 23
+        }
+      ],
+      "features": {
+        "demandLag1m": 23,
+        "demandLag2m": 32,
+        "demandLag3m": 8,
+        "averageDemand3m": 21.0,
+        "ordersLag1m": 20,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 3.3684,
+        "reviewCountAsOf": 19,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 26,
+        "lower": 7,
+        "upper": 44
+      }
+    },
+    {
+      "slug": "eucalipto",
+      "productName": "Eucalipto",
+      "category": "linea-verde",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 21
+        },
+        {
+          "month": "2026-02",
+          "units": 36
+        },
+        {
+          "month": "2026-03",
+          "units": 29
+        },
+        {
+          "month": "2026-04",
+          "units": 26
+        },
+        {
+          "month": "2026-05",
+          "units": 50
+        },
+        {
+          "month": "2026-06",
+          "units": 34
+        }
+      ],
+      "features": {
+        "demandLag1m": 34,
+        "demandLag2m": 50,
+        "demandLag3m": 26,
+        "averageDemand3m": 36.6667,
+        "ordersLag1m": 30,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 3.7714,
+        "reviewCountAsOf": 35,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 44,
+        "lower": 26,
+        "upper": 63
+      }
+    },
+    {
+      "slug": "hierbabuena",
+      "productName": "Hierbabuena",
+      "category": "linea-verde",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 14
+        },
+        {
+          "month": "2026-02",
+          "units": 12
+        },
+        {
+          "month": "2026-03",
+          "units": 12
+        },
+        {
+          "month": "2026-04",
+          "units": 32
+        },
+        {
+          "month": "2026-05",
+          "units": 28
+        },
+        {
+          "month": "2026-06",
+          "units": 40
+        }
+      ],
+      "features": {
+        "demandLag1m": 40,
+        "demandLag2m": 28,
+        "demandLag3m": 32,
+        "averageDemand3m": 33.3333,
+        "ordersLag1m": 37,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.4375,
+        "reviewCountAsOf": 32,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 44,
+        "lower": 26,
+        "upper": 62
+      }
+    },
+    {
+      "slug": "jengibre",
+      "productName": "Jengibre",
+      "category": "linea-resfriado",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 20
+        },
+        {
+          "month": "2026-02",
+          "units": 23
+        },
+        {
+          "month": "2026-03",
+          "units": 14
+        },
+        {
+          "month": "2026-04",
+          "units": 24
+        },
+        {
+          "month": "2026-05",
+          "units": 30
+        },
+        {
+          "month": "2026-06",
+          "units": 26
+        }
+      ],
+      "features": {
+        "demandLag1m": 26,
+        "demandLag2m": 30,
+        "demandLag3m": 24,
+        "averageDemand3m": 26.6667,
+        "ordersLag1m": 22,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2121,
+        "reviewCountAsOf": 33,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 36,
+        "lower": 17,
+        "upper": 54
+      }
+    },
+    {
+      "slug": "lavanda",
+      "productName": "Lavanda",
+      "category": "linea-insomnio",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 13
+        },
+        {
+          "month": "2026-02",
+          "units": 20
+        },
+        {
+          "month": "2026-03",
+          "units": 55
+        },
+        {
+          "month": "2026-04",
+          "units": 51
+        },
+        {
+          "month": "2026-05",
+          "units": 46
+        },
+        {
+          "month": "2026-06",
+          "units": 55
+        }
+      ],
+      "features": {
+        "demandLag1m": 55,
+        "demandLag2m": 46,
+        "demandLag3m": 51,
+        "averageDemand3m": 50.6667,
+        "ordersLag1m": 44,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2895,
+        "reviewCountAsOf": 38,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 59,
+        "lower": 40,
+        "upper": 77
+      }
+    },
+    {
+      "slug": "manzanilla",
+      "productName": "Manzanilla",
+      "category": "linea-ansiedad-estres",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 26
+        },
+        {
+          "month": "2026-02",
+          "units": 18
+        },
+        {
+          "month": "2026-03",
+          "units": 31
+        },
+        {
+          "month": "2026-04",
+          "units": 46
+        },
+        {
+          "month": "2026-05",
+          "units": 37
+        },
+        {
+          "month": "2026-06",
+          "units": 58
+        }
+      ],
+      "features": {
+        "demandLag1m": 58,
+        "demandLag2m": 37,
+        "demandLag3m": 46,
+        "averageDemand3m": 47.0,
+        "ordersLag1m": 50,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.439,
+        "reviewCountAsOf": 41,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 58,
+        "lower": 40,
+        "upper": 77
+      }
+    },
+    {
+      "slug": "menta",
+      "productName": "Menta",
+      "category": "linea-verde",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 16
+        },
+        {
+          "month": "2026-02",
+          "units": 22
+        },
+        {
+          "month": "2026-03",
+          "units": 20
+        },
+        {
+          "month": "2026-04",
+          "units": 45
+        },
+        {
+          "month": "2026-05",
+          "units": 49
+        },
+        {
+          "month": "2026-06",
+          "units": 53
+        }
+      ],
+      "features": {
+        "demandLag1m": 53,
+        "demandLag2m": 49,
+        "demandLag3m": 45,
+        "averageDemand3m": 49.0,
+        "ordersLag1m": 42,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2353,
+        "reviewCountAsOf": 34,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 55,
+        "lower": 37,
+        "upper": 74
+      }
+    },
+    {
+      "slug": "mirra-y-azafran",
+      "productName": "Mirra y Azafrán",
+      "category": "linea-ansiedad-estres",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 14
+        },
+        {
+          "month": "2026-02",
+          "units": 15
+        },
+        {
+          "month": "2026-03",
+          "units": 11
+        },
+        {
+          "month": "2026-04",
+          "units": 8
+        },
+        {
+          "month": "2026-05",
+          "units": 32
+        },
+        {
+          "month": "2026-06",
+          "units": 20
+        }
+      ],
+      "features": {
+        "demandLag1m": 20,
+        "demandLag2m": 32,
+        "demandLag3m": 8,
+        "averageDemand3m": 20.0,
+        "ordersLag1m": 20,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.125,
+        "reviewCountAsOf": 16,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 24,
+        "lower": 6,
+        "upper": 43
+      }
+    },
+    {
+      "slug": "romero",
+      "productName": "Romero",
+      "category": "linea-resfriado",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 11
+        },
+        {
+          "month": "2026-02",
+          "units": 23
+        },
+        {
+          "month": "2026-03",
+          "units": 18
+        },
+        {
+          "month": "2026-04",
+          "units": 19
+        },
+        {
+          "month": "2026-05",
+          "units": 25
+        },
+        {
+          "month": "2026-06",
+          "units": 19
+        }
+      ],
+      "features": {
+        "demandLag1m": 19,
+        "demandLag2m": 25,
+        "demandLag3m": 19,
+        "averageDemand3m": 21.0,
+        "ordersLag1m": 16,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.1724,
+        "reviewCountAsOf": 29,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 29,
+        "lower": 11,
+        "upper": 47
+      }
+    },
+    {
+      "slug": "rosas-de-castilla",
+      "productName": "Rosas de Castilla",
+      "category": "linea-ansiedad-estres",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 16
+        },
+        {
+          "month": "2026-02",
+          "units": 8
+        },
+        {
+          "month": "2026-03",
+          "units": 19
+        },
+        {
+          "month": "2026-04",
+          "units": 29
+        },
+        {
+          "month": "2026-05",
+          "units": 32
+        },
+        {
+          "month": "2026-06",
+          "units": 28
+        }
+      ],
+      "features": {
+        "demandLag1m": 28,
+        "demandLag2m": 32,
+        "demandLag3m": 29,
+        "averageDemand3m": 29.6667,
+        "ordersLag1m": 23,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2667,
+        "reviewCountAsOf": 30,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 37,
+        "lower": 19,
+        "upper": 55
+      }
+    },
+    {
+      "slug": "toronjil",
+      "productName": "Toronjil",
+      "category": "linea-insomnio",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 10
+        },
+        {
+          "month": "2026-02",
+          "units": 14
+        },
+        {
+          "month": "2026-03",
+          "units": 17
+        },
+        {
+          "month": "2026-04",
+          "units": 33
+        },
+        {
+          "month": "2026-05",
+          "units": 34
+        },
+        {
+          "month": "2026-06",
+          "units": 35
+        }
+      ],
+      "features": {
+        "demandLag1m": 35,
+        "demandLag2m": 34,
+        "demandLag3m": 33,
+        "averageDemand3m": 34.0,
+        "ordersLag1m": 32,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.5556,
+        "reviewCountAsOf": 36,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 44,
+        "lower": 26,
+        "upper": 62
+      }
+    },
+    {
+      "slug": "vaporub",
+      "productName": "Vaporub",
+      "category": "linea-verde",
+      "history": [
+        {
+          "month": "2026-01",
+          "units": 23
+        },
+        {
+          "month": "2026-02",
+          "units": 31
+        },
+        {
+          "month": "2026-03",
+          "units": 23
+        },
+        {
+          "month": "2026-04",
+          "units": 20
+        },
+        {
+          "month": "2026-05",
+          "units": 38
+        },
+        {
+          "month": "2026-06",
+          "units": 32
+        }
+      ],
+      "features": {
+        "demandLag1m": 32,
+        "demandLag2m": 38,
+        "demandLag3m": 20,
+        "averageDemand3m": 30.0,
+        "ordersLag1m": 25,
+        "averagePriceLag1m": 60.0,
+        "averageRatingAsOf": 4.2778,
+        "reviewCountAsOf": 36,
+        "monthNumber": 7
+      },
+      "prediction": {
+        "units": 40,
+        "lower": 22,
+        "upper": 58
+      }
+    }
+  ]
+}

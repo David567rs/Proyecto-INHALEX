@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { AddressesProvider } from "@/components/addresses/addresses-provider";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { FavoritesProvider } from "@/components/favorites/favorites-provider";
+import { CatalogProvider } from "@/components/products/catalog-provider";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
@@ -24,23 +25,23 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "INHALEX | El Respiro Que Alivia",
   description:
-    "Descubre nuestra selección de productos naturales diseñados para tu bienestar respiratorio. Auxiliar de macerado de plantas para congestión nasal, dolor de cabeza, resfriado, gripe y tos.",
+    "Explora el catálogo de inhaladores aromáticos INHALEX, organizado por líneas y perfiles para acompañar pausas y rutinas cotidianas.",
   keywords: [
     "INHALEX",
-    "productos naturales",
-    "bienestar respiratorio",
-    "congestión nasal",
-    "remedios naturales",
+    "inhaladores aromáticos",
+    "aromas de uso personal",
+    "perfiles aromáticos",
+    "bienestar cotidiano",
     "aromaterapia",
   ],
   authors: [{ name: "INHALEX SAS de CV" }],
   openGraph: {
     title: "INHALEX | El Respiro Que Alivia",
-    description: "Productos naturales para tu bienestar respiratorio",
+    description:
+      "Inhaladores aromáticos personales organizados por líneas y perfiles.",
     type: "website",
     locale: "es_MX",
   },
-  generator: "v0.app",
 };
 
 export const viewport: Viewport = {
@@ -57,6 +58,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${manrope.variable}`}
     >
       <body className="font-sans antialiased">
@@ -64,9 +66,11 @@ export default function RootLayout({
           <AddressesProvider>
             <FavoritesProvider>
               <CartProvider>
-                {children}
-                <Toaster />
-                <Analytics />
+                <CatalogProvider>
+                  {children}
+                  <Toaster />
+                  <Analytics />
+                </CatalogProvider>
               </CartProvider>
             </FavoritesProvider>
           </AddressesProvider>

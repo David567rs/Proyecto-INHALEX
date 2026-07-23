@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AdminMonthlyDemandForecast } from "@/components/admin/admin-monthly-demand-forecast";
+import { AdminRecommendationInsights } from "@/components/admin/admin-recommendation-insights";
 import { AdminSalesDepletionForecast } from "@/components/admin/admin-sales-depletion-forecast";
 import { SalesHistoryModal } from "@/components/admin/admin-sales-history-section";
 import { AdminSalesAPI, type SalesOverview } from "@/lib/admin/admin-sales-api";
@@ -189,11 +191,11 @@ export function AdminVentasSection() {
               <BarChart3 className="h-5 w-5" />
             </div>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-primary">
-              Ventas y reportes
+              Ventas e inteligencia
             </h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
-              Revisa pedidos completados, ingresos y rendimiento por producto.
-              Abre un producto para ver su historial con grafica y tabla.
+              Revisa pedidos completados, ingresos y rendimiento por producto,
+              junto con recomendaciones Apriori y pronósticos mensuales.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -368,6 +370,10 @@ export function AdminVentasSection() {
             </div>
           </div>
         ) : null}
+
+        <AdminMonthlyDemandForecast />
+
+        <AdminRecommendationInsights />
 
         <AdminSalesDepletionForecast
           products={products}

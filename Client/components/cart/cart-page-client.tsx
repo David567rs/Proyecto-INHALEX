@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { useAddresses } from "@/components/addresses/addresses-provider"
 import { useAuth } from "@/components/auth/auth-provider"
+import { BasketRecommendationCard } from "@/components/cart/basket-recommendation-card"
 import { useCart } from "@/components/cart/cart-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -70,10 +71,15 @@ export function CartPageClient() {
     preview,
     subtotal,
     itemCount,
+    addItem,
     updateItemQuantity,
     removeItem,
     isSyncing,
     syncError,
+    recommendation,
+    recommendationModel,
+    recommendationSource,
+    isRecommendationLoading,
     createDraft,
     lastDraft,
     clearLastDraft,
@@ -430,6 +436,15 @@ export function CartPageClient() {
               )
             })}
           </div>
+
+          <BasketRecommendationCard
+            variant="wide"
+            recommendation={recommendation}
+            model={recommendationModel}
+            source={recommendationSource}
+            isLoading={isRecommendationLoading}
+            onAdd={addItem}
+          />
         </div>
 
         <aside className="page-fade-up page-fade-up-delay-2 space-y-5">

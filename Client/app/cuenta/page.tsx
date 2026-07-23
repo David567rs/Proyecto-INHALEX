@@ -10,6 +10,7 @@ import { AccountNotices } from "@/components/account/account-notices"
 import { AccountReports } from "@/components/account/account-reports"
 import { AccountReviews } from "@/components/account/account-reviews"
 import { AccountAlexaAccess } from "@/components/account/account-alexa-access"
+import { AccountOrderReceipts } from "@/components/account/account-order-receipts"
 
 export default function CuentaPage() {
   const { user } = useAuth()
@@ -44,6 +45,7 @@ export default function CuentaPage() {
               </div>
 
               <AccountNotices />
+              <AccountOrderReceipts />
               <AccountReviews />
               <AccountReports />
               <AccountFavorites />

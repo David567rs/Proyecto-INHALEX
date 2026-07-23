@@ -1,5 +1,8 @@
 # Dependencias
 node_modules/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
 
 # Builds
 .next/
@@ -21,6 +24,17 @@ pnpm-debug.log*
 Server/backups/
 mongo-migration/
 docs/mongo-backups/
+
+# Salidas reproducibles de datos sintéticos/ML
+ml/exports/*.csv
+ml/exports/validation-report.json
+ml/exports/quality-report.csv
+ml/exports/quality-summary.json
+ml/exports/operational-seed.json
+ml/artifacts/*.joblib
+ml/.jupyter-config/
+ml/.jupyter-data/
+ml/.jupyter-runtime/
 
 # Logs locales del servidor
 Server/server-start*.txt

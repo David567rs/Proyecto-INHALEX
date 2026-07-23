@@ -1,0 +1,1175 @@
+﻿GUION COMPLETO PARA EXPONER LA PROPUESTA 1 DE INHALEX
+RECOMENDACIÓN DE UN AROMA COMPLEMENTARIO CON APRIORI
+======================================================================
+
+Propósito de este archivo
+----------------------------------------------------------------------
+
+Este documento sirve para estudiar la propuesta, no para leerlo completo
+durante la exposición. Primero memoriza el guion principal y después revisa
+el glosario y las preguntas probables. Así podrás explicar la diapositiva de
+forma sencilla y también responder si el profesor pide detalles técnicos.
+
+
+FICHA RÁPIDA DE LA PROPUESTA
+----------------------------------------------------------------------
+
+Nombre:
+Recomendación de un aroma complementario.
+
+Tipo de aplicación:
+Sistema de recomendación.
+
+Técnica:
+Reglas de asociación con el algoritmo Apriori.
+
+Tipo de aprendizaje:
+Aprendizaje no supervisado.
+
+Colección utilizada para construir el dataset:
+pedidos.
+
+Unidad de análisis:
+Una compra o canasta.
+
+Formato del dataset:
+TID | Items
+
+Variables X:
+Los productos presentes dentro de cada canasta.
+
+Variable Y:
+No existe o no aplica.
+
+Salida:
+Una regla producto A -> producto B y una recomendación Top-1.
+
+Ejemplo principal:
+Vaporub -> Eucalipto.
+
+Datos actuales usados para la demostración:
+- 1,674 canastas o pedidos completados.
+- 3,003 registros producto-pedido después de representar presencia.
+- 3,664 unidades físicas antes de convertir cantidades en presencia 0/1.
+- 16 productos.
+- 861 canastas con dos o más productos.
+
+Advertencia que siempre debe mencionarse:
+Los datos son sintéticos, reproducibles y compatibles con la estructura de
+MongoDB de INHALEX. Sirven para demostrar el proceso, pero todavía no prueban
+el comportamiento de compradores reales.
+
+
+1. GUION PRINCIPAL PARA DECIR DURANTE LA EXPOSICIÓN
+----------------------------------------------------------------------
+
+Duración aproximada: entre 1 minuto 30 segundos y 2 minutos.
+
+"Nuestra primera propuesta es un sistema de recomendación de un aroma
+complementario mediante reglas de asociación con el algoritmo Apriori.
+
+Para construir el dataset utilizamos únicamente la colección pedidos. Esto es
+posible porque cada documento de pedido contiene un arreglo llamado items con
+los productos incluidos en esa compra. Primero conservamos solamente los
+pedidos cuyo estado es completed, porque representan compras terminadas.
+
+Después, en una libreta de Jupyter, usamos el campo reference como TID o
+identificador de la transacción y agrupamos los valores de
+items.productName para formar la columna Items. El resultado es un dataset
+transaccional con una fila por pedido y una lista de los productos que fueron
+comprados juntos.
+
+Apriori convierte esas canastas en presencia o ausencia de productos y busca
+combinaciones frecuentes. Esta propuesta no tiene variable Y porque es
+aprendizaje no supervisado: no le damos una respuesta correcta previamente,
+sino que el algoritmo descubre las asociaciones existentes.
+
+Como ejemplo, en nuestros datos la regla Vaporub hacia Eucalipto tiene un
+soporte de 3.52 por ciento, una confianza de 26.94 por ciento y un lift de
+1.88. Esto significa que Vaporub y Eucalipto aparecen juntos en 59 de las
+1,674 canastas; además, cuando aparece Vaporub, Eucalipto también aparece en
+aproximadamente 27 por ciento de esos pedidos. El lift mayor que uno indica
+que la combinación sucede más de lo esperado por la popularidad normal de
+Eucalipto.
+
+Al integrarlo en INHALEX, si el cliente tiene Vaporub en su bolsa, el sistema
+puede consultar las reglas, seleccionar la mejor y recomendar Eucalipto como
+un solo aroma complementario. Vaporub es solamente un ejemplo: Apriori puede
+encontrar reglas para diferentes aromas." 
+
+
+2. CÓMO RECORRER VISUALMENTE LA DIAPOSITIVA
+----------------------------------------------------------------------
+
+No expliques la diapositiva al azar. Recórrela de izquierda a derecha.
+
+PASO 1. Señala el título.
+
+Di:
+"Es un sistema de recomendación de un aroma complementario mediante Apriori."
+
+La palabra complementario es importante. No estamos afirmando que el sistema
+conoce completamente los gustos personales del cliente. La recomendación se
+basa en el producto que tiene en su bolsa y en productos que históricamente
+aparecen juntos.
+
+
+PASO 2. Señala la colección pedidos.
+
+Di:
+"La fuente del dataset de entrenamiento es la colección pedidos."
+
+Explica los campos:
+
+reference
+Es la referencia legible y única del pedido. En el dataset se convierte en
+TID.
+
+status
+Es el estado del pedido. Se utiliza para conservar únicamente status igual a
+completed.
+
+items[].productName
+Es el nombre de cada producto dentro del arreglo items. Los corchetes indican
+que items es una lista o arreglo con varios elementos.
+
+
+PASO 3. Señala la caja de trazabilidad.
+
+Di:
+"Aquí se muestra exactamente de dónde sale cada columna del dataset."
+
+Mapeo:
+
+pedidos.reference
+    -> TID
+
+pedidos.items[].productName
+    -> Items
+
+pedidos.status = completed
+    -> filtro de compras válidas
+
+TID sale directamente de la base de datos.
+Items es una variable derivada en Jupyter porque se construye agrupando los
+productos que comparten la misma referencia de pedido.
+
+
+PASO 4. Señala la flecha.
+
+Di:
+"El proceso consiste en filtrar, extraer los artículos y agruparlos por TID."
+
+Filtrar:
+Se conservan únicamente pedidos completados.
+
+Extraer items[]:
+Se recorren los elementos que están dentro del arreglo del pedido.
+
+Agrupar por TID:
+Los productos con la misma referencia vuelven a juntarse como una canasta.
+
+
+PASO 5. Señala la tabla TID | Items.
+
+Di:
+"Este es el dataset transaccional solicitado: una fila representa una compra
+y Items contiene los productos comprados juntos."
+
+Ejemplo:
+
+SYN-ORD-000001 | Toronjil, Jengibre
+
+Esto significa que el pedido SYN-ORD-000001 contenía Toronjil y Jengibre.
+
+
+PASO 6. Señala la caja de Apriori.
+
+Di:
+"Las X son los productos presentes en las canastas y no existe una Y."
+
+Después señala:
+
+Vaporub -> Eucalipto
+
+Di:
+"Esta es una regla encontrada al analizar las canastas."
+
+
+PASO 7. Señala la franja inferior.
+
+Di:
+"En el sistema, si Vaporub está en la bolsa, se puede recomendar Eucalipto
+como Top-1, es decir, como la mejor recomendación disponible."
+
+
+3. EXPLICACIÓN DE TODOS LOS CONCEPTOS IMPORTANTES
+----------------------------------------------------------------------
+
+3.1. ¿Qué es un sistema de recomendación?
+
+Es un sistema que ordena o selecciona productos que podrían ser relevantes
+para un usuario o para una situación concreta.
+
+En esta propuesta, la situación concreta es el aroma que se encuentra en la
+bolsa del cliente. Por eso la recomendación es contextual.
+
+
+3.2. ¿Es una recomendación personalizada?
+
+No es una personalización profunda basada en todo el historial individual.
+Es una recomendación contextual o complementaria.
+
+La regla se aprende con el comportamiento conjunto de todas las canastas y se
+aplica según el producto que el cliente tiene actualmente.
+
+Frase correcta:
+"Recomendación contextual de un producto complementario."
+
+Frase que conviene evitar:
+"El modelo conoce perfectamente los gustos del cliente."
+
+
+3.3. ¿Qué es una regla de asociación?
+
+Es una relación del tipo:
+
+A -> B
+
+Se lee:
+"Cuando aparece A en una transacción, B también tiende a aparecer."
+
+A se llama antecedente.
+B se llama consecuente.
+
+Ejemplo:
+
+Vaporub -> Eucalipto
+
+Antecedente:
+Vaporub.
+
+Consecuente:
+Eucalipto.
+
+Una regla no demuestra que A cause B. Solo indica que existe una asociación
+estadística dentro de las compras observadas.
+
+
+3.4. ¿Qué es Apriori?
+
+Apriori es un algoritmo que busca conjuntos de productos que aparecen juntos
+con suficiente frecuencia y después construye reglas de asociación.
+
+De manera simplificada trabaja así:
+
+1. Cuenta qué tan frecuente es cada producto.
+2. Prueba combinaciones de dos productos.
+3. Conserva las combinaciones que superan el soporte mínimo.
+4. Puede probar combinaciones de tres o más productos.
+5. Genera reglas y calcula soporte, confianza y lift.
+
+Apriori descarta temprano las combinaciones que no son frecuentes. Esa poda
+evita revisar inútilmente todas las combinaciones posibles.
+
+
+3.5. ¿Qué significa aprendizaje no supervisado?
+
+Significa que el dataset no incluye una respuesta correcta previamente
+etiquetada.
+
+En una regresión existiría una Y numérica.
+En una clasificación existiría una Y con clases.
+En Apriori no existe esa Y: el algoritmo descubre patrones de coexistencia.
+
+
+3.6. ¿Qué es un dataset transaccional?
+
+Es un conjunto de datos organizado por transacciones o canastas.
+
+Cada transacción tiene:
+
+- Un identificador.
+- Una lista de artículos.
+
+Ejemplo:
+
+TID                 Items
+SYN-ORD-000001      Toronjil, Jengibre
+SYN-ORD-000002      Vaporub, Eucalipto
+
+
+3.7. ¿Qué significa TID?
+
+TID significa Transaction ID, es decir, identificador de la transacción.
+
+En INHALEX se obtiene de:
+
+pedidos.reference
+
+TID sirve para separar una canasta de otra. No es una característica que
+Apriori utilice para encontrar similitudes; únicamente identifica el grupo de
+productos perteneciente a cada compra.
+
+
+3.8. ¿Qué significa Items?
+
+Items significa artículos o productos de la transacción.
+
+No existe como una columna literal con ese nombre en MongoDB. Se construye en
+Jupyter agrupando los valores de pedidos.items[].productName que pertenecen al
+mismo reference.
+
+
+3.9. ¿Qué significa SYN-ORD-000001?
+
+SYN:
+Synthetic. Indica que el pedido fue generado sintéticamente.
+
+ORD:
+Order. Significa pedido.
+
+000001:
+Número consecutivo con seis posiciones y ceros a la izquierda.
+
+SYN-ORD-000001 no es el ObjectId interno de MongoDB. Es el valor legible que
+se almacena en pedidos.reference para el conjunto sintético.
+
+En pedidos normales del sistema pueden existir referencias como:
+
+BOR-AAAAMMDD-XXXXXX
+para un borrador.
+
+PED-AAAAMMDD-XXXXXX
+para un pedido confirmado.
+
+
+3.10. ¿Qué significa items[]?
+
+Los corchetes [] indican que items es un arreglo.
+
+Un documento de pedido puede contener:
+
+items[0] = Vaporub
+items[1] = Eucalipto
+
+La expresión items[].productName significa:
+"Tomar productName de cada elemento del arreglo items."
+
+
+3.11. ¿Qué es una colección MongoDB?
+
+Es un conjunto de documentos del mismo dominio.
+
+En una base relacional se hablaría de tablas y filas.
+En MongoDB se habla de colecciones y documentos.
+
+INHALEX no necesita una tabla separada de detalle_pedido para esta propuesta,
+porque los artículos están embebidos dentro de pedidos.items[].
+
+
+3.12. ¿Qué significa Top-1?
+
+Significa mostrar una sola recomendación: el candidato mejor evaluado para el
+producto que funciona como antecedente.
+
+Apriori puede producir varias reglas, pero la interfaz puede escoger una.
+
+Por ejemplo:
+
+Vaporub -> Eucalipto
+Vaporub -> Menta
+
+Después de aplicar los filtros y ordenar las reglas, el sistema muestra solo
+la primera.
+
+
+4. TRANSFORMACIÓN EXACTA DEL DATO
+----------------------------------------------------------------------
+
+4.1. Documento original simplificado de MongoDB
+
+{
+  reference: "SYN-ORD-000001",
+  status: "completed",
+  items: [
+    { productName: "Toronjil" },
+    { productName: "Jengibre" }
+  ]
+}
+
+
+4.2. Filtro
+
+Condición:
+
+status = completed
+
+Motivo:
+Un borrador, pedido cancelado o pedido pendiente no demuestra una compra
+terminada. Incluirlo produciría asociaciones basadas en intenciones que quizá
+nunca se concretaron.
+
+
+4.3. Extracción del arreglo
+
+El arreglo items se recorre para obtener los nombres de los productos.
+
+Forma intermedia:
+
+SYN-ORD-000001 | Toronjil
+SYN-ORD-000001 | Jengibre
+
+
+4.4. Agrupación
+
+Las filas con el mismo reference se agrupan:
+
+SYN-ORD-000001 | Toronjil, Jengibre
+
+Esta columna agrupada es Items.
+
+
+4.5. Eliminación de duplicados dentro de una canasta
+
+Apriori clásico estudia presencia o ausencia.
+
+Si un pedido contiene tres unidades de Lavanda, la canasta para Apriori
+registra Lavanda una vez.
+
+No se interpreta como:
+
+Lavanda, Lavanda, Lavanda
+
+Se interpreta como:
+
+Lavanda presente = 1
+
+
+4.6. Matriz binaria interna
+
+Aunque la diapositiva muestra TID | Items, Jupyter convierte las canastas en
+una matriz de ceros y unos:
+
+TID                 Toronjil   Jengibre   Vaporub   Eucalipto
+SYN-ORD-000001          1          1          0          0
+SYN-ORD-000002          0          0          1          1
+
+1 significa que el producto está presente.
+0 significa que el producto está ausente.
+
+Esta matriz es la entrada computacional de Apriori.
+
+
+5. VARIABLES X Y VARIABLE Y
+----------------------------------------------------------------------
+
+Variables X:
+La presencia o ausencia de los productos dentro de cada canasta.
+
+Ejemplos de columnas X internas:
+
+- Toronjil.
+- Jengibre.
+- Vaporub.
+- Eucalipto.
+- Lavanda.
+- Los demás productos del catálogo.
+
+Variable Y:
+No aplica.
+
+Respuesta breve si preguntan:
+
+"No existe Y porque Apriori es no supervisado. El resultado no se entrega
+como etiqueta; el algoritmo descubre reglas entre las variables de presencia."
+
+No debes decir que Eucalipto es la Y. Eucalipto es el consecuente de una regla,
+no una etiqueta objetivo almacenada en cada fila del dataset.
+
+
+6. CÁLCULO EXACTO DE LA REGLA VAPORUB -> EUCALIPTO
+----------------------------------------------------------------------
+
+Datos verificados:
+
+Total de canastas completadas:
+1,674.
+
+Canastas con Vaporub:
+219.
+
+Canastas con Eucalipto:
+240.
+
+Canastas con ambos:
+59.
+
+
+6.1. Soporte
+
+Pregunta que responde:
+"¿Qué porcentaje de todas las compras contiene ambos productos?"
+
+Fórmula:
+
+soporte(A -> B) = canastas con A y B / total de canastas
+
+Cálculo:
+
+59 / 1,674 = 0.035245
+
+En porcentaje:
+
+3.52 %
+
+Interpretación correcta:
+
+"Vaporub y Eucalipto aparecen juntos en aproximadamente 3.52 por ciento de
+todas las canastas."
+
+
+6.2. Confianza
+
+Pregunta que responde:
+"De las compras que contienen Vaporub, ¿cuántas también contienen Eucalipto?"
+
+Fórmula:
+
+confianza(Vaporub -> Eucalipto)
+= canastas con Vaporub y Eucalipto / canastas con Vaporub
+
+Cálculo:
+
+59 / 219 = 0.269406
+
+En porcentaje:
+
+26.94 %
+
+Interpretación correcta:
+
+"De los pedidos que contienen Vaporub, aproximadamente 26.94 por ciento
+también contiene Eucalipto."
+
+
+6.3. Lift
+
+Pregunta que responde:
+"¿La presencia conjunta es especial o solo ocurre porque Eucalipto es muy
+popular?"
+
+Primero calculamos la frecuencia general de Eucalipto:
+
+240 / 1,674 = 0.143369
+
+Es decir, Eucalipto aparece aproximadamente en 14.34 por ciento de todas las
+canastas.
+
+Fórmula:
+
+lift = confianza(Vaporub -> Eucalipto) / soporte(Eucalipto)
+
+Cálculo:
+
+0.269406 / 0.143369 = 1.8791
+
+Redondeado:
+
+1.88
+
+Interpretación correcta:
+
+"La aparición conjunta de Vaporub y Eucalipto es aproximadamente 1.88 veces
+la esperada tomando en cuenta la frecuencia normal de Eucalipto."
+
+No significa que exista 188 por ciento de probabilidad.
+No significa que Vaporub cause la compra de Eucalipto.
+
+
+6.4. Cómo interpretar lift
+
+Lift mayor que 1:
+Asociación positiva.
+
+Lift igual a 1:
+La aparición de B es prácticamente independiente de A.
+
+Lift menor que 1:
+A y B aparecen juntos menos de lo esperado.
+
+
+7. OTROS AROMAS QUE EL MODELO PUEDE RECOMENDAR
+----------------------------------------------------------------------
+
+Vaporub es solamente el ejemplo de la diapositiva. Algunas asociaciones
+verificadas en las canastas actuales son:
+
+Antecedente       Consecuente       Soporte     Confianza     Lift
+Vaporub           Eucalipto          3.52 %       26.94 %      1.88
+Toronjil          Lavanda            3.17 %       27.18 %      1.64
+Eucalipto         Vaporub            3.52 %       24.58 %      1.88
+Menta             Vaporub            3.17 %       22.65 %      1.73
+Hierbabuena       Menta              2.15 %       21.43 %      1.53
+Lavanda           Toronjil           3.17 %       19.06 %      1.64
+
+La confianza cambia cuando se invierte una regla.
+
+Ejemplo:
+
+Vaporub -> Eucalipto tiene confianza 26.94 %.
+Eucalipto -> Vaporub tiene confianza 24.58 %.
+
+Esto sucede porque existen 219 canastas con Vaporub y 240 con Eucalipto. El
+denominador de la confianza depende del antecedente.
+
+El lift es igual en ambas direcciones para el mismo par, pero la confianza no.
+
+
+8. CÓMO SE INTEGRARÍA EN EL SISTEMA
+----------------------------------------------------------------------
+
+Debes separar entrenamiento e integración.
+
+
+8.1. Entrenamiento o descubrimiento de reglas
+
+Colección:
+pedidos.
+
+Uso:
+Construir las canastas históricas y descubrir relaciones.
+
+Flujo:
+
+pedidos
+-> filtrar completed
+-> construir TID | Items
+-> matriz 0/1
+-> Apriori
+-> reglas con soporte, confianza y lift
+
+
+8.2. Aplicación en la bolsa
+
+Colección:
+usuarios.
+
+Campo:
+cartItems[].productId
+
+Uso:
+Conocer qué producto tiene actualmente el cliente y utilizarlo como
+antecedente para buscar una regla.
+
+usuarios no forma parte del dataset con el que Apriori aprende las reglas.
+Participa después, durante la aplicación.
+
+
+8.3. Mostrar la recomendación
+
+Colección:
+productos.
+
+Uso:
+
+- Obtener el nombre actual.
+- Mostrar la imagen.
+- Mostrar el precio.
+- Revisar existencias.
+- Verificar que status sea active.
+
+productos tampoco forma parte del dataset transaccional mostrado. Se consulta
+después para convertir el resultado del modelo en una tarjeta visible.
+
+
+8.4. Flujo completo en producción
+
+Reglas entrenadas con pedidos
+              +
+producto actual de usuarios.cartItems[]
+              ->
+seleccionar la mejor regla aplicable
+              ->
+obtener la información actual desde productos
+              ->
+mostrar una recomendación Top-1
+
+Ejemplo de interfaz:
+
+"Tienes Vaporub en tu bolsa. También podrías agregar Eucalipto."
+
+
+9. CÓMO SELECCIONAR UNA SOLA RECOMENDACIÓN
+----------------------------------------------------------------------
+
+Apriori puede producir varias reglas. Para devolver Top-1 se propone:
+
+1. Buscar reglas cuyo antecedente coincida con el producto de la bolsa.
+2. Excluir productos que ya están en la bolsa.
+3. Conservar reglas con soporte suficiente.
+4. Conservar reglas con lift mayor que 1.
+5. Ordenar por confianza y lift.
+6. Consultar productos y descartar candidatos inactivos o sin existencias.
+7. Mostrar el mejor candidato restante.
+
+Top-1 es una decisión de interfaz y negocio.
+Apriori sigue siendo capaz de generar varias reglas.
+
+
+10. PREGUNTAS PROBABLES Y RESPUESTAS PREPARADAS
+----------------------------------------------------------------------
+
+PREGUNTA 1. ¿Por qué solamente usan la colección pedidos?
+
+Respuesta:
+"Porque Apriori necesita canastas históricas y la colección pedidos ya guarda
+los productos dentro de items[]. No necesitamos usuarios ni reseñas para
+descubrir qué productos se compran juntos."
+
+
+PREGUNTA 2. ¿Por qué no aparece la colección productos?
+
+Respuesta:
+"El nombre del producto ya está guardado como fotografía histórica dentro de
+pedidos.items[].productName. Productos se utilizará posteriormente para
+mostrar imagen, precio, stock y estado actual, pero no para entrenar Apriori."
+
+
+PREGUNTA 3. ¿Por qué no usan favoritos o reseñas?
+
+Respuesta:
+"Porque eso correspondería a otro enfoque, por ejemplo un recomendador basado
+en contenido o un modelo híbrido. En esta propuesta elegimos exclusivamente
+reglas de asociación para mantener coherencia entre colección, dataset y
+modelo."
+
+
+PREGUNTA 4. ¿El modelo solo recomienda Eucalipto desde Vaporub?
+
+Respuesta:
+"No. Esa es una regla ilustrativa. Apriori encuentra relaciones para varios
+productos, como Toronjil hacia Lavanda, Menta hacia Vaporub e Hierbabuena hacia
+Menta. El resultado depende del antecedente que esté en la bolsa."
+
+
+PREGUNTA 5. ¿Por qué no hay variable Y?
+
+Respuesta:
+"Porque Apriori es no supervisado. No intentamos predecir una etiqueta
+previamente conocida; buscamos patrones de coexistencia entre productos."
+
+
+PREGUNTA 6. ¿Eucalipto podría ser la variable Y?
+
+Respuesta:
+"No en esta formulación. Eucalipto es el consecuente de una regla descubierta,
+no una etiqueta objetivo almacenada para todas las filas."
+
+
+PREGUNTA 7. ¿Apriori es realmente aprendizaje automático?
+
+Respuesta:
+"Se considera una técnica de minería de datos y aprendizaje no supervisado
+para descubrir patrones frecuentes. No es un predictor supervisado, pero sí
+aprende relaciones a partir de los datos."
+
+
+PREGUNTA 8. ¿Apriori predice qué comprará exactamente el cliente?
+
+Respuesta:
+"No garantiza una compra futura. Estima qué productos son buenos candidatos
+porque históricamente aparecen asociados. La recomendación debe entenderse
+como una sugerencia, no como una certeza."
+
+
+PREGUNTA 9. ¿Qué diferencia hay entre asociación y causalidad?
+
+Respuesta:
+"Asociación significa que dos productos aparecen juntos más de lo esperado.
+Causalidad significaría que comprar uno provoca comprar el otro. Apriori solo
+demuestra asociación, no causalidad."
+
+
+PREGUNTA 10. ¿Qué significa soporte?
+
+Respuesta:
+"Es el porcentaje de todas las canastas que contiene juntos el antecedente y
+el consecuente. En el ejemplo son 59 de 1,674 canastas, equivalente a 3.52 por
+ciento."
+
+
+PREGUNTA 11. ¿Qué significa confianza?
+
+Respuesta:
+"De las canastas que contienen el antecedente, indica qué proporción también
+contiene el consecuente. Son 59 de las 219 canastas con Vaporub, equivalente a
+26.94 por ciento."
+
+
+PREGUNTA 12. ¿Qué significa lift?
+
+Respuesta:
+"Compara la confianza contra la frecuencia general del consecuente. Un lift de
+1.88 indica una asociación positiva y significa que la combinación aparece
+1.88 veces más de lo esperado."
+
+
+PREGUNTA 13. ¿Lift de 1.88 significa 188 por ciento de probabilidad?
+
+Respuesta:
+"No. Es una razón respecto al valor esperado. La probabilidad condicional del
+ejemplo está representada por la confianza, que es 26.94 por ciento."
+
+
+PREGUNTA 14. ¿Por qué la confianza cambia al invertir la regla?
+
+Respuesta:
+"Porque cambia el antecedente y, por lo tanto, el denominador. Hay 219 canastas
+con Vaporub y 240 con Eucalipto."
+
+
+PREGUNTA 15. ¿Qué significa TID?
+
+Respuesta:
+"Transaction ID. Es el identificador de la compra y proviene directamente de
+pedidos.reference."
+
+
+PREGUNTA 16. ¿TID es una variable X?
+
+Respuesta:
+"No. TID únicamente identifica y separa las canastas. Las X reales son las
+columnas de presencia o ausencia de productos."
+
+
+PREGUNTA 17. ¿Items viene directamente de la base?
+
+Respuesta:
+"Los nombres individuales sí vienen de pedidos.items[].productName, pero la
+lista Items se deriva en Jupyter agrupando los productos del mismo reference."
+
+
+PREGUNTA 18. ¿Qué significa status completed?
+
+Respuesta:
+"Significa que el pedido terminó su proceso. Se utiliza para evitar aprender
+de borradores, pedidos pendientes o cancelados."
+
+
+PREGUNTA 19. ¿Por qué no usan cantidad?
+
+Respuesta:
+"Apriori clásico analiza presencia o ausencia. Si una persona compra tres
+unidades del mismo producto, ese producto aparece una vez en la canasta. Un
+modelo ponderado por cantidades sería una extensión diferente."
+
+
+PREGUNTA 20. ¿Por qué muestran productName y no productId?
+
+Respuesta:
+"La diapositiva usa productName para que el dataset sea comprensible. En una
+implementación productId sería el identificador interno más robusto y
+productName sería la etiqueta visual. Ambos están disponibles dentro de los
+artículos del pedido."
+
+
+PREGUNTA 21. ¿Los datos son reales?
+
+Respuesta:
+"Son datos sintéticos verosímiles y reproducibles, generados con la estructura
+del sistema y compatibles con MongoDB local. No son datos de compradores
+reales ni demuestran todavía el rendimiento definitivo."
+
+
+PREGUNTA 22. ¿Entonces la regla es confiable para producción?
+
+Respuesta:
+"Es válida como demostración del proceso sobre el dataset sintético. Antes de
+usarla comercialmente habría que entrenar y validar nuevamente con pedidos
+reales acumulados, revisar estabilidad y medir resultados en el sistema."
+
+
+PREGUNTA 23. ¿El modelo ya está integrado en INHALEX?
+
+Respuesta:
+"Sí, como prototipo académico. La libreta construye las canastas y entrena
+Apriori; después exporta un artefacto versionado que consume el backend. Cuando
+la bolsa contiene un producto, el sistema busca una regla aplicable, descarta
+el aroma que ya está en la bolsa, comprueba que la recomendación esté activa y
+disponible, y la muestra sin agregarla automáticamente. Como el entrenamiento
+actual usa datos sintéticos, la interfaz lo identifica expresamente."
+
+
+PREGUNTA 24. ¿Qué hace actualmente la libreta principal?
+
+Respuesta:
+"La libreta vigente 01_apriori_inhalex ejecuta la transformación de compras a
+canastas tid,items, entrena reglas A hacia B, muestra soporte, confianza y lift,
+realiza una evaluación cronológica 80/20 y valida el artefacto que utiliza el
+backend."
+
+
+PREGUNTA 25. ¿Cómo se aplicaría si el cliente tiene dos aromas en la bolsa?
+
+Respuesta:
+"Se pueden buscar reglas para cada producto o reglas cuyo antecedente contenga
+el conjunto de productos. Después se combinan candidatos, se eliminan los que
+ya están en la bolsa y se selecciona el mejor."
+
+
+PREGUNTA 26. ¿Qué pasa si no existe una regla para un aroma?
+
+Respuesta:
+"El sistema no debe inventar una asociación. Puede no mostrar recomendación o
+utilizar como respaldo un producto popular de la misma línea. Ese respaldo ya
+sería una estrategia adicional."
+
+
+PREGUNTA 27. ¿Qué ocurre con un cliente nuevo?
+
+Respuesta:
+"Apriori no necesita historial personal. En cuanto el cliente agrega un aroma
+a su bolsa puede aplicar una regla general. Si su bolsa está vacía, se puede
+usar popularidad como estrategia de arranque."
+
+
+PREGUNTA 28. ¿Apriori utiliza datos personales?
+
+Respuesta:
+"No para esta propuesta. El entrenamiento necesita identificadores de pedidos
+y productos, pero no nombre, correo, teléfono ni dirección del cliente."
+
+
+PREGUNTA 29. ¿Cada cuánto se actualizarían las reglas?
+
+Respuesta:
+"Dependería del volumen de pedidos. Se podrían recalcular semanal o
+mensualmente para incorporar cambios en las preferencias y temporadas."
+
+
+PREGUNTA 30. ¿Cómo se evaluaría en producción?
+
+Respuesta:
+"Primero revisaríamos soporte, confianza, lift y estabilidad temporal. En la
+interfaz mediríamos cuántas recomendaciones se muestran, cuántas reciben clic,
+cuántas se agregan a la bolsa y cuántas terminan en compra."
+
+
+PREGUNTA 31. ¿Por qué un soporte de 3.52 por ciento puede ser útil?
+
+Respuesta:
+"El catálogo tiene 16 productos y muchas combinaciones posibles. No basta con
+mirar soporte aislado; la regla también tiene confianza de 26.94 por ciento y
+lift de 1.88. Además, el umbral final debe validarse con más datos reales."
+
+
+PREGUNTA 32. ¿Qué umbrales utilizarían?
+
+Respuesta:
+"Como punto inicial académico podemos usar soporte mínimo de 2 por ciento,
+confianza mínima de 10 por ciento y lift mayor que 1. En 1,674 canastas, un
+soporte de 2 por ciento exige aproximadamente 34 compras conjuntas. Después se
+ajustan los umbrales según el volumen real, la cantidad de reglas y su
+estabilidad."
+
+
+PREGUNTA 33. ¿Qué diferencia existe entre Apriori y similitud por contenido?
+
+Respuesta:
+"Apriori usa productos comprados juntos. La similitud por contenido usaría
+categoría, aromas, beneficios o descripción. En esta propuesta elegimos
+Apriori; por eso esas variables no aparecen en el dataset."
+
+
+PREGUNTA 34. ¿Qué diferencia existe entre Apriori y filtrado colaborativo?
+
+Respuesta:
+"Apriori analiza canastas y reglas A hacia B. El filtrado colaborativo compara
+patrones entre usuarios y productos. Esta propuesta no necesita una matriz
+usuario-producto."
+
+
+PREGUNTA 35. ¿MongoDB realiza Apriori directamente?
+
+Respuesta:
+"MongoDB almacena los documentos. La extracción puede realizarse mediante una
+agregación y Apriori se ejecutaría en Jupyter o en un servicio de análisis."
+
+
+PREGUNTA 36. ¿Todos los aromas tienen una recomendación con esos umbrales?
+
+Respuesta:
+"No necesariamente. Con soporte mínimo de 2 por ciento, confianza mínima de
+10 por ciento y lift mayor que 1 se obtienen 12 reglas dirigidas y solamente
+7 de los 16 productos aparecen como antecedente. Si un producto no tiene una
+regla suficientemente sólida, el sistema no debe inventarla."
+
+
+PREGUNTA 37. ¿El generador sintético ya incluía afinidades entre productos?
+
+Respuesta:
+"Sí. El generador fue diseñado con afinidades plausibles para producir un
+dataset útil académicamente. Apriori puede redescubrir esos patrones, lo cual
+valida la transformación y el funcionamiento del proceso, pero no demuestra
+todavía un comportamiento real del mercado."
+
+
+11. PREGUNTAS SOBRE EL PROCESO EN JUPYTER
+----------------------------------------------------------------------
+
+¿Qué haría la libreta?
+
+1. Conectarse a MongoDB local.
+2. Consultar la colección pedidos.
+3. Aplicar el filtro status = completed.
+4. Extraer items[].
+5. Crear el dataset TID | Items.
+6. Convertirlo en matriz binaria.
+7. Ejecutar Apriori.
+8. Generar reglas.
+9. Calcular soporte, confianza y lift.
+10. Ordenar reglas y exportar los resultados.
+
+Pseudocódigo conceptual:
+
+pedidos_completados = pedidos donde status == "completed"
+
+por cada pedido:
+    TID = reference
+    Items = lista única de items[].productName
+
+matriz = convertir Items a columnas 0/1
+conjuntos_frecuentes = Apriori(matriz)
+reglas = generar_reglas(conjuntos_frecuentes)
+reglas_validas = reglas donde lift > 1
+
+
+12. LIMITACIONES QUE DEBES RECONOCER
+----------------------------------------------------------------------
+
+1. Los datos actuales son sintéticos.
+
+2. El catálogo tiene solamente 16 productos, por lo que la cantidad de
+combinaciones útiles es limitada.
+
+3. Una asociación no demuestra causalidad.
+
+4. Apriori no entiende por sí mismo aromas, beneficios o descripciones.
+
+5. Apriori no construye un perfil individual profundo.
+
+6. Un producto nuevo sin pedidos todavía no tendrá reglas.
+
+7. Las reglas pueden cambiar por temporada y deben recalcularse.
+
+8. Debe evitarse recomendar productos inactivos o sin stock mediante una
+consulta posterior a productos.
+
+Reconocer estas limitaciones no debilita la propuesta. Demuestra que entiendes
+qué puede y qué no puede hacer el modelo.
+
+
+13. FRASES QUE CONVIENE EVITAR Y CÓMO CORREGIRLAS
+----------------------------------------------------------------------
+
+Evita:
+"Apriori predice que el cliente comprará Eucalipto."
+
+Mejor:
+"Apriori identifica a Eucalipto como candidato porque aparece asociado con
+Vaporub."
+
+
+Evita:
+"Vaporub provoca que las personas compren Eucalipto."
+
+Mejor:
+"Vaporub y Eucalipto presentan una asociación positiva en las canastas."
+
+
+Evita:
+"Eucalipto es nuestra variable Y."
+
+Mejor:
+"No hay variable Y; Eucalipto es el consecuente de una regla descubierta."
+
+
+Evita:
+"Usamos usuarios, favoritos y reseñas para Apriori."
+
+Mejor:
+"Apriori se entrena con pedidos. Usuarios y productos intervienen después en
+la integración."
+
+
+Evita:
+"Son compras reales de nuestros clientes."
+
+Mejor:
+"Son datos sintéticos compatibles con la estructura operacional."
+
+
+Evita:
+"MongoDB tiene tablas."
+
+Mejor:
+"MongoDB tiene colecciones y documentos."
+
+
+Evita:
+"Top-1 es el algoritmo."
+
+Mejor:
+"Apriori es el algoritmo y Top-1 es la forma de presentar una sola salida."
+
+
+14. VERSIÓN MUY CORTA POR SI PIDEN RESUMIR EN 30 SEGUNDOS
+----------------------------------------------------------------------
+
+"La propuesta utiliza Apriori para recomendar un aroma complementario. De la
+colección pedidos tomamos únicamente compras completadas, convertimos cada
+pedido en una canasta TID | Items y buscamos productos que aparecen juntos.
+No existe variable Y porque es aprendizaje no supervisado. Por ejemplo,
+Vaporub hacia Eucalipto tiene confianza de 26.94 por ciento y lift de 1.88. Al
+integrarlo, el sistema puede leer el aroma de la bolsa y mostrar una sola
+recomendación complementaria."
+
+
+15. TARJETA FINAL PARA MEMORIZAR
+----------------------------------------------------------------------
+
+1. Fuente del entrenamiento: pedidos.
+
+2. Filtro: status = completed.
+
+3. TID: pedidos.reference.
+
+4. Items: lista derivada de pedidos.items[].productName.
+
+5. Dataset: una fila por canasta.
+
+6. X: presencia de productos.
+
+7. Y: no aplica.
+
+8. Modelo: Apriori, aprendizaje no supervisado.
+
+9. Regla principal: Vaporub -> Eucalipto.
+
+10. Cálculos: 59 canastas conjuntas; soporte 3.52 %; confianza 26.94 %;
+lift 1.88.
+
+11. Resultado: recomendar un aroma Top-1.
+
+12. Entrenamiento: pedidos.
+
+13. Integración: usuarios para la bolsa y productos para mostrar/validar.
+
+14. Datos: sintéticos, no clientes reales.
+
+15. Apriori encuentra asociación, no causalidad ni certeza de compra.
+
+
+FIN DEL GUION
+======================================================================

@@ -1,12 +1,13 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "inhalex bienestar",
+      "invocationName": "respiro que alivia",
       "intents": [
         {
           "name": "ExploreLinesIntent",
           "slots": [],
           "samples": [
+            "líneas",
             "explorar líneas",
             "ver líneas",
             "abrir líneas",
@@ -60,6 +61,7 @@
           "name": "ShowCatalogIntent",
           "slots": [],
           "samples": [
+            "catálogo",
             "ver catálogo",
             "abrir catálogo",
             "mostrar catálogo",
@@ -131,10 +133,19 @@
           ],
           "samples": [
             "muéstrame {product}",
+            "muéstrame el aroma {product}",
             "quiero ver {product}",
+            "quiero ver el aroma {product}",
             "ver {product}",
+            "ver aroma {product}",
             "abrir {product}",
             "seleccionar {product}",
+            "buscar {product}",
+            "buscar aroma {product}",
+            "quiero buscar {product}",
+            "tienen {product}",
+            "tienen aroma de {product}",
+            "hay aroma de {product}",
             "dame información de {product}",
             "dame detalles de {product}",
             "para qué sirve {product}",
@@ -152,6 +163,18 @@
             "aroma {product}",
             "detalle del aroma {product}",
             "información del aroma {product}"
+          ]
+        },
+        {
+          "name": "ProductNameIntent",
+          "slots": [
+            {
+              "name": "product",
+              "type": "PRODUCTOS_INHALEX"
+            }
+          ],
+          "samples": [
+            "{product}"
           ]
         },
         {
@@ -252,6 +275,7 @@
           "name": "ShowFavoritesIntent",
           "slots": [],
           "samples": [
+            "favoritos",
             "ver favoritos",
             "abrir favoritos",
             "mostrar favoritos",
@@ -267,6 +291,7 @@
           "name": "ShowBagIntent",
           "slots": [],
           "samples": [
+            "bolsa",
             "ver bolsa",
             "abrir bolsa",
             "mostrar bolsa",
@@ -409,6 +434,7 @@
                 "value": "toronjil",
                 "synonyms": [
                   "melisa",
+                  "torongil",
                   "aroma de toronjil",
                   "esencia de toronjil",
                   "toronjil natural"
@@ -426,6 +452,8 @@
                   "mirra azafran",
                   "mirra con azafrán",
                   "mirra con azafran",
+                  "mira y azafrán",
+                  "mira y azafran",
                   "aroma de mirra y azafrán",
                   "aroma de mirra y azafran"
                 ]
@@ -451,6 +479,8 @@
                   "anis",
                   "anís estrellado",
                   "anis estrellado",
+                  "anís de estrella",
+                  "anis de estrella",
                   "aroma de anís estrella",
                   "aroma de anis estrella"
                 ]
@@ -460,6 +490,7 @@
               "name": {
                 "value": "eucalipto",
                 "synonyms": [
+                  "eucalito",
                   "eucalipto natural",
                   "aroma de eucalipto",
                   "esencia de eucalipto",
@@ -471,6 +502,8 @@
               "name": {
                 "value": "lavanda",
                 "synonyms": [
+                  "la banda",
+                  "labanda",
                   "floral lavanda",
                   "aroma de lavanda",
                   "esencia de lavanda",
@@ -515,6 +548,7 @@
                 "synonyms": [
                   "gingibre",
                   "gengibre",
+                  "jenjibre",
                   "aroma de jengibre",
                   "esencia de jengibre",
                   "jengibre natural"
@@ -539,6 +573,8 @@
                 "value": "hierbabuena",
                 "synonyms": [
                   "hierba buena",
+                  "yerbabuena",
+                  "yerba buena",
                   "aroma de hierbabuena",
                   "esencia de hierbabuena",
                   "hierbabuena natural"
@@ -552,6 +588,8 @@
                   "vaporizante",
                   "vapo rub",
                   "vapor rub",
+                  "vaporú",
+                  "vaporu",
                   "aroma vaporub",
                   "aroma de vaporub",
                   "esencia vaporub"
@@ -564,6 +602,7 @@
                 "synonyms": [
                   "rosas",
                   "rosa de castilla",
+                  "rosa castilla",
                   "rosas castilla",
                   "aroma de rosas",
                   "aroma de rosas de castilla",
@@ -576,6 +615,8 @@
                 "value": "bugambilia",
                 "synonyms": [
                   "bugambilias",
+                  "buganvilia",
+                  "buganvilla",
                   "aroma de bugambilia",
                   "esencia de bugambilia",
                   "bugambilia natural"
@@ -590,6 +631,56 @@
                   "aroma de manzanilla",
                   "esencia de manzanilla"
                 ]
+              }
+            },
+            {
+              "name": {
+                "value": "naranja"
+              }
+            },
+            {
+              "name": {
+                "value": "manzana"
+              }
+            },
+            {
+              "name": {
+                "value": "pino"
+              }
+            },
+            {
+              "name": {
+                "value": "encino"
+              }
+            },
+            {
+              "name": {
+                "value": "vainilla"
+              }
+            },
+            {
+              "name": {
+                "value": "limón"
+              }
+            },
+            {
+              "name": {
+                "value": "coco"
+              }
+            },
+            {
+              "name": {
+                "value": "fresa"
+              }
+            },
+            {
+              "name": {
+                "value": "jazmín"
+              }
+            },
+            {
+              "name": {
+                "value": "sándalo"
               }
             }
           ]

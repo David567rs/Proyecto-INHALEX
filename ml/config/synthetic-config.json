@@ -1,0 +1,13 @@
+{
+  "generation_run_id": "inhalex-synthetic-v1",
+  "random_seed": 20260717,
+  "start_date": "2025-01-01",
+  "end_date": "2026-06-30",
+  "customer_count": 300,
+  "order_count": 1800,
+  "target_horizon_months": 1,
+  "timezone": "America/Mexico_City",
+  "currency": "MXN",
+  "base_unit_price": 60,
+  "output_directory": "ml/exports"
+}

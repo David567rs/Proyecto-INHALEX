@@ -1,0 +1,2625 @@
+﻿GUION COMPLETO PARA EXPONER LA PROPUESTA 2 DE INHALEX
+PREDICCIÓN MENSUAL DE DEMANDA POR PRODUCTO
+======================================================================
+
+Propósito de este archivo
+----------------------------------------------------------------------
+
+Este documento sirve para estudiar y comprender la propuesta 2. No está
+pensado para leerse completo durante la exposición. Primero memoriza el guion
+principal y el recorrido de la diapositiva; después utiliza las explicaciones,
+el glosario y las preguntas probables para prepararte por si el doctor pide
+un detalle técnico.
+
+La idea central que no debes olvidar es la siguiente:
+
+"Usamos los pedidos históricos para estimar cuántas unidades solicitarán los
+clientes de cada producto durante el siguiente mes calendario."
+
+
+ESTADO ACTUAL DEL DATASET
+----------------------------------------------------------------------
+
+El archivo:
+
+ml/exports/dataset_prediccion_demanda.csv
+
+ya utiliza la estructura mensual explicada en este documento: una fila por
+producto y mes objetivo, variables X construidas únicamente con meses
+anteriores y una Y con las unidades solicitadas durante el mes objetivo. Sus
+validaciones también comprueban los rezagos, la fecha de corte y el ejemplo de
+Lavanda.
+
+Las cifras vigentes son 288 filas base y 240 filas con tres meses completos de
+historia. No deben utilizarse las cifras antiguas de 8,736 filas producto-día,
+lags de siete días ni el objetivo de "la siguiente semana".
+
+ESTADO ACTUAL DE LA IMPLEMENTACIÓN
+----------------------------------------------------------------------
+
+La propuesta ya funciona como prototipo académico. La libreta
+02_demanda_mensual_inhalex entrena una regresión Ridge con división
+cronológica, compara el resultado contra el promedio móvil de tres meses y
+exporta el pronóstico que consume el backend. Para julio de 2026 genera 16
+predicciones. En validación obtuvo MAE 8.3657, RMSE 10.5702 y R² 0.2319; el
+baseline obtuvo MAE 9.7708, por lo que Ridge mejoró 14.3813% sobre estos datos
+sintéticos. El panel administrativo combina el intervalo pronosticado con el
+stock actual y sugiere cuánto reabastecer. Actualizar el panel vuelve a leer el
+inventario y el artefacto; el reentrenamiento se realiza con el pipeline ML.
+
+
+FICHA RÁPIDA DE LA PROPUESTA
+----------------------------------------------------------------------
+
+Nombre:
+Predicción mensual de demanda por producto.
+
+Tipo de aplicación:
+Regresión supervisada.
+
+Horizonte:
+El siguiente mes calendario completo.
+
+Unidad de análisis:
+Una fila representa un producto y un mes objetivo.
+
+Colecciones principales:
+- pedidos
+- productos
+- reseñas_producto
+
+Colección principal para construir la demanda:
+pedidos.
+
+Variable Y:
+Y_unidades_solicitadas_mes.
+
+Definición de Y:
+Suma de pedidos.items[].requestedQuantity del producto durante el mes
+objetivo, usando pedidos válidos.
+
+Pedidos considerados válidos:
+- pending_review
+- confirmed
+- completed
+
+Pedidos excluidos:
+- draft
+- cancelled
+
+Variables X visibles:
+- categoria
+- demanda_lag_1m
+- demanda_lag_2m
+- demanda_lag_3m
+- promedio_demanda_3m
+- pedidos_lag_1m
+- precio_promedio_lag_1m
+- rating_promedio_al_corte
+- cantidad_resenas_al_corte
+- numero_mes
+
+Variables de control o identificación:
+- fecha_corte
+- mes_objetivo
+- product_id
+- producto
+
+Modelo inicial propuesto:
+RandomForestRegressor, comparado contra una línea base sencilla.
+
+Métrica principal:
+MAE o error absoluto medio, expresado en unidades.
+
+Resultado de ejemplo:
+"Para junio de 2026 se estiman aproximadamente 55 unidades de Lavanda."
+
+Utilidad:
+Planear el reabastecimiento antes de iniciar el siguiente mes y reducir
+faltantes o sobreinventario.
+
+Datos actuales:
+- 16 productos.
+- 18 meses, de enero de 2025 a junio de 2026.
+- 288 filas producto-mes.
+- 240 filas entrenables después de exigir tres meses previos.
+
+Advertencia obligatoria:
+Los datos actuales son sintéticos y reproducibles. Permiten demostrar la
+estructura y el proceso, pero todavía no prueban el comportamiento de clientes
+reales ni la precisión comercial del modelo.
+
+
+1. GUION PRINCIPAL PARA DECIR DURANTE LA EXPOSICIÓN
+----------------------------------------------------------------------
+
+Duración aproximada: entre 2 y 3 minutos.
+
+"Nuestra segunda propuesta es una regresión supervisada para predecir la
+demanda mensual de cada producto. En lugar de intentar predecir un día o una
+semana, cada fila del dataset representa un producto y un mes objetivo.
+
+Por ejemplo, para predecir junio de 2026 hacemos un corte al 31 de mayo. Esto
+significa que las variables X solamente pueden utilizar información disponible
+hasta ese día. La información de junio no se usa como entrada; durante el
+entrenamiento se utiliza únicamente como la variable Y que el modelo debe
+aprender.
+
+La colección principal es pedidos. De cada pedido utilizamos su estado, su
+fecha de creación y el arreglo items. Dentro de cada item encontramos el
+identificador del producto, la cantidad originalmente solicitada y el precio
+aplicado. Conservamos los pedidos pending_review, confirmed y completed;
+excluimos los borradores y cancelados.
+
+Utilizamos requestedQuantity porque queremos predecir demanda solicitada, es
+decir, lo que el cliente quiso comprar. Esto no es exactamente lo mismo que
+las unidades surtidas: si un cliente solicita diez unidades y solamente se
+pueden surtir seis, la demanda fue diez aunque la venta satisfecha haya sido
+seis.
+
+La colección productos aporta el catálogo, el nombre y la categoría, y también
+nos permite crear las filas de los meses donde un producto tuvo cero pedidos.
+La colección reseñas_producto aporta la calificación y la cantidad de reseñas
+que existían hasta la fecha de corte.
+
+En Jupyter desanidamos items, agrupamos requestedQuantity por producto y mes,
+completamos con cero los meses sin pedidos y calculamos los tres meses
+anteriores, su promedio, el número de pedidos, el precio promedio y las
+reseñas acumuladas. Todas estas son variables X.
+
+La variable Y es la suma de unidades solicitadas durante el mes objetivo. En
+el ejemplo verificado de Lavanda, para junio tenemos como antecedentes 46
+unidades en mayo, 51 en abril y 55 en marzo. Su promedio fue 50.67. En mayo
+apareció en 38 pedidos, tuvo un precio promedio de 56.48 pesos y acumulaba 31
+reseñas con una calificación de 4.29. La Y observada en junio fue de 55
+unidades.
+
+Con 16 productos y 18 meses obtenemos 288 filas base. Al exigir tres meses
+previos completos quedan 240 filas entrenables. Se entrena un solo modelo
+global y la evaluación se hace de manera cronológica, nunca mezclando meses
+futuros con meses pasados.
+
+Finalmente, después de predecir la demanda, el sistema consulta el stock actual
+y el stock mínimo para sugerir cuánto convendría reabastecer. El administrador
+mantiene la decisión final. Los resultados actuales son una demostración con
+datos sintéticos y no una garantía de precisión con clientes reales." 
+
+
+2. CÓMO RECORRER VISUALMENTE LA DIAPOSITIVA
+----------------------------------------------------------------------
+
+Recorre la diapositiva de izquierda a derecha. No saltes directamente a la
+tabla porque primero debes explicar de dónde salen los datos.
+
+PASO 1. Señala el título.
+
+Di:
+"Es una regresión supervisada que estima la demanda de cada producto para el
+siguiente mes calendario."
+
+Aclara que "mensual" significa un mes del calendario, por ejemplo junio
+completo, y no una ventana móvil de treinta días iniciada en cualquier fecha.
+
+
+PASO 2. Señala la colección pedidos.
+
+Di:
+"Pedidos es la fuente principal. De aquí obtenemos cuándo se realizó la
+solicitud, qué producto se pidió, cuántas unidades solicitó el cliente y qué
+precio se aplicó."
+
+Señala especialmente:
+- status
+- createdAt
+- items[].productId
+- items[].requestedQuantity
+- items[].unitPrice
+
+
+PASO 3. Señala la colección productos.
+
+Di:
+"Productos aporta el catálogo y la categoría. También permite crear una fila
+con cero cuando un producto no tuvo pedidos en determinado mes."
+
+No digas que productos aporta el precio histórico ni el inventario histórico.
+Los campos price y stockAvailable describen principalmente el estado actual.
+
+
+PASO 4. Señala reseñas_producto.
+
+Di:
+"De las reseñas calculamos la calificación y la cantidad de opiniones que el
+producto ya tenía al cerrar el mes anterior. No utilizamos reseñas futuras."
+
+
+PASO 5. Señala la flecha.
+
+Di:
+"En Jupyter filtramos pedidos válidos, separamos cada elemento de items,
+agrupamos por producto y mes, completamos meses con cero y calculamos los
+rezagos o lags."
+
+La flecha representa transformación de datos; no es otra colección y no
+significa que MongoDB ya guarde directamente todas las columnas finales.
+
+
+PASO 6. Señala el primer bloque de la tabla.
+
+Di:
+"Esta fila representa Lavanda para el mes objetivo junio de 2026. El corte es
+el 31 de mayo, por lo que 46 corresponde a mayo, 51 a abril y 55 a marzo."
+
+
+PASO 7. Señala el segundo bloque de la tabla.
+
+Di:
+"También usamos los 38 pedidos de mayo, el precio promedio de 56.48 pesos, el
+rating acumulado de 4.29, las 31 reseñas existentes y el número de mes."
+
+
+PASO 8. Señala el cuadro verde de variables X.
+
+Di:
+"Las X son todos los datos que el modelo conoce antes de comenzar junio."
+
+
+PASO 9. Señala el cuadro morado de variable Y.
+
+Di:
+"La Y es el valor que se quiere predecir: 55 unidades solicitadas durante
+junio. En entrenamiento conocemos ese valor; cuando predigamos el próximo mes,
+todavía será desconocido."
+
+
+PASO 10. Señala las cifras y la utilidad.
+
+Di:
+"El dataset mensual tiene 288 filas base y 240 entrenables. El resultado se
+utiliza para planear el reabastecimiento, pero el administrador conserva la
+decisión final."
+
+
+3. QUÉ PROBLEMA RESUELVE LA PROPUESTA
+----------------------------------------------------------------------
+
+INHALEX necesita decidir con anticipación cuánto producto debe tener
+disponible. Si compra o produce menos de lo necesario puede tener faltantes;
+si compra demasiado puede acumular inventario sin movimiento.
+
+La propuesta intenta responder:
+
+"¿Cuántas unidades solicitarán los clientes de cada aroma durante el siguiente
+mes?"
+
+La salida no toma automáticamente una decisión comercial. Primero produce una
+estimación de demanda. Después, el sistema compara esa estimación con:
+
+- productos.stockAvailable
+- productos.stockReserved
+- productos.stockMin
+- un margen o stock de seguridad definido por el negocio
+
+Una fórmula sencilla de apoyo sería:
+
+reabastecimiento sugerido =
+máximo(0, demanda pronosticada + stock de seguridad - stock disponible)
+
+Ejemplo:
+
+Demanda pronosticada: 55 unidades.
+Stock disponible: 20 unidades.
+Stock de seguridad: 10 unidades.
+
+55 + 10 - 20 = 45 unidades sugeridas de reabastecimiento.
+
+La fórmula se aplica después de la predicción. El stock actual no se copia en
+las filas históricas del dataset.
+
+
+4. CONCEPTOS FUNDAMENTALES
+----------------------------------------------------------------------
+
+4.1. ¿Qué es aprendizaje supervisado?
+
+Es un tipo de aprendizaje donde cada ejemplo histórico contiene:
+
+- Variables X: información conocida.
+- Variable Y: respuesta correcta observada.
+
+El modelo aprende una relación entre X y Y. En esta propuesta, X contiene el
+historial anterior al mes y Y contiene la demanda real del mes objetivo.
+
+
+4.2. ¿Por qué es regresión?
+
+Porque queremos obtener una cantidad numérica:
+
+- 18 unidades
+- 42 unidades
+- 55 unidades
+
+Una clasificación solamente devolvería etiquetas como baja, media o alta.
+Eso no indicaría cuántas unidades conviene preparar.
+
+Aunque la demanda observada sea un conteo entero, el modelo de regresión puede
+producir un valor decimal, por ejemplo 54.7. La aplicación puede mostrarlo como
+aproximadamente 55 unidades.
+
+
+4.3. ¿Qué es una variable X?
+
+Es una característica que el modelo puede consultar antes del periodo que
+quiere predecir. Por ejemplo, para predecir junio, la demanda de mayo sí puede
+ser X, pero la demanda de junio no.
+
+
+4.4. ¿Qué es la variable Y?
+
+Es el valor que el modelo intenta aprender y predecir. La Y de esta propuesta
+es:
+
+Y_unidades_solicitadas_mes
+
+Durante el entrenamiento, Y ya existe porque usamos meses históricos. Para un
+mes futuro todavía no existe y será sustituida por la predicción del modelo.
+
+
+4.5. ¿Qué es el mes objetivo?
+
+Es el mes cuya demanda se desea predecir.
+
+Ejemplo:
+
+fecha_corte = 31/05/2026
+mes_objetivo = 2026-06
+
+
+4.6. ¿Qué es la fecha de corte?
+
+Es el último instante del que se permite usar información para formar X. Todo
+lo ocurrido después del corte pertenece al futuro desde el punto de vista de
+esa fila.
+
+Para junio de 2026, la fecha de corte es el 31 de mayo de 2026 a las 23:59:59.
+
+
+4.7. ¿Qué significa una fila producto-mes?
+
+Significa que una fila representa una combinación específica:
+
+un producto + un mes objetivo
+
+Ejemplos:
+
+Lavanda + junio de 2026
+Eucalipto + junio de 2026
+Toronjil + julio de 2025
+
+No representa un cliente ni un pedido individual.
+
+
+4.8. ¿Qué es un lag o rezago?
+
+Es el valor observado un periodo antes.
+
+Para un objetivo mensual:
+
+- lag_1m = mes inmediatamente anterior.
+- lag_2m = dos meses anteriores.
+- lag_3m = tres meses anteriores.
+
+Para predecir junio:
+
+- M-1 es mayo.
+- M-2 es abril.
+- M-3 es marzo.
+
+Los lags no son campos guardados directamente en MongoDB. Se calculan en
+Jupyter después de ordenar los meses de cada producto.
+
+
+4.9. ¿Qué es un promedio móvil de tres meses?
+
+Es el promedio de los tres lags:
+
+promedio_3m = (lag_1m + lag_2m + lag_3m) / 3
+
+Resume el nivel reciente de demanda y reduce el efecto de un solo mes
+extraordinario.
+
+
+4.10. ¿Qué es un dataset o DataFrame?
+
+El dataset es la tabla final utilizada para entrenar y evaluar el modelo. Un
+DataFrame es la estructura tabular que utiliza pandas dentro de Jupyter para
+representar esa información.
+
+MongoDB no necesita convertirse en una base relacional. Solamente extraemos y
+transformamos los documentos a una tabla analítica.
+
+
+4.11. ¿Qué es una colección MongoDB?
+
+Es un conjunto de documentos del mismo dominio. Se parece conceptualmente a
+una tabla, aunque sus documentos pueden contener arreglos y objetos anidados.
+
+Ejemplos en INHALEX:
+
+- pedidos contiene documentos de pedidos.
+- productos contiene documentos del catálogo.
+- reseñas_producto contiene documentos de opiniones.
+
+
+4.12. ¿Qué significa desanidar o unwind?
+
+Un pedido contiene un arreglo items[]. Desanidar significa producir una fila
+temporal por cada elemento del arreglo.
+
+Documento original:
+
+Pedido A:
+- Lavanda, 2 unidades.
+- Eucalipto, 1 unidad.
+
+Después de desanidar:
+
+Pedido A | Lavanda   | 2
+Pedido A | Eucalipto | 1
+
+Esto permite agrupar las cantidades por producto.
+
+
+4.13. ¿Qué significa agrupar?
+
+Agrupar significa reunir los registros que pertenecen al mismo producto y mes
+y calcular un resumen.
+
+Ejemplo:
+
+Lavanda en junio:
+pedido A = 2 unidades
+pedido B = 1 unidad
+pedido C = 3 unidades
+
+Total mensual = 2 + 1 + 3 = 6 unidades.
+
+
+4.14. ¿Qué significa unir por identificador?
+
+Significa relacionar documentos de diferentes colecciones utilizando el mismo
+producto.
+
+En pedidos y reseñas, productId se almacena como texto. En productos, _id es
+un ObjectId de MongoDB. En Jupyter ambos deben normalizarse a texto antes de
+unir:
+
+str(productos._id) = pedidos.items[].productId
+
+
+4.15. ¿Qué es fuga de información o data leakage?
+
+Ocurre cuando una variable X utiliza datos que todavía no existirían al
+momento de hacer la predicción.
+
+Ejemplo incorrecto:
+Usar una reseña escrita el 20 de junio para predecir la demanda de junio con
+un corte al 31 de mayo.
+
+Eso permitiría que el modelo "viera el futuro" y produciría una evaluación
+engañosamente buena.
+
+
+4.16. ¿Qué significa corte cronológico?
+
+Significa entrenar con meses antiguos y evaluar con meses posteriores. No se
+mezclan aleatoriamente los meses como si el tiempo no importara.
+
+
+4.17. Diferencia entre demanda solicitada y venta surtida
+
+Demanda solicitada:
+Lo que el cliente intentó comprar. Se conserva en requestedQuantity.
+
+Venta surtida:
+Lo que efectivamente pudo entregarse. El backend la aproxima como:
+
+quantity - backorderQuantity
+
+Ejemplo:
+
+requestedQuantity = 10
+quantity = 10
+backorderQuantity = 4
+
+Demanda solicitada = 10.
+Unidades surtidas = 6.
+
+Si el objetivo es reabastecer, requestedQuantity evita ocultar las unidades
+que el cliente quería pero no estaban disponibles inmediatamente.
+
+
+5. EXPLICACIÓN DE CADA COLECCIÓN Y CAMPO
+----------------------------------------------------------------------
+
+5.1. Colección pedidos
+
+Nombre exacto en MongoDB:
+pedidos
+
+Modelo de NestJS:
+Order
+
+Archivo del esquema:
+Server/src/modules/orders/schemas/order.schema.ts
+
+Es la colección principal porque registra la solicitud del cliente y guarda
+una fotografía de cada producto en el momento del pedido.
+
+Documento simplificado:
+
+{
+  _id: ObjectId(...),
+  reference: "SYN-ORD-000123",
+  status: "completed",
+  createdAt: ISODate(...),
+  items: [
+    {
+      productId: "...",
+      productName: "Lavanda",
+      category: "linea-insomnio",
+      requestedQuantity: 2,
+      quantity: 2,
+      unitPrice: 60,
+      subtotal: 120,
+      backorderQuantity: 0
+    }
+  ]
+}
+
+
+5.1.1. pedidos._id
+
+Es el identificador interno único que MongoDB asigna al documento. Normalmente
+es un ObjectId.
+
+Uso en el dataset:
+Contar pedidos distintos y evitar duplicarlos después de desanidar items[].
+
+No debe utilizarse como una cantidad numérica para el modelo.
+
+
+5.1.2. pedidos.reference
+
+Es el identificador legible del pedido, por ejemplo:
+
+SYN-ORD-000123
+
+En los datos sintéticos:
+- SYN significa synthetic o sintético.
+- ORD significa order o pedido.
+- 000123 es un consecutivo con ceros a la izquierda.
+
+Uso:
+Auditoría, conteo de pedidos distintos y rastreo de la procedencia de un
+registro.
+
+
+5.1.3. pedidos.status
+
+Representa la etapa actual del pedido.
+
+Valores posibles:
+
+draft:
+Borrador. Todavía no representa una solicitud enviada y se excluye.
+
+pending_review:
+El cliente ya confirmó el pedido desde la web y está pendiente de revisión
+comercial o manual. Se incluye porque ya expresa una solicitud real.
+
+confirmed:
+El equipo revisó y aceptó el pedido. Se incluye.
+
+completed:
+El pedido terminó su proceso y fue marcado como entregado. Se incluye.
+
+cancelled:
+El pedido fue cancelado. En esta primera definición se excluye para modelar
+demanda válida de pedidos activos o concluidos.
+
+La regla de filtrado será:
+
+status IN [pending_review, confirmed, completed]
+
+Matiz importante:
+Un pedido cancelado pudo expresar interés inicial. En una versión futura se
+podría analizar la razón de cancelación o construir una variable separada. En
+esta propuesta se excluye para mantener una definición clara y reproducible.
+
+
+5.1.4. pedidos.createdAt
+
+Es una fecha generada automáticamente por Mongoose cuando se crea el documento.
+
+Uso:
+Ubicar la solicitud en un mes calendario.
+
+Ejemplo:
+
+createdAt = 2026-05-18
+
+Ese pedido contribuye a mayo de 2026.
+
+Se utiliza createdAt porque pending_review todavía no tiene confirmedAt. En
+una implementación futura podría añadirse submittedAt para registrar de forma
+explícita el instante exacto en que el cliente envió el pedido.
+
+Las fechas deben convertirse a la zona America/Mexico_City antes de extraer
+el mes, para evitar que un pedido cercano a medianoche cambie de mes por una
+conversión UTC incorrecta.
+
+
+5.1.5. pedidos.items[]
+
+Es un arreglo de productos dentro del pedido.
+
+Los corchetes [] significan que puede contener varios elementos. Un pedido con
+tres aromas tendrá tres objetos dentro de items.
+
+Para el dataset mensual se desanida este arreglo.
+
+
+5.1.6. pedidos.items[].productId
+
+Identifica el producto al que pertenece el item.
+
+En el esquema del pedido se almacena como string. En productos, _id es un
+ObjectId. Antes de unir colecciones se convierten ambos a texto.
+
+Uso:
+- Agrupar demanda por producto.
+- Unir pedidos con productos.
+- Unir pedidos con reseñas_producto.
+
+
+5.1.7. pedidos.items[].productName
+
+Es el nombre del producto guardado al crear el pedido.
+
+Se considera una fotografía histórica. Aunque posteriormente se modificara el
+nombre del catálogo, el pedido conserva el nombre original.
+
+Uso:
+Revisión humana y trazabilidad. No se usa como una magnitud numérica.
+
+
+5.1.8. pedidos.items[].category
+
+Es la categoría guardada dentro del item, por ejemplo:
+
+linea-insomnio
+
+También es una fotografía del momento del pedido.
+
+Uso:
+Validar la categoría histórica. Para crear la cuadrícula completa se utiliza
+productos.category. La propuesta asume que las categorías del catálogo son
+relativamente estables.
+
+
+5.1.9. pedidos.items[].requestedQuantity
+
+Es la cantidad originalmente solicitada por el cliente.
+
+Es el campo más importante para definir demanda.
+
+Ejemplo:
+El cliente intenta pedir 5 unidades. requestedQuantity conserva 5 incluso si
+el sistema tiene que ajustar o dejar una parte en backorder.
+
+Uso:
+- Calcular la demanda mensual.
+- Construir los lags.
+- Construir el promedio de tres meses.
+- Construir la variable Y.
+
+
+5.1.10. pedidos.items[].quantity
+
+Es la cantidad aceptada en el pedido después de aplicar reglas de inventario.
+Puede ser diferente de requestedQuantity cuando no se permite surtir todo lo
+solicitado.
+
+No es la variable Y principal porque podría esconder demanda no satisfecha.
+
+
+5.1.11. pedidos.items[].backorderQuantity
+
+Es la parte de quantity que queda pendiente por falta de inventario inmediato.
+
+El backend calcula unidades surtidas aproximadamente como:
+
+max(quantity - backorderQuantity, 0)
+
+No se utiliza para la Y de demanda solicitada, pero permite explicar la
+diferencia entre demanda y venta satisfecha.
+
+
+5.1.12. pedidos.items[].unitPrice
+
+Es el precio unitario efectivo guardado al crear el pedido.
+
+El backend utiliza promoPrice cuando existe una promoción activa y válida;
+de lo contrario utiliza price. Por eso unitPrice funciona como una fotografía
+del precio realmente aplicado al cliente.
+
+Uso:
+Calcular precio_promedio_lag_1m.
+
+Ventaja:
+No cambia si después se actualiza productos.price.
+
+
+5.1.13. pedidos.items[].subtotal
+
+Es quantity multiplicada por unitPrice en el pedido.
+
+No es necesario utilizarlo como X en esta primera versión. Para precio promedio
+usamos unitPrice ponderado por requestedQuantity.
+
+
+5.1.14. Campos de pedidos que no son variables del modelo
+
+Datos personales como nombre, correo, teléfono y dirección no son necesarios
+para predecir demanda por producto. Deben excluirse del dataset analítico para
+reducir riesgos de privacidad y evitar variables sin justificación.
+
+
+5.2. Colección productos
+
+Nombre exacto en MongoDB:
+productos
+
+Modelo de NestJS:
+Product
+
+Archivo del esquema:
+Server/src/modules/products/schemas/product.schema.ts
+
+Documento simplificado:
+
+{
+  _id: ObjectId(...),
+  name: "Lavanda",
+  category: "linea-insomnio",
+  status: "active",
+  price: 60,
+  stockAvailable: 20,
+  stockMin: 10,
+  createdAt: ISODate(...)
+}
+
+
+5.2.1. productos._id
+
+Identificador único del producto en MongoDB.
+
+Uso:
+Relacionarlo con pedidos.items[].productId y reseñas_producto.productId.
+
+Conversión necesaria:
+
+str(productos._id)
+
+porque los otros productId se almacenan como texto.
+
+
+5.2.2. productos.name
+
+Nombre actual del producto.
+
+Uso:
+- Mostrar un nombre legible.
+- Generar una predicción entendible para el administrador.
+
+No debe convertirse arbitrariamente en 1, 2, 3. Si entra al modelo, se trata
+como variable categórica.
+
+
+5.2.3. productos.category
+
+Cadena que representa la línea del producto.
+
+Valores existentes:
+- linea-insomnio
+- linea-ansiedad-estres
+- linea-resfriado
+- linea-verde
+- linea-estimulante
+
+Uso:
+Variable X categórica. Puede ayudar a compartir patrones entre productos de
+una misma línea.
+
+Antes de entrenar se codifica, por ejemplo, con one-hot encoding.
+
+
+5.2.4. productos.status
+
+Valores:
+- draft
+- active
+- archived
+
+Uso:
+Determinar qué productos deben recibir una predicción futura.
+
+Para la inferencia se predicen principalmente productos active. Para el
+entrenamiento histórico, un producto archivado puede conservarse si tuvo
+demanda real en el pasado.
+
+Matiz:
+status también representa el estado actual del documento. Para reconstruir el
+catálogo de una fecha antigua con máxima precisión haría falta un historial de
+activación y archivado.
+
+
+5.2.5. productos.createdAt
+
+Indica desde cuándo existe el documento del producto.
+
+Uso:
+En producción puede servir como aproximación para evitar crear meses con cero
+antes de que el producto existiera.
+
+No tiene sentido afirmar que un producto tuvo cero demanda seis meses antes de
+ser lanzado; en ese periodo todavía no formaba parte del catálogo.
+
+Sin embargo, createdAt indica cuándo se creó el documento, no necesariamente
+la fecha comercial exacta de lanzamiento. Lo ideal sería conservar activatedAt
+o un historial de estados. Además, el seed sintético actual reutiliza productos
+locales ya existentes y sus createdAt no representan el inicio de enero de
+2025; por eso la cuadrícula sintética se guía por la configuración del
+generador, como se explica en la sección 6.2.
+
+
+5.2.6. productos.price
+
+Es el precio actual del catálogo.
+
+No debe copiarse a todas las filas históricas porque puede haber cambiado. En
+la propuesta usamos pedidos.items[].unitPrice para reconstruir el precio
+aplicado en pedidos anteriores.
+
+
+5.2.7. productos.promoActive, promoPrice y promoEndsAt
+
+Describen la promoción actual o vigente en el documento. No forman un historial
+mensual completo y no existe promoStartsAt en el esquema actual.
+
+Por eso no aparecen como variables X históricas.
+
+Para utilizar promociones correctamente haría falta una colección como:
+
+producto_promociones_historial
+- productId
+- regularPrice
+- promoPrice
+- startsAt
+- endsAt
+
+
+5.2.8. productos.stockAvailable
+
+Existencias disponibles actuales.
+
+No representa necesariamente las existencias que había en cada mes pasado.
+No debe copiarse retroactivamente en el dataset.
+
+Uso correcto en esta versión:
+Consultar después de obtener la predicción para calcular una sugerencia de
+reabastecimiento.
+
+
+5.2.9. productos.stockReserved
+
+Unidades actualmente reservadas para pedidos.
+
+Puede utilizarse después del pronóstico para interpretar la disponibilidad
+real, pero no como un supuesto valor histórico.
+
+
+5.2.10. productos.stockMin
+
+Umbral mínimo configurado para el producto.
+
+Puede funcionar como parte del stock de seguridad al convertir la predicción
+en una recomendación de reabasto.
+
+
+5.2.11. productos.rating y productos.reviews
+
+Son resúmenes actuales. Podrían incluir opiniones publicadas después de una
+fecha histórica.
+
+Para evitar fuga temporal no se copian directamente. Se reconstruyen desde
+reseñas_producto utilizando createdAt y la fecha de corte.
+
+
+5.3. Colección reseñas_producto
+
+Nombre exacto en MongoDB:
+reseñas_producto
+
+Modelo de NestJS:
+ProductReview
+
+Archivo del esquema:
+Server/src/modules/reviews/schemas/product-review.schema.ts
+
+Documento simplificado:
+
+{
+  productId: "...",
+  rating: 5,
+  status: "published",
+  createdAt: ISODate(...)
+}
+
+
+5.3.1. reseñas_producto.productId
+
+Identifica el producto evaluado. Se guarda como string.
+
+Uso:
+Unir la reseña con la fila del producto.
+
+
+5.3.2. reseñas_producto.rating
+
+Calificación entre 1 y 5.
+
+Uso:
+Calcular el promedio acumulado que existía hasta la fecha de corte.
+
+
+5.3.3. reseñas_producto.status
+
+Valores:
+- published
+- hidden
+
+Solamente se consideran published. Una reseña oculta no debe influir en el
+rating visible ni en la variable del modelo.
+
+
+5.3.4. reseñas_producto.createdAt
+
+Fecha en la que se creó la reseña.
+
+Uso:
+Excluir cualquier reseña posterior a la fecha de corte.
+
+Filtro para junio de 2026:
+
+status = published
+createdAt <= 31/05/2026 23:59:59
+
+
+5.3.5. Campos personales que no se utilizan
+
+userId, userEmail y userName no son necesarios para esta propuesta. La unidad
+de análisis es producto-mes, no cliente. Se excluyen del dataset.
+
+
+5.4. Colección ventas_agregadas
+
+Esta colección existe y puede guardar periodos daily, weekly y monthly.
+
+Campos relevantes:
+- productId
+- periodType
+- periodStart
+- periodEnd
+- totalUnits
+- totalRevenue
+- totalOrders
+
+No se utiliza como fuente de la Y principal porque totalUnits representa
+unidades surtidas de pedidos completed, no toda la cantidad originalmente
+solicitada.
+
+Si utilizáramos ventas_agregadas.totalUnits, el nombre correcto sería:
+
+"Predicción mensual de unidades vendidas o surtidas."
+
+Puede utilizarse para comparar demanda solicitada contra ventas satisfechas y
+medir demanda no cubierta.
+
+
+5.5. Colección producto_inventario_movimientos
+
+Nombre exacto:
+producto_inventario_movimientos
+
+Campos relevantes:
+- productId
+- type
+- quantity
+- nextAvailable
+- createdAt
+
+En producción podría reconstruir stock_al_corte buscando el último
+nextAvailable anterior a la fecha de corte.
+
+No aparece en el dataset principal actual por dos razones:
+
+1. El generador sintético calcula inventario diario en memoria, pero el seeder
+   operativo actual no crea un historial mensual completo equivalente en esta
+   colección.
+2. El uso más claro del stock es después de la predicción, para convertir la
+   demanda estimada en una sugerencia de reabastecimiento.
+
+No se debe afirmar que stock histórico sale de MongoDB mientras ese historial
+no esté completamente poblado.
+
+
+5.6. ¿Qué significa SYN-PROD-006?
+
+En el CSV sintético, SYN-PROD-006 es una llave analítica estable:
+
+- SYN = synthetic o sintético.
+- PROD = product o producto.
+- 006 = consecutivo del catálogo sintético.
+
+Corresponde a Lavanda en el conjunto académico.
+
+No es un ObjectId real de MongoDB y no se utiliza como una cantidad. Cuando el
+seed se importa a MongoDB, el script enlaza la llave sintética con el producto
+del catálogo y guarda en pedidos.items[].productId el ObjectId convertido a
+texto.
+
+Si el dataset se extrae directamente de MongoDB, product_id debe contener ese
+identificador real normalizado como string. El nombre SYN se conserva en la
+diapositiva para que el ejemplo sea reproducible y no dependa de un ObjectId
+específico de una instalación.
+
+
+6. TRANSFORMACIÓN EXACTA DE MONGODB AL DATASET
+----------------------------------------------------------------------
+
+La transformación puede realizarse con una consulta de MongoDB y pandas en una
+libreta de Jupyter. Los nombres finales como demanda_lag_1m no son colecciones
+nuevas; son columnas analíticas calculadas.
+
+
+6.1. Definir el periodo de estudio
+
+Periodo sintético actual:
+
+inicio = enero de 2025
+fin = junio de 2026
+
+Cantidad de meses:
+
+12 meses de 2025 + 6 meses de 2026 = 18 meses
+
+Se debe trabajar con meses calendario completos y con la zona horaria
+America/Mexico_City.
+
+
+6.2. Extraer el catálogo
+
+De productos se obtienen, como mínimo:
+
+- _id
+- name
+- category
+- status
+
+En producción, createdAt o un campo futuro activatedAt permitirían conocer el
+momento desde el que un producto formó parte del catálogo.
+
+Matiz del seed actual:
+El seeder sintético enlaza los 16 productos que ya existen por su slug, pero
+no modifica sus fechas createdAt para que coincidan con enero de 2025. Por eso,
+para la demostración sintética se utiliza el periodo definido en la
+configuración del generador y se considera que los 16 productos pertenecen al
+catálogo durante los 18 meses. No se deben eliminar meses sintéticos usando el
+createdAt local de esos documentos.
+
+
+6.3. Extraer pedidos
+
+Campos mínimos:
+
+- _id
+- reference
+- status
+- createdAt
+- items
+
+Filtro de la versión académica:
+
+status IN [pending_review, confirmed, completed]
+
+Los datos personales del cliente no se extraen porque no son necesarios.
+
+
+6.4. Determinar el estado del pedido
+
+Para el dataset sintético actual se utiliza el status guardado en el documento
+al momento de la extracción.
+
+En una implementación histórica más rigurosa conviene reconstruir el estado
+que tenía el pedido en cada fecha de corte utilizando statusNotes[].status y
+statusNotes[].createdAt. Esto evita un caso como el siguiente:
+
+1. El pedido estaba activo el 31 de mayo.
+2. Fue cancelado el 3 de junio.
+3. Una extracción hecha en julio solamente ve status = cancelled.
+
+Usar sin cuidado el estado final podría cambiar retroactivamente la definición
+de mayo. Para el prototipo sintético, las notas cronológicas existen y este
+refinamiento puede incorporarse cuando se implemente la libreta mensual.
+
+
+6.5. Desanidar items[]
+
+Cada pedido se convierte temporalmente en tantas filas como items contenga.
+
+Ejemplo original:
+
+reference = SYN-ORD-000001
+items = [Lavanda x 2, Eucalipto x 1]
+
+Resultado temporal:
+
+SYN-ORD-000001 | Lavanda   | 2
+SYN-ORD-000001 | Eucalipto | 1
+
+En pandas puede utilizarse explode; en MongoDB, $unwind.
+
+
+6.6. Normalizar fechas
+
+MongoDB almacena Date en UTC. Antes de extraer el mes se convierte createdAt a
+America/Mexico_City.
+
+Después se crea una columna mensual, por ejemplo:
+
+periodo_mes = 2026-05
+
+Sin esta conversión, un pedido realizado cerca de medianoche podría asignarse
+al mes equivocado.
+
+
+6.7. Normalizar identificadores
+
+productos._id es ObjectId.
+pedidos.items[].productId es string.
+reseñas_producto.productId es string.
+
+En Jupyter:
+
+productos["product_id"] = productos["_id"].astype(str)
+
+Nunca se debe unir por nombre como primera opción. Dos productos podrían tener
+nombres parecidos o el nombre podría cambiar.
+
+
+6.8. Agrupar demanda por producto y mes
+
+Para cada combinación product_id + periodo_mes se calcula:
+
+demanda_mes = SUM(items[].requestedQuantity)
+
+También se calcula:
+
+pedidos_mes = COUNT(DISTINCT pedidos._id)
+
+El conteo debe ser distinto porque, después de desanidar, un pedido puede
+generar varias filas temporales.
+
+
+6.9. Calcular precio promedio mensual
+
+Se utiliza un promedio ponderado:
+
+precio_promedio_mes =
+SUM(requestedQuantity × unitPrice) / SUM(requestedQuantity)
+
+El promedio solo existe cuando SUM(requestedQuantity) es mayor que cero.
+
+Si no hubo demanda:
+- precio_promedio_mes queda como dato ausente, no como cero.
+- después puede propagarse el último precio observado del pasado.
+- o puede imputarse dentro del pipeline usando únicamente entrenamiento.
+
+Colocar cero significaría incorrectamente que el producto fue gratuito.
+
+
+6.10. Crear la cuadrícula productos por meses
+
+La consulta de pedidos solo produce filas cuando ocurrió una solicitud. Para
+incorporar meses sin pedidos se crea el producto cartesiano:
+
+16 productos × 18 meses = 288 combinaciones
+
+Después se hace una unión izquierda con la demanda agrupada.
+
+Cuando no existe un pedido para una combinación válida:
+
+demanda_mes = 0
+pedidos_mes = 0
+
+Los ceros no son pedidos inventados. Representan la ausencia comprobada de
+solicitudes de un producto que pertenecía al catálogo durante ese mes.
+
+
+6.11. Ordenar cada serie
+
+Se ordena por:
+
+product_id
+periodo_mes
+
+Sin orden cronológico, shift(1) podría tomar el mes incorrecto.
+
+
+6.12. Crear los lags
+
+Conceptualmente:
+
+demanda_lag_1m = demanda_mes desplazada 1 posición dentro de cada producto
+demanda_lag_2m = demanda_mes desplazada 2 posiciones
+demanda_lag_3m = demanda_mes desplazada 3 posiciones
+
+Pseudocódigo de pandas:
+
+monthly["demanda_lag_1m"] = (
+    monthly.groupby("product_id")["demanda_mes"].shift(1)
+)
+
+monthly["demanda_lag_2m"] = (
+    monthly.groupby("product_id")["demanda_mes"].shift(2)
+)
+
+monthly["demanda_lag_3m"] = (
+    monthly.groupby("product_id")["demanda_mes"].shift(3)
+)
+
+Primero se completa la cuadrícula y después se calculan los lags. Si se
+eliminaran los meses con cero, shift(1) significaría "último mes con ventas" y
+no "mes calendario anterior".
+
+
+6.13. Crear promedio_demanda_3m
+
+Fórmula:
+
+(demanda_lag_1m + demanda_lag_2m + demanda_lag_3m) / 3
+
+No debe incluir demanda_mes del mes objetivo. Solamente resume los tres meses
+anteriores.
+
+El promedio contiene información derivada de los mismos lags. Puede resultar
+redundante para ciertos modelos lineales, pero ayuda a representar de manera
+directa el nivel reciente. Su utilidad real debe comprobarse mediante
+evaluación o selección de variables.
+
+
+6.14. Desplazar pedidos y precio
+
+La tabla mensual primero contiene pedidos_mes y precio_promedio_mes del propio
+periodo. Para predecir el periodo M se utilizan los valores de M-1:
+
+pedidos_lag_1m = pedidos_mes.shift(1)
+precio_promedio_lag_1m = precio_promedio_mes.shift(1)
+
+Los desplazamientos se realizan dentro de cada product_id.
+
+
+6.15. Calcular reseñas al corte
+
+Para cada producto y mes objetivo:
+
+1. Determinar fecha_corte.
+2. Filtrar reseñas con status = published.
+3. Conservar createdAt <= fecha_corte.
+4. Contar las reseñas.
+5. Promediar rating.
+
+Resultados:
+
+cantidad_resenas_al_corte
+rating_promedio_al_corte
+
+Si no existen reseñas:
+
+cantidad_resenas_al_corte = 0
+rating_promedio_al_corte = NA
+
+El valor NA puede imputarse en el pipeline con una estrategia ajustada solo en
+los datos de entrenamiento. También puede añadirse una variable binaria
+tiene_resenas para distinguir un producto sin opiniones.
+
+
+6.16. Crear variables del calendario
+
+De mes_objetivo se obtiene:
+
+numero_mes = 1 a 12
+
+Para algunos modelos conviene evitar tratar diciembre y enero como extremos
+lejanos. Puede transformarse en:
+
+mes_sin = sin(2 × pi × (numero_mes - 1) / 12)
+mes_cos = cos(2 × pi × (numero_mes - 1) / 12)
+
+En la diapositiva se muestra numero_mes porque es más fácil de explicar. En la
+libreta se puede comparar one-hot encoding contra la representación seno/coseno.
+
+
+6.17. Colocar la variable Y
+
+La fila se etiqueta con el mes objetivo. Por eso:
+
+Y_unidades_solicitadas_mes = demanda_mes del propio mes objetivo
+
+Las X utilizan M-1, M-2 y M-3. Y utiliza M.
+
+Ejemplo:
+
+fila objetivo junio:
+X = marzo, abril, mayo y acumulados hasta mayo
+Y = demanda observada en junio
+
+
+6.18. Eliminar filas sin historia suficiente
+
+Los primeros tres meses de cada producto no tienen M-1, M-2 y M-3 completos.
+Se conservan en el dataset base para auditoría, pero no se usan en el baseline
+que exige los tres lags.
+
+18 meses - 3 meses iniciales = 15 filas entrenables por producto
+
+15 × 16 = 240 filas entrenables
+
+
+6.19. Separar X, Y y columnas de control
+
+Columnas de control:
+- fecha_corte
+- mes_objetivo
+- product_id
+- producto
+
+Variables X:
+- categoria
+- demanda_lag_1m
+- demanda_lag_2m
+- demanda_lag_3m
+- promedio_demanda_3m
+- pedidos_lag_1m
+- precio_promedio_lag_1m
+- rating_promedio_al_corte
+- cantidad_resenas_al_corte
+- numero_mes o su codificación
+
+Variable Y:
+- Y_unidades_solicitadas_mes
+
+Metadatos de auditoría que pueden conservarse, pero no entran al modelo:
+- generation_run_id
+- is_synthetic
+
+
+7. DICCIONARIO COMPLETO DE COLUMNAS DEL DATASET
+----------------------------------------------------------------------
+
+7.1. fecha_corte
+
+Rol:
+Control temporal; no es la respuesta.
+
+Ejemplo:
+2026-05-31
+
+Origen:
+Calculada en Jupyter como el final del mes anterior a mes_objetivo.
+
+Pregunta que responde:
+"¿Hasta qué momento estaba permitido conocer información?"
+
+
+7.2. mes_objetivo
+
+Rol:
+Identificación temporal de la fila.
+
+Ejemplo:
+2026-06
+
+Origen:
+Secuencia mensual creada en Jupyter.
+
+Pregunta que responde:
+"¿Qué mes intenta estimar esta fila?"
+
+
+7.3. product_id
+
+Rol:
+Llave de agrupación y unión.
+
+Origen operativo:
+pedidos.items[].productId relacionado con productos._id.
+
+Ejemplo sintético visible:
+SYN-PROD-006
+
+No es una cantidad ni debe convertirse en el número 6 para el modelo.
+
+
+7.4. producto
+
+Rol:
+Etiqueta legible y columna de auditoría.
+
+Origen:
+productos.name o el snapshot pedidos.items[].productName.
+
+Ejemplo:
+Lavanda
+
+No se introduce como texto sin transformar a Random Forest.
+
+
+7.5. categoria
+
+Rol:
+Variable X categórica.
+
+Origen principal:
+productos.category.
+
+Origen histórico de respaldo:
+pedidos.items[].category.
+
+Ejemplo almacenado:
+linea-insomnio
+
+Transformación:
+One-hot encoding u otra codificación categórica.
+
+
+7.6. demanda_lag_1m
+
+Nombre corto de la diapositiva:
+dem. M-1
+
+Rol:
+Variable X numérica.
+
+Origen:
+Suma mensual de requestedQuantity, desplazada un mes por producto.
+
+Significado:
+Unidades solicitadas durante el mes inmediatamente anterior.
+
+Para junio:
+M-1 = mayo.
+
+
+7.7. demanda_lag_2m
+
+Nombre corto:
+dem. M-2
+
+Rol:
+Variable X numérica.
+
+Significado:
+Unidades solicitadas dos meses antes.
+
+Para junio:
+M-2 = abril.
+
+
+7.8. demanda_lag_3m
+
+Nombre corto:
+dem. M-3
+
+Rol:
+Variable X numérica.
+
+Significado:
+Unidades solicitadas tres meses antes.
+
+Para junio:
+M-3 = marzo.
+
+
+7.9. promedio_demanda_3m
+
+Nombre corto:
+prom. 3M
+
+Rol:
+Variable X numérica derivada.
+
+Fórmula:
+(lag_1m + lag_2m + lag_3m) / 3
+
+Significado:
+Nivel promedio de demanda durante los tres meses anteriores.
+
+
+7.10. pedidos_lag_1m
+
+Nombre corto:
+pedidos M-1
+
+Rol:
+Variable X numérica.
+
+Origen:
+Conteo distinto de pedidos._id o reference en M-1.
+
+No se cuentan filas desanidadas porque un pedido no debe duplicarse.
+
+
+7.11. precio_promedio_lag_1m
+
+Nombre corto:
+precio M-1
+
+Rol:
+Variable X numérica.
+
+Origen:
+pedidos.items[].unitPrice y requestedQuantity.
+
+Fórmula:
+SUM(requestedQuantity × unitPrice) / SUM(requestedQuantity)
+
+Significado:
+Precio promedio efectivo por unidad durante el mes anterior.
+
+Si no hubo pedidos:
+Queda ausente; no se convierte automáticamente en cero.
+
+
+7.12. rating_promedio_al_corte
+
+Nombre corto:
+rating al corte
+
+Rol:
+Variable X numérica.
+
+Origen:
+Promedio de reseñas_producto.rating publicadas hasta fecha_corte.
+
+Rango esperado:
+1 a 5 cuando hay reseñas.
+
+
+7.13. cantidad_resenas_al_corte
+
+Nombre corto:
+reseñas al corte
+
+Rol:
+Variable X numérica.
+
+Origen:
+Conteo de documentos published en reseñas_producto hasta fecha_corte.
+
+Significado:
+Cantidad de evidencia que respalda el rating.
+
+
+7.14. numero_mes
+
+Nombre corto:
+núm. mes
+
+Rol:
+Variable X de calendario antes de codificación.
+
+Origen:
+Mes extraído de mes_objetivo.
+
+Valores:
+1 a 12.
+
+Ejemplo:
+junio = 6.
+
+
+7.15. Y_unidades_solicitadas_mes
+
+Nombre corto:
+Y: unidades mes
+
+Rol:
+Variable objetivo de regresión.
+
+Origen:
+SUM(pedidos.items[].requestedQuantity) del producto durante el mes objetivo,
+con pedidos válidos.
+
+Significado:
+Cantidad numérica que el modelo intenta predecir.
+
+Restricción de negocio:
+No puede ser negativa.
+
+Presentación:
+El modelo puede generar decimal; la interfaz lo redondea o lo expresa como
+aproximación sin alterar el valor usado para evaluación.
+
+
+7.16. generation_run_id
+
+Rol:
+Metadato de auditoría del generador sintético.
+
+No es X ni Y.
+
+Permite saber qué ejecución produjo una fila.
+
+
+7.17. is_synthetic
+
+Rol:
+Indicador de procedencia.
+
+Valor actual:
+true
+
+No entra al modelo. Sirve para impedir que los datos sintéticos se confundan
+con observaciones reales de producción.
+
+
+8. EJEMPLO VERIFICADO: LAVANDA PARA JUNIO DE 2026
+----------------------------------------------------------------------
+
+Esta fila fue recalculada desde:
+
+ml/exports/operational-seed.json
+
+y contrastada con el mapeo del seeder de NestJS. No son números elegidos para
+decorar la diapositiva.
+
+Producto sintético:
+SYN-PROD-006 = Lavanda
+
+Categoría:
+linea-insomnio
+
+Fecha de corte:
+31/05/2026
+
+Mes objetivo:
+2026-06
+
+Estados incluidos:
+pending_review, confirmed y completed
+
+
+8.1. demanda_lag_1m
+
+Mes:
+mayo de 2026
+
+Unidades solicitadas válidas:
+46
+
+Interpretación:
+Durante mayo se solicitaron 46 unidades de Lavanda en pedidos considerados
+válidos.
+
+
+8.2. demanda_lag_2m
+
+Mes:
+abril de 2026
+
+Unidades:
+51
+
+
+8.3. demanda_lag_3m
+
+Mes:
+marzo de 2026
+
+Unidades:
+55
+
+
+8.4. promedio_demanda_3m
+
+Fórmula:
+
+(46 + 51 + 55) / 3
+= 152 / 3
+= 50.666666...
+
+Valor mostrado:
+50.67
+
+
+8.5. pedidos_lag_1m
+
+Pedidos distintos de mayo que incluyeron Lavanda:
+38
+
+No significa 38 unidades. Significa que 38 documentos de pedido distintos
+contenían Lavanda; algunos pudieron solicitar más de una unidad.
+
+
+8.6. precio_promedio_lag_1m
+
+Suma ponderada del valor de las 46 unidades de mayo:
+$2,598 MXN
+
+Fórmula:
+
+$2,598 / 46 unidades
+= $56.478260...
+
+Valor mostrado:
+$56.48 MXN
+
+La diferencia respecto al precio base de $60 refleja que algunas unidades se
+registraron con precio efectivo promocional. No necesitamos conocer el nombre
+de la promoción para reconstruir el precio pagado.
+
+
+8.7. cantidad_resenas_al_corte
+
+Reseñas de Lavanda creadas antes del 1 de junio de 2026 y publicadas:
+31
+
+
+8.8. rating_promedio_al_corte
+
+Suma de calificaciones:
+133
+
+Cantidad de reseñas:
+31
+
+Fórmula:
+
+133 / 31
+= 4.290322...
+
+Valor mostrado:
+4.29
+
+
+8.9. numero_mes
+
+Junio es el sexto mes:
+
+numero_mes = 6
+
+
+8.10. Variable Y
+
+Unidades solicitadas válidas de Lavanda en junio de 2026:
+55
+
+Pedidos válidos de junio que incluyeron Lavanda:
+44
+
+La Y es 55 unidades, no 44 pedidos.
+
+
+8.11. Fila resumida
+
+corte → mes:
+31/05/2026 → 2026-06
+
+producto / ID:
+Lavanda / SYN-PROD-006
+
+categoría:
+linea-insomnio
+
+dem. M-1:
+46
+
+dem. M-2:
+51
+
+dem. M-3:
+55
+
+prom. 3M:
+50.67
+
+pedidos M-1:
+38
+
+precio M-1:
+$56.48
+
+rating al corte:
+4.29
+
+reseñas al corte:
+31
+
+núm. mes:
+6
+
+Y: unidades mes:
+55
+
+
+8.12. Frase para explicar la fila
+
+"Esta fila representa Lavanda para junio de 2026. Al cerrar mayo, el modelo
+conoce que se solicitaron 46 unidades en mayo, 51 en abril y 55 en marzo, con
+un promedio de 50.67. En mayo apareció en 38 pedidos y tuvo un precio promedio
+de 56.48 pesos. Al corte acumulaba 31 reseñas con rating de 4.29. La respuesta
+histórica que debe aprender es que en junio se solicitaron 55 unidades."
+
+
+8.13. Dos valores 55 que no deben confundirse
+
+demanda_lag_3m = 55:
+Corresponde a marzo.
+
+Y = 55:
+Corresponde a junio.
+
+Coinciden por casualidad, pero representan meses diferentes.
+
+
+9. ENTRENAMIENTO DEL MODELO
+----------------------------------------------------------------------
+
+9.1. Un solo modelo global
+
+No conviene entrenar 16 modelos independientes porque cada producto tendría
+solamente 15 filas mensuales utilizables.
+
+Se entrena un modelo global con las 240 filas de todos los productos. La
+categoría, los lags y las demás variables ayudan a distinguir los patrones.
+
+El resultado sigue siendo individual por producto: para el mes futuro se crea
+una fila de cada aroma y el modelo genera una predicción para cada una.
+
+
+9.2. Modelo inicial
+
+Propuesta comprensible:
+
+RandomForestRegressor
+
+Es un conjunto de árboles de decisión que puede aprender relaciones no
+lineales. No presupone que aumentar una variable produzca siempre el mismo
+cambio en Y.
+
+No se afirma que sea automáticamente el mejor modelo. Debe compararse contra
+alternativas y contra una referencia sencilla.
+
+
+9.3. Línea base
+
+Una referencia razonable es:
+
+prediccion_base = demanda_lag_1m
+
+Es decir, asumir que el siguiente mes será igual al anterior.
+
+El modelo de aprendizaje automático solo aporta valor si reduce el error de
+esa regla simple.
+
+
+9.4. Preparación de variables
+
+Variables numéricas:
+- lags
+- promedio
+- pedidos
+- precio
+- rating
+- reseñas
+
+Variable categórica:
+- categoria
+
+La categoría necesita codificación, por ejemplo OneHotEncoder.
+
+Valores ausentes, especialmente precio o rating, deben tratarse mediante un
+imputador ajustado exclusivamente con el conjunto de entrenamiento.
+
+
+9.5. product_id no es un número ordinal
+
+SYN-PROD-006 no debe convertirse simplemente a 6 y entregarse como cantidad.
+Eso haría suponer que PROD-010 es matemáticamente mayor que PROD-006.
+
+product_id sirve para agrupar y auditar. Si se decide incluir identidad de
+producto como señal, se codifica como categoría.
+
+
+9.6. División cronológica
+
+Forma incorrecta:
+Dividir aleatoriamente las 240 filas.
+
+Forma correcta:
+
+- Entrenamiento: meses más antiguos.
+- Validación: meses posteriores.
+- Prueba: meses más recientes.
+
+Todos los productos del mismo mes deben permanecer en el mismo bloque
+temporal.
+
+
+9.7. Walk-forward
+
+Con pocos meses conviene una validación progresiva:
+
+1. Entrenar hasta cierto mes.
+2. Predecir el siguiente.
+3. Incorporar ese mes al historial.
+4. Repetir.
+
+Esto también se llama walk-forward u origen rodante.
+
+
+9.8. MAE
+
+MAE significa Mean Absolute Error o error absoluto medio.
+
+Ejemplo:
+
+Y real = 55
+predicción = 50
+error absoluto = |55 - 50| = 5 unidades
+
+Un MAE de 6 significa que, en promedio, el modelo se equivoca por seis
+unidades.
+
+
+9.9. RMSE
+
+RMSE penaliza con mayor fuerza los errores grandes. Puede acompañar al MAE,
+pero MAE es más fácil de explicar al administrador.
+
+
+9.10. WAPE
+
+WAPE relaciona el error absoluto total con la demanda total. Es útil cuando
+algunas Y son cero.
+
+No conviene depender únicamente de MAPE porque dividir entre una demanda real
+de cero es imposible o inestable.
+
+
+9.11. Predicciones negativas o decimales
+
+La demanda no puede ser negativa. Para presentar el resultado:
+
+prediccion_valida = max(0, prediccion)
+
+Si el modelo devuelve 54.7, puede mostrarse:
+
+"aproximadamente 55 unidades"
+
+La evaluación debe conservar el valor numérico original antes del redondeo.
+
+
+10. CÓMO SE INTEGRARÍA EN INHALEX
+----------------------------------------------------------------------
+
+10.1. Momento de ejecución
+
+Al cerrar cada mes o durante los últimos días del mes, el sistema actualiza las
+variables y genera el pronóstico para el siguiente mes.
+
+
+10.2. Flujo
+
+1. Leer pedidos, productos y reseñas desde MongoDB.
+2. Regenerar la tabla mensual.
+3. Calcular los lags y acumulados más recientes.
+4. Cargar el modelo entrenado.
+5. Generar una predicción por producto activo.
+6. Consultar stockAvailable, stockReserved y stockMin actuales.
+7. Calcular una sugerencia de reabastecimiento.
+8. Mostrarla al administrador.
+
+
+10.3. Pantalla propuesta
+
+Panel administrativo de ventas e inventario.
+
+Por cada producto podría mostrar:
+
+- Demanda estimada del próximo mes.
+- Stock disponible actual.
+- Stock mínimo o margen de seguridad.
+- Cantidad sugerida de reabasto.
+- Nivel de confianza o intervalo estimado.
+- Histórico mensual y pronóstico.
+
+
+10.4. El administrador conserva la decisión
+
+El modelo funciona como apoyo. No debe realizar compras o modificar inventario
+automáticamente sin reglas de negocio y autorización administrativa.
+
+
+11. CONTEOS DEL CONJUNTO ACTUAL
+----------------------------------------------------------------------
+
+Catálogo sintético:
+16 productos.
+
+Periodo:
+enero de 2025 a junio de 2026.
+
+Meses:
+18.
+
+Filas base:
+
+16 × 18 = 288
+
+Cada producto tiene una fila por cada mes, incluso si la demanda fue cero.
+
+Filas sin los tres lags completos:
+
+3 primeros meses × 16 productos = 48
+
+Filas entrenables:
+
+288 - 48 = 240
+
+Equivalente:
+
+15 meses utilizables × 16 productos = 240
+
+Pedidos sintéticos operativos actuales:
+
+- 1,800 pedidos totales.
+- 1,674 completed.
+- 102 cancelled.
+- 13 confirmed.
+- 11 pending_review.
+
+Con la definición de pedidos válidos:
+
+1,674 + 13 + 11 = 1,698 pedidos válidos.
+
+Estos conteos pertenecen a la ejecución sintética actual y cambiarán si se
+regenera la semilla con otra configuración.
+
+
+12. LIMITACIONES Y COSAS QUE TODAVÍA HACEN FALTA
+----------------------------------------------------------------------
+
+12.1. Los datos son sintéticos
+
+Sirven para validar:
+- estructura
+- extracción
+- fórmulas
+- entrenamiento académico
+- integración conceptual
+
+No demuestran patrones comerciales reales.
+
+
+12.2. Solo existen 18 meses
+
+Es suficiente para un prototipo global sencillo, pero no para aprender con
+confianza una estacionalidad anual repetida varias veces.
+
+Para producción sería recomendable conservar al menos 24 meses y,
+preferentemente, 36 meses o más.
+
+
+12.3. No entrenar un modelo por producto
+
+Quince ejemplos por aroma producirían sobreajuste y resultados inestables.
+
+
+12.4. Historial de promociones faltante
+
+El sistema no conserva todavía una colección completa con inicio, fin, precio
+normal y precio promocional de cada campaña.
+
+unitPrice captura el precio aplicado en pedidos, pero no permite saber qué
+promoción estuvo disponible en días donde no hubo compras.
+
+
+12.5. Historial de inventario sintético incompleto
+
+La colección de movimientos existe, pero el seed actual no exporta toda la
+trayectoria de inventario simulada a MongoDB. Por eso no se utiliza como X en
+la diapositiva corregida.
+
+
+12.6. Motivo de cancelación no estructurado
+
+El pedido puede tener notas, pero no existe un cancellationReason normalizado.
+Excluir cancelled podría subestimar demanda si algunas cancelaciones fueron
+provocadas por falta de stock.
+
+Mejora futura:
+- agregar cancellationReason
+- separar demanda bruta de demanda válida
+- identificar cancelaciones por falta de inventario
+
+
+12.7. Estado histórico
+
+status es el estado actual del pedido. Para reconstruir exactamente cómo se
+veía un pedido al corte se deben utilizar statusNotes y sus fechas.
+
+
+12.8. Productos nuevos
+
+Un aroma recién incorporado no tendrá tres meses de historial. Esto se conoce
+como cold start temporal.
+
+Puede utilizar información de su categoría, precio y productos similares, pero
+su predicción tendrá mayor incertidumbre.
+
+
+12.9. El generador ya exporta el dataset mensual
+
+El generador, el contrato de columnas, las validaciones y la libreta de Jupyter
+ya trabajan con la tabla producto-mes. Cada nueva ejecución vuelve a crear las
+288 filas base y verifica que existan 240 filas con tres rezagos completos.
+
+La llave visible SYN-PROD-006 es una llave analítica sintética compartida por
+los tres datasets. No es el ObjectId hexadecimal de MongoDB. Al sembrar la base
+local se relaciona por slug con el producto existente; en producción se
+utilizaría productos._id convertido a texto para unir las colecciones.
+
+
+12.10. Historial de visibilidad de reseñas
+
+reseñas_producto.status indica si una reseña está published o hidden en el
+momento actual, pero no conserva la fecha exacta en que fue ocultada. Para una
+reconstrucción histórica perfecta haría falta un historial de moderación. Esto
+no altera el ejemplo sintético porque las reseñas generadas están publicadas,
+pero debe reconocerse para una implementación real.
+
+
+13. PREGUNTAS PROBABLES Y RESPUESTAS PREPARADAS
+----------------------------------------------------------------------
+
+PREGUNTA 1:
+¿Qué se quiere predecir exactamente?
+
+RESPUESTA:
+Cuántas unidades solicitarán los clientes de cada producto durante el siguiente
+mes calendario completo.
+
+
+PREGUNTA 2:
+¿Por qué se decidió hacer una predicción mensual?
+
+RESPUESTA:
+Porque el objetivo es planear inventario y reabastecimiento con anticipación.
+La agregación mensual reduce el ruido de días aislados y permite al
+administrador prepararse antes de iniciar el periodo.
+
+
+PREGUNTA 3:
+¿Por qué es regresión y no clasificación?
+
+RESPUESTA:
+Porque queremos una cantidad numérica de unidades. Una clasificación solo
+diría baja, media o alta y no indicaría cuántas unidades preparar.
+
+
+PREGUNTA 4:
+¿Cuál es la variable Y?
+
+RESPUESTA:
+La suma de items[].requestedQuantity del producto durante el mes objetivo en
+pedidos válidos.
+
+
+PREGUNTA 5:
+¿Por qué no se utiliza ventas_agregadas.totalUnits?
+
+RESPUESTA:
+Porque totalUnits representa unidades surtidas de pedidos completed. La
+propuesta mide demanda solicitada, incluso cuando el inventario limitó el
+surtido. Para usar totalUnits tendría que llamarse predicción de ventas
+surtidas.
+
+
+PREGUNTA 6:
+¿Qué diferencia hay entre requestedQuantity y quantity?
+
+RESPUESTA:
+requestedQuantity conserva lo que el cliente pidió originalmente. quantity
+puede ser ajustada por inventario. Por eso requestedQuantity representa mejor
+la demanda.
+
+
+PREGUNTA 7:
+¿Por qué se incluye pending_review?
+
+RESPUESTA:
+Porque en INHALEX el documento se crea en pending_review después de que el
+cliente confirma y envía el pedido desde la web. Ya es una solicitud real.
+
+
+PREGUNTA 8:
+¿Por qué se excluye cancelled?
+
+RESPUESTA:
+La versión base modela demanda válida de pedidos activos o concluidos. Una
+cancelación puede deberse a duplicado, cambio de opinión o decisión comercial.
+Reconocemos que podría subestimarse demanda si se canceló por falta de stock;
+para resolverlo se necesitaría un motivo de cancelación estructurado.
+
+
+PREGUNTA 9:
+¿Qué fecha representa la demanda?
+
+RESPUESTA:
+createdAt, porque registra cuándo se creó y recibió la solicitud. completedAt
+corresponde al final o entrega y sería más apropiado para ventas surtidas.
+
+
+PREGUNTA 10:
+¿De dónde salen las variables X?
+
+RESPUESTA:
+Los hechos base salen de pedidos, productos y reseñas_producto. Jupyter los
+agrupa, desplaza y resume para crear lags, promedios, conteos y acumulados.
+
+
+PREGUNTA 11:
+¿Jupyter inventa los lags?
+
+RESPUESTA:
+No. Los calcula desplazando los totales mensuales obtenidos de requestedQuantity.
+Son transformaciones deterministas del historial.
+
+
+PREGUNTA 12:
+¿Qué significa fecha_corte?
+
+RESPUESTA:
+El último momento del que se permite usar información para X. Para predecir
+junio, el corte es el 31 de mayo.
+
+
+PREGUNTA 13:
+¿Por qué se agregan meses con cero?
+
+RESPUESTA:
+Porque la ausencia de pedidos es un dato real. Sin esas filas, los lags
+saltarían meses y el modelo aprendería solo de periodos con demanda positiva.
+
+
+PREGUNTA 14:
+¿Cómo se obtienen las 288 filas?
+
+RESPUESTA:
+16 productos multiplicados por 18 meses producen 288 combinaciones producto-mes.
+
+
+PREGUNTA 15:
+¿Por qué solo hay 240 entrenables?
+
+RESPUESTA:
+Cada fila necesita tres meses anteriores. Se pierden los tres primeros meses
+de cada producto: 288 menos 48 es igual a 240.
+
+
+PREGUNTA 16:
+¿Por qué usar tres meses y no doce?
+
+RESPUESTA:
+Con solo 18 meses, una ventana de doce dejaría muy pocos ejemplos. Tres meses
+capturan tendencia reciente sin eliminar demasiadas filas. Cuando exista más
+historia deben compararse ventanas de 3, 6 y 12 meses.
+
+
+PREGUNTA 17:
+¿Qué significa pedidos M-1?
+
+RESPUESTA:
+El número de pedidos distintos que incluyeron el producto durante el mes
+anterior. Permite distinguir muchas compras pequeñas de pocos pedidos grandes.
+
+
+PREGUNTA 18:
+¿Cómo se calcula precio M-1?
+
+RESPUESTA:
+Con un promedio ponderado: suma de requestedQuantity por unitPrice, dividida
+entre la suma de requestedQuantity.
+
+
+PREGUNTA 19:
+¿Por qué no usar productos.price?
+
+RESPUESTA:
+Porque es el precio actual. items[].unitPrice queda congelado dentro de cada
+pedido y conserva el precio efectivo histórico.
+
+
+PREGUNTA 20:
+¿Qué pasa si no hubo pedidos y no existe precio promedio?
+
+RESPUESTA:
+El precio queda ausente. Se puede propagar el último precio conocido del pasado
+o imputarlo dentro del conjunto de entrenamiento. Nunca se rellena con precio
+futuro ni con cero.
+
+
+PREGUNTA 21:
+¿Por qué no usar directamente productos.rating?
+
+RESPUESTA:
+Porque representa el resumen actual y podría incluir reseñas futuras. El
+rating histórico se reconstruye desde reseñas_producto hasta la fecha de corte.
+
+
+PREGUNTA 22:
+¿La calificación causa demanda?
+
+RESPUESTA:
+No se afirma causalidad. Se usa como una señal histórica cuya utilidad debe
+comprobarse comparando el error con y sin esa variable.
+
+
+PREGUNTA 23:
+¿Por qué no incluyen stock histórico?
+
+RESPUESTA:
+Porque stockAvailable es actual y el seed todavía no conserva toda la serie de
+movimientos simulados en MongoDB. El stock se consulta después del pronóstico
+para sugerir reabasto.
+
+
+PREGUNTA 24:
+¿Por qué no incluyen promociones?
+
+RESPUESTA:
+Los campos actuales no forman un historial completo con inicio y fin de cada
+campaña. unitPrice captura el precio pagado, pero para modelar promociones se
+necesita una colección histórica.
+
+
+PREGUNTA 25:
+¿Qué modelo se utilizará?
+
+RESPUESTA:
+Como primera alternativa, RandomForestRegressor, comparado contra la referencia
+de usar la demanda del mes anterior. El modelo solo se acepta si reduce el
+error de la referencia.
+
+
+PREGUNTA 26:
+¿Por qué un modelo global?
+
+RESPUESTA:
+Porque cada producto tendría solo 15 ejemplos. Un modelo global aprovecha las
+240 filas y genera después una predicción independiente para cada aroma.
+
+
+PREGUNTA 27:
+¿Por qué no dividir aleatoriamente?
+
+RESPUESTA:
+Porque el problema tiene tiempo. Se debe entrenar con el pasado y probar con
+meses posteriores para simular el uso real y evitar fuga.
+
+
+PREGUNTA 28:
+¿Cómo se evalúa?
+
+RESPUESTA:
+Principalmente con MAE, que indica por cuántas unidades se equivoca el modelo
+en promedio. También pueden reportarse RMSE y WAPE.
+
+
+PREGUNTA 29:
+¿Los datos de Lavanda son reales?
+
+RESPUESTA:
+Son valores calculados del dataset sintético y por eso son verificables dentro
+del proyecto. No son ventas reales de clientes de producción.
+
+
+PREGUNTA 30:
+¿Son suficientes 240 filas?
+
+RESPUESTA:
+Son suficientes para una demostración académica con un modelo global sencillo,
+pero no para afirmar precisión de producción. Conviene reunir entre 24 y 36
+meses reales.
+
+
+PREGUNTA 31:
+¿El modelo decide automáticamente cuánto comprar?
+
+RESPUESTA:
+No. Predice demanda. Después el sistema compara demanda, stock y seguridad y
+presenta una sugerencia. El administrador mantiene la decisión final.
+
+
+PREGUNTA 32:
+¿Qué significa SYN-PROD-006?
+
+RESPUESTA:
+Es una llave sintética reproducible: SYN significa sintético, PROD producto y
+006 es el consecutivo. No es una magnitud ni un dato personal.
+
+
+14. FRASES QUE CONVIENE EVITAR
+----------------------------------------------------------------------
+
+EVITAR:
+"El modelo predice exactamente 55 unidades."
+
+MEJOR:
+"El modelo estima aproximadamente 55 unidades; 55 es la Y histórica del
+ejemplo de entrenamiento."
+
+
+EVITAR:
+"La base ya guarda los lags."
+
+MEJOR:
+"Jupyter calcula los lags a partir de la demanda mensual agregada desde
+pedidos."
+
+
+EVITAR:
+"ventas_agregadas es la demanda."
+
+MEJOR:
+"ventas_agregadas registra unidades surtidas; para demanda solicitada usamos
+requestedQuantity."
+
+
+EVITAR:
+"Los pedidos cancelados nunca son demanda."
+
+MEJOR:
+"La primera definición excluye cancelados para modelar demanda válida; una
+versión futura distinguirá el motivo de cancelación."
+
+
+EVITAR:
+"stockAvailable muestra el stock de cada mes."
+
+MEJOR:
+"stockAvailable muestra el estado actual; el stock se consulta después del
+pronóstico."
+
+
+EVITAR:
+"promoActive indica las promociones históricas."
+
+MEJOR:
+"promoActive describe la promoción actual; falta un historial de campañas."
+
+
+EVITAR:
+"El ID 006 es una variable numérica."
+
+MEJOR:
+"SYN-PROD-006 es una llave de identificación y no tiene orden cuantitativo."
+
+
+EVITAR:
+"Los datos son de clientes reales."
+
+MEJOR:
+"Los datos son sintéticos, reproducibles y compatibles con la estructura
+operativa."
+
+
+EVITAR:
+"Random Forest es definitivamente el mejor modelo."
+
+MEJOR:
+"Random Forest es una primera alternativa que debe compararse contra una línea
+base y otros modelos."
+
+
+15. VERSIÓN CORTA PARA EXPLICAR EN 30 SEGUNDOS
+----------------------------------------------------------------------
+
+"La propuesta utiliza regresión supervisada para estimar las unidades que se
+solicitarán de cada producto durante el siguiente mes. De MongoDB obtenemos
+pedidos, productos y reseñas; en Jupyter desanidamos los items, agrupamos por
+producto y mes, completamos meses con cero y calculamos tres lags, su promedio,
+pedidos, precio y rating al corte. La Y es la suma mensual de requestedQuantity,
+porque representa demanda solicitada y no solo venta surtida. Con 16 productos
+y 18 meses existen 288 filas base y 240 entrenables. Después del pronóstico se
+consulta el stock actual para sugerir reabastecimiento."
+
+
+16. TARJETA FINAL PARA MEMORIZAR
+----------------------------------------------------------------------
+
+1. Tipo:
+   Regresión supervisada.
+
+2. Horizonte:
+   Siguiente mes calendario.
+
+3. Unidad:
+   Una fila por producto y mes objetivo.
+
+4. Fuente principal:
+   pedidos.
+
+5. Filtro:
+   pending_review, confirmed, completed.
+
+6. Demanda:
+   SUM(items[].requestedQuantity).
+
+7. Colecciones complementarias:
+   productos y reseñas_producto.
+
+8. X:
+   categoría, lags 1/2/3, promedio 3M, pedidos, precio, rating/reseñas y mes.
+
+9. Y:
+   unidades solicitadas durante el mes objetivo.
+
+10. Ejemplo:
+    Lavanda, junio 2026, Y = 55.
+
+11. Filas:
+    288 base; 240 entrenables.
+
+12. Modelo:
+    RandomForestRegressor global, comparado contra lag_1m.
+
+13. Evaluación:
+    Cronológica; MAE principal.
+
+14. Utilidad:
+    Apoyar reabastecimiento.
+
+15. Stock:
+    Se consulta después del pronóstico.
+
+16. Datos:
+    Sintéticos, no clientes reales.
+
+
+17. CIERRE PARA LA EXPOSICIÓN
+----------------------------------------------------------------------
+
+"MongoDB aporta los hechos históricos y Jupyter los convierte en una tabla
+mensual sin utilizar información futura. El modelo aprende de la demanda
+anterior y del contexto conocido para estimar las unidades del siguiente mes.
+La predicción no reemplaza al administrador: le proporciona una referencia
+cuantitativa para decidir el reabastecimiento."
+
+
+FIN DEL GUION
+======================================================================

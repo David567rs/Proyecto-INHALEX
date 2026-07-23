@@ -13,9 +13,29 @@ const productCases = [
     ['rosas castilla', 'rosas-de-castilla'],
     ['hierba buena', 'hierbabuena'],
     ['gingibre', 'jengibre'],
+    ['gengibre', 'jengibre'],
+    ['jenjibre', 'jengibre'],
     ['melisa', 'toronjil'],
+    ['torongil', 'toronjil'],
+    ['mira y azafrán', 'mirra-y-azafran'],
+    ['anís de estrella', 'anis-estrella'],
+    ['eucalito', 'eucalipto'],
+    ['la banda', 'lavanda'],
+    ['labanda', 'lavanda'],
+    ['aroma de la banda', 'lavanda'],
+    ['la lavanda natural', 'lavanda'],
+    ['yerbabuena', 'hierbabuena'],
+    ['yerba buena', 'hierbabuena'],
+    ['vaporú', 'vaporub'],
+    ['Vapo.Rub', 'vaporub'],
+    ['rosa castilla', 'rosas-de-castilla'],
+    ['buganvilia', 'bugambilia'],
+    ['buganvilla', 'bugambilia'],
+    ['bugambilias', 'bugambilia'],
     ['café', 'cafe'],
-    ['anis estrella', 'anis-estrella']
+    ['anis estrella', 'anis-estrella'],
+    ['canela', 'canela'],
+    ['bugambilia', 'bugambilia']
 ];
 
 for (const [query, expectedSlug] of productCases) {
@@ -24,6 +44,46 @@ for (const [query, expectedSlug] of productCases) {
     assert.ok(product, 'Expected product for "' + query + '"');
     assert.strictEqual(product.slug, expectedSlug);
 }
+
+for (const unavailableProduct of [
+    'naranja',
+    'manzana',
+    'manzanita',
+    'encino',
+    'banda',
+    'mira',
+    'romeo',
+    'meta',
+    'venta',
+    'candela',
+    'copa',
+    'floral',
+    'fresco',
+    'dulce'
+]) {
+    assert.strictEqual(
+        util.findProduct(products, unavailableProduct),
+        null,
+        'Expected no product for "' + unavailableProduct + '"'
+    );
+}
+
+assert.strictEqual(
+    util.buildUnavailableProductSpeech('naranja'),
+    'Por el momento, el aroma de naranja no forma parte de nuestro catálogo. ' +
+    'Te mostraré los aromas que tenemos disponibles.'
+);
+
+assert.strictEqual(
+    util.buildUnavailableProductSpeech('aroma de manzana'),
+    'Por el momento, el aroma de manzana no forma parte de nuestro catálogo. ' +
+    'Te mostraré los aromas que tenemos disponibles.'
+);
+
+assert.strictEqual(
+    util.normalizeProductQuery('  LA   BÁNDA  '),
+    'lavanda'
+);
 
 assert.strictEqual(
     util.normalizeLine('línea verde'),

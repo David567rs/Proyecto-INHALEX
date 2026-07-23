@@ -9,6 +9,7 @@ import {
 } from '../products/schemas/product-inventory-movement.schema';
 import { UsersModule } from '../users/users.module';
 import { SalesModule } from '../sales/sales.module';
+import { ReportsModule } from '../reports/reports.module';
 import { AdminOrdersController } from './admin-orders.controller';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
@@ -20,6 +21,7 @@ import { Order, OrderSchema } from './schemas/order.schema';
     UsersModule,
     SalesModule,
     NotificationsModule,
+    ReportsModule,
     MongooseModule.forFeature([
       { name: Product.name, schema: ProductSchema },
       {

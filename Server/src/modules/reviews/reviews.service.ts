@@ -16,6 +16,7 @@ import { Order, OrderDocument } from '../orders/schemas/order.schema';
 import { Product, ProductDocument } from '../products/schemas/product.schema';
 import { UsersService } from '../users/users.service';
 import { CreateProductReviewDto } from './dto/create-product-review.dto';
+import { ListProductReviewsQueryDto } from './dto/list-product-reviews-query.dto';
 import {
   ProductReview,
   ProductReviewDocument,
@@ -52,6 +53,23 @@ export interface ReviewableProductResponse {
 export interface ReviewableProductsResponse {
   pending: ReviewableProductResponse[];
   completed: ReviewableProductResponse[];
+}
+
+export interface ProductReviewsPageResponse {
+  items: PublicProductReviewResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  averageRating: number | null;
+}
+
+export interface PublicProductReviewResponse {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt?: string;
 }
 
 @Injectable()
@@ -221,19 +239,54 @@ export class ReviewsService {
 
   async listProductReviews(
     productId: string,
-    limit = 8,
-  ): Promise<ProductReviewResponse[]> {
+    query: ListProductReviewsQueryDto = {},
+  ): Promise<ProductReviewsPageResponse> {
     if (!Types.ObjectId.isValid(productId)) {
       throw new BadRequestException('Invalid product id');
     }
 
-    const reviews = await this.productReviewModel
-      .find({ productId, status: ProductReviewStatus.PUBLISHED })
-      .sort({ createdAt: -1 })
-      .limit(Math.max(1, Math.min(limit, 20)))
-      .exec();
+    const page = Math.max(1, Math.trunc(Number(query.page) || 1));
+    const limit = Math.max(
+      1,
+      Math.min(20, Math.trunc(Number(query.limit) || 8)),
+    );
+    const skip = (page - 1) * limit;
+    const filters = {
+      productId,
+      status: ProductReviewStatus.PUBLISHED,
+    };
 
-    return reviews.map((review) => this.mapReview(review));
+    const [reviews, total, ratingSummary] = await Promise.all([
+      this.productReviewModel
+        .find(filters)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.productReviewModel.countDocuments(filters).exec(),
+      this.productReviewModel
+        .aggregate<{ _id: null; averageRating: number }>([
+          { $match: filters },
+          {
+            $group: {
+              _id: null,
+              averageRating: { $avg: '$rating' },
+            },
+          },
+        ])
+        .exec(),
+    ]);
+
+    return {
+      items: reviews.map((review) => this.mapPublicReview(review)),
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      averageRating: ratingSummary[0]
+        ? Number(ratingSummary[0].averageRating.toFixed(1))
+        : null,
+    };
   }
 
   private async refreshProductRating(productId: string): Promise<void> {
@@ -300,6 +353,18 @@ export class ReviewsService {
       rating: review.rating,
       comment: review.comment,
       status: review.status,
+      createdAt: review.createdAt?.toISOString(),
+    };
+  }
+
+  private mapPublicReview(
+    review: ProductReviewDocument,
+  ): PublicProductReviewResponse {
+    return {
+      id: review.id,
+      userName: review.userName,
+      rating: review.rating,
+      comment: review.comment,
       createdAt: review.createdAt?.toISOString(),
     };
   }

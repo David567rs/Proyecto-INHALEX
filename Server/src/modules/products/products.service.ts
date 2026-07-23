@@ -45,6 +45,13 @@ export interface SeedProductsResult {
   total: number;
 }
 
+export interface SyncProductCopyResult {
+  total: number;
+  matched: number;
+  updated: number;
+  missingSlugs: string[];
+}
+
 export interface PublicCategoryItem {
   id: string;
   name: string;
@@ -982,6 +989,45 @@ export class ProductsService {
       created,
       updated,
       total: DEFAULT_PRODUCTS.length,
+    };
+  }
+
+  async syncDefaultProductCopy(): Promise<SyncProductCopyResult> {
+    let matched = 0;
+    let updated = 0;
+    const missingSlugs: string[] = [];
+
+    for (const seedProduct of DEFAULT_PRODUCTS) {
+      const slug = this.buildSlug(seedProduct.name);
+      const result = await this.productModel
+        .updateOne(
+          { slug },
+          {
+            $set: {
+              description: seedProduct.description.trim(),
+              longDescription: seedProduct.longDescription?.trim(),
+              benefits: this.normalizeStringArray(seedProduct.benefits),
+              aromas: this.normalizeStringArray(seedProduct.aromas),
+            },
+          },
+          { runValidators: true },
+        )
+        .exec();
+
+      if (result.matchedCount === 0) {
+        missingSlugs.push(slug);
+        continue;
+      }
+
+      matched += result.matchedCount;
+      updated += result.modifiedCount;
+    }
+
+    return {
+      total: DEFAULT_PRODUCTS.length,
+      matched,
+      updated,
+      missingSlugs,
     };
   }
 

@@ -36,9 +36,9 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Toronjil',
     description:
-      'Frescura citrica y herbacea que alivia el estres y proporciona serenidad.',
+      'Inhalador aromático personal de notas cítricas y herbales, ideal para acompañar pausas de calma y relajación.',
     longDescription:
-      'El Toronjil, tambien conocido como melisa, es una planta aromatica reconocida por sus propiedades calmantes y relajantes. Nuestro macerado captura la esencia pura de esta hierba medicinal, ofreciendo un aroma fresco y citrico que ayuda a reducir la ansiedad, calmar los nervios y promover un estado de paz interior.',
+      'Este inhalador aromático de Toronjil, también conocido como melisa, combina notas cítricas y herbales en una experiencia fresca y suave. Está pensado para acompañar pausas personales, momentos de descanso y rutinas de relajación.',
     price: 60,
     promoActive: true,
     promoLabel: 'Calma de junio',
@@ -48,8 +48,12 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     currency: 'MXN',
     image: '/products/toronjil.jpg',
     category: ProductCategory.LINEA_INSOMNIO,
-    benefits: ['Alivia el estres', 'Promueve la calma', 'Aroma refrescante'],
-    aromas: ['toronjil', 'melisa', 'citrico', 'herbaceo'],
+    benefits: [
+      'Sensación de calma',
+      'Perfil cítrico y herbal',
+      'Ideal para pausas de relajación',
+    ],
+    aromas: ['toronjil', 'melisa', 'cítrico', 'herbáceo'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -59,11 +63,11 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     sortOrder: 1,
   },
   {
-    name: 'Mirra y Azafran',
+    name: 'Mirra y Azafrán',
     description:
-      'Combinacion exotica y sofisticada que eleva el espiritu y proporciona bienestar.',
+      'Inhalador aromático personal de perfil resinoso y especiado, pensado para momentos de enfoque y bienestar.',
     longDescription:
-      'Una fusion unica de dos ingredientes legendarios. La mirra, con su aroma profundo y balsamico, se combina con el azafran para crear una experiencia olfativa sofisticada que eleva el espiritu y proporciona una sensacion de lujo y bienestar.',
+      'Este inhalador aromático combina el perfil profundo de la mirra con las notas calidas y especiadas del azafran. Su carácter envolvente acompaña pausas conscientes y momentos en los que se busca una experiencia aromatica sofisticada.',
     price: 60,
     promoActive: true,
     promoLabel: 'Aroma especial',
@@ -73,7 +77,11 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     currency: 'MXN',
     image: '/products/mirra-azafran.jpg',
     category: ProductCategory.LINEA_ANSIEDAD_ESTRES,
-    benefits: ['Aroma exotico', 'Eleva el espiritu', 'Sofisticado'],
+    benefits: [
+      'Perfil resinoso y especiado',
+      'Sensación envolvente',
+      'Ideal para pausas conscientes',
+    ],
     aromas: ['mirra', 'azafran', 'resina', 'especiado'],
     presentation: '10ml',
     origin: '100% Natural',
@@ -86,9 +94,9 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Copal',
     description:
-      'Esencia ancestral purificadora que limpia el ambiente y proporciona paz interior.',
+      'Inhalador aromático personal de notas resinosas y amaderadas que acompaña momentos de pausa y concentración.',
     longDescription:
-      'El Copal es una resina sagrada utilizada desde tiempos prehispanicos por las culturas mesoamericanas. Su aroma distintivo tiene propiedades purificadoras que ayudan a limpiar espacios de energias negativas, promoviendo un ambiente de paz, meditacion y conexion espiritual.',
+      'El perfil resinoso y amaderado del Copal brinda una experiencia aromática profunda y de uso personal. Este inhalador está pensado para acompañar momentos de serenidad, introspección y concentración.',
     price: 60,
     promoActive: true,
     promoLabel: 'Ritual purificador',
@@ -99,9 +107,9 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     image: '/products/copal.jpg',
     category: ProductCategory.LINEA_ESTIMULANTE,
     benefits: [
-      'Purifica el ambiente',
-      'Promueve la meditacion',
-      'Conexion espiritual',
+      'Perfil resinoso y amaderado',
+      'Sensación de profundidad',
+      'Acompaña momentos de introspección',
     ],
     aromas: ['copal', 'resina', 'amaderado', 'ritual'],
     presentation: '10ml',
@@ -113,16 +121,20 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
     sortOrder: 3,
   },
   {
-    name: 'Anis Estrella',
+    name: 'Anís Estrella',
     description:
-      'Dulzura especiada unica que reconforta y proporciona calidez aromatica.',
+      'Inhalador aromático personal de notas dulces y especiadas, con una sensación cálida y reconfortante.',
     longDescription:
-      'El Anis Estrella es una especia con forma de estrella que emana un aroma dulce y especiado inconfundible. Nuestro macerado captura su esencia reconfortante, perfecta para momentos de relajacion y para crear un ambiente calido y acogedor.',
+      'Este inhalador aromático conserva el perfil dulce y especiado caracteristico del Anís Estrella. Su calidez acompaña pausas personales y momentos en los que se busca una experiencia suave y reconfortante.',
     price: 60,
     currency: 'MXN',
     image: '/products/anis-estrella.jpg',
     category: ProductCategory.LINEA_ANSIEDAD_ESTRES,
-    benefits: ['Aroma reconfortante', 'Proporciona calidez', 'Dulce y especiado'],
+    benefits: [
+      'Perfil dulce y especiado',
+      'Sensación cálida',
+      'Acompaña la relajación',
+    ],
     aromas: ['anis', 'especiado', 'dulce', 'estrella'],
     presentation: '10ml',
     origin: '100% Natural',
@@ -135,17 +147,17 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Eucalipto',
     description:
-      'Frescura mentolada que despeja las vias respiratorias y revitaliza los sentidos.',
+      'Inhalador aromático personal de perfil mentolado que brinda una sensación fresca al respirar.',
     longDescription:
-      'El Eucalipto es reconocido por sus propiedades descongestionantes. Su aroma fresco y mentolado ayuda a despejar las vias respiratorias, aliviando la congestion nasal y proporcionando una sensacion de frescura y claridad mental.',
+      'Este inhalador aromático presenta las notas frescas y mentoladas caracteristicas del Eucalipto. Su perfil intenso acompaña respiraciones pausadas y rutinas personales de frescura y bienestar.',
     price: 60,
     currency: 'MXN',
     image: '/products/eucalipto.jpg',
     category: ProductCategory.LINEA_VERDE,
     benefits: [
-      'Despeja vias respiratorias',
-      'Alivia congestion',
-      'Revitaliza',
+      'Sensación de frescura',
+      'Perfil mentolado',
+      'Acompaña respiraciones conscientes',
     ],
     aromas: ['eucalipto', 'mentolado', 'fresco', 'respiratorio'],
     presentation: '10ml',
@@ -159,14 +171,18 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Lavanda',
     description:
-      'Aroma floral relajante que calma la mente y favorece el descanso profundo.',
+      'Inhalador aromático personal de notas florales suaves, ideal para acompañar momentos de calma y descanso.',
     longDescription:
-      'La Lavanda es la reina de las plantas aromaticas relajantes. Su distintivo aroma floral tiene propiedades calmantes comprobadas que ayudan a reducir el estres, aliviar dolores de cabeza tensionales y promover un sueno reparador.',
+      'Este inhalador aromático destaca el perfil floral, limpio y delicado de la Lavanda. Su aroma suave está pensado para acompañar pausas de tranquilidad, rutinas nocturnas y momentos de descanso personal.',
     price: 60,
     currency: 'MXN',
     image: '/products/lavanda.jpg',
     category: ProductCategory.LINEA_INSOMNIO,
-    benefits: ['Calma la mente', 'Favorece el descanso', 'Alivia tension'],
+    benefits: [
+      'Sensación de calma',
+      'Perfil floral suave',
+      'Acompaña la rutina de descanso',
+    ],
     aromas: ['lavanda', 'floral', 'calmante', 'suave'],
     presentation: '10ml',
     origin: '100% Natural',
@@ -184,17 +200,17 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Menta',
     description:
-      'Frescura intensa que activa la mente y proporciona energia instantanea.',
+      'Inhalador aromático personal de frescura intensa, pensado para acompañar momentos de atención y energía.',
     longDescription:
-      'La Menta es conocida por su aroma intenso y refrescante que estimula los sentidos. Ideal para momentos que requieren concentracion y energia, ayuda a despejar la mente y proporcionar una sensacion de vitalidad.',
+      'Este inhalador aromático ofrece el perfil fresco y mentolado caracteristico de la Menta. Su intensidad brinda una experiencia vivaz que acompaña momentos de enfoque, actividad y claridad sensorial.',
     price: 60,
     currency: 'MXN',
     image: '/products/menta.jpg',
     category: ProductCategory.LINEA_VERDE,
     benefits: [
-      'Activa la mente',
-      'Proporciona energia',
-      'Alivia dolor de cabeza',
+      'Sensación refrescante',
+      'Perfil mentolado intenso',
+      'Acompaña momentos de enfoque',
     ],
     aromas: ['menta', 'fresco', 'mentolado', 'estimulante'],
     presentation: '10ml',
@@ -208,15 +224,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Romero',
     description:
-      'Esencia herbacea vigorizante que mejora la concentracion y la memoria.',
+      'Inhalador aromático personal de notas herbales y verdes, ideal para acompañar momentos de claridad y enfoque.',
     longDescription:
-      'El Romero es una hierba mediterranea con un aroma herbaceo distintivo. Conocido por mejorar la memoria y la concentracion, ofrece beneficios vigorizantes que ayudan a mantener la mente clara.',
+      'Este inhalador aromático resalta las notas herbales y verdes del Romero. Su carácter vigorizante acompaña pausas activas, jornadas de estudio y momentos en los que se busca una experiencia clara y fresca.',
     price: 60,
     currency: 'MXN',
     image: '/products/romero.jpg',
     category: ProductCategory.LINEA_RESFRIADO,
-    benefits: ['Mejora concentracion', 'Fortalece memoria', 'Vigorizante'],
-    aromas: ['romero', 'herbaceo', 'verde', 'mediterraneo'],
+    benefits: [
+      'Perfil herbal y verde',
+      'Sensación vigorizante',
+      'Acompaña la concentración',
+    ],
+    aromas: ['romero', 'herbáceo', 'verde', 'mediterraneo'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -228,19 +248,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Canela',
     description:
-      'Calidez especiada que reconforta el cuerpo y estimula la circulacion.',
+      'Inhalador aromático personal de notas calidas y especiadas que brinda una experiencia reconfortante.',
     longDescription:
-      'La Canela es una especia milenaria apreciada por su aroma calido y envolvente. Nuestro macerado captura su esencia reconfortante, ideal para aliviar malestares respiratorios y estimular la circulacion.',
+      'Este inhalador aromático concentra el perfil dulce, cálido y especiado de la Canela. Su aroma envolvente está pensado para acompañar pausas personales y momentos en los que se busca una sensación de confort.',
     price: 60,
     currency: 'MXN',
     image: '/products/canela.jpg',
     category: ProductCategory.LINEA_RESFRIADO,
     benefits: [
-      'Reconforta el cuerpo',
-      'Estimula circulacion',
-      'Aroma calido',
+      'Sensación cálida',
+      'Perfil dulce y especiado',
+      'Acompaña momentos de confort',
     ],
-    aromas: ['canela', 'especiado', 'calido', 'dulce'],
+    aromas: ['canela', 'especiado', 'cálido', 'dulce'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -252,19 +272,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Jengibre',
     description:
-      'Energia picante y revitalizante que activa el cuerpo y despeja la mente.',
+      'Inhalador aromático personal de perfil cálido y especiado, pensado para una experiencia vigorizante.',
     longDescription:
-      'El Jengibre es una raiz con propiedades energizantes y descongestionantes. Su aroma picante y calido ayuda a aliviar nauseas, mejorar la circulacion y proporcionar sensacion de vitalidad.',
+      'Este inhalador aromático presenta las notas picantes, calidas y especiadas del Jengibre. Su carácter dinámico acompaña momentos de actividad y brinda una experiencia sensorial revitalizante.',
     price: 60,
     currency: 'MXN',
     image: '/products/jengibre.jpg',
     category: ProductCategory.LINEA_RESFRIADO,
     benefits: [
-      'Revitalizante',
-      'Despeja vias respiratorias',
-      'Mejora circulacion',
+      'Sensación revitalizante',
+      'Perfil cálido y especiado',
+      'Acompaña momentos de actividad',
     ],
-    aromas: ['jengibre', 'picante', 'calido', 'especiado'],
+    aromas: ['jengibre', 'picante', 'cálido', 'especiado'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -276,14 +296,18 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Café',
     description:
-      'Aroma intenso y estimulante que despierta los sentidos y activa la mente.',
+      'Inhalador aromático personal de notas tostadas e intensas, ideal para acompañar momentos de energía y atención.',
     longDescription:
-      'El Café es reconocido por su aroma intenso y vigorizante. Nuestro macerado captura la esencia de los granos tostados, ofreciendo propiedades estimulantes para combatir la fatiga.',
+      'Este inhalador aromático recrea el perfil tostado, profundo e inconfundible del Café. Su intensidad acompaña pausas activas y momentos en los que se busca una experiencia energica y enfocada.',
     price: 60,
     currency: 'MXN',
     image: '/products/cafe.jpg',
     category: ProductCategory.LINEA_ESTIMULANTE,
-    benefits: ['Estimulante', 'Combate fatiga', 'Despierta los sentidos'],
+    benefits: [
+      'Perfil tostado e intenso',
+      'Sensación energica',
+      'Acompaña momentos de enfoque',
+    ],
     aromas: ['café', 'tostado', 'intenso', 'estimulante'],
     presentation: '10ml',
     origin: '100% Natural',
@@ -296,15 +320,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Hierbabuena',
     description:
-      'Frescura suave y digestiva que calma el estomago y refresca el aliento.',
+      'Inhalador aromático personal de perfil verde y mentolado, con una sensación suave y refrescante.',
     longDescription:
-      'La Hierbabuena es una variedad de menta con aroma mas suave y dulce. Conocida por sus propiedades digestivas, ayuda a aliviar malestares estomacales y refrescar el aliento.',
+      'Este inhalador aromático combina las notas verdes, dulces y mentoladas de la Hierbabuena. Su frescura ligera acompaña respiraciones pausadas y rutinas personales de bienestar.',
     price: 60,
     currency: 'MXN',
     image: '/products/hierbabuena.jpg',
     category: ProductCategory.LINEA_VERDE,
-    benefits: ['Digestiva', 'Refresca el aliento', 'Aroma suave'],
-    aromas: ['hierbabuena', 'menta suave', 'fresco', 'digestivo'],
+    benefits: [
+      'Frescura suave',
+      'Perfil herbal y mentolado',
+      'Acompaña respiraciones pausadas',
+    ],
+    aromas: ['hierbabuena', 'menta suave', 'fresco', 'herbal'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -316,14 +344,18 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Vaporub',
     description:
-      'Planta aromatica descongestionante que alivia sintomas de gripe y resfriado.',
+      'Inhalador aromático personal de perfil mentolado intenso, pensado para brindar una sensación fresca al respirar.',
     longDescription:
-      'La planta Vaporub (Plectranthus tomentosa) es conocida por su intenso aroma mentolado. Sus hojas liberan un aroma descongestionante natural ideal para aliviar congestion nasal y tos.',
+      'Este inhalador aromático reune notas mentoladas intensas y un carácter fresco de fácil reconocimiento. Está pensado para acompañar respiraciones conscientes y rutinas personales de bienestar respiratorio.',
     price: 60,
     currency: 'MXN',
     image: '/products/vaporub.jpg',
     category: ProductCategory.LINEA_VERDE,
-    benefits: ['Descongestionante', 'Alivia gripe', 'Alivio inmediato'],
+    benefits: [
+      'Frescura mentolada intensa',
+      'Sensación fresca al inhalar',
+      'Acompaña respiraciones conscientes',
+    ],
     aromas: ['vaporub', 'mentolado', 'respiratorio', 'fresco'],
     presentation: '10ml',
     origin: '100% Natural',
@@ -336,15 +368,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Rosas de Castilla',
     description:
-      'Delicadeza floral romantica que calma emociones y nutre el espiritu.',
+      'Inhalador aromático personal de notas florales suaves, ideal para acompañar respiraciones tranquilas y momentos de calma.',
     longDescription:
-      'Las Rosas de Castilla son flores apreciadas por su aroma y propiedades terapeuticas. Nuestro macerado captura su esencia delicada para calmar emociones y crear un ambiente romantico.',
+      'Este inhalador aromático personal presenta las delicadas notas florales de las Rosas de Castilla. Su perfil suave y reconfortante está pensado para acompañar pausas de tranquilidad y bienestar durante el día.',
     price: 60,
     currency: 'MXN',
     image: '/products/rosas-castilla.jpg',
     category: ProductCategory.LINEA_ANSIEDAD_ESTRES,
-    benefits: ['Calma emociones', 'Aroma romantico', 'Nutre el espiritu'],
-    aromas: ['rosa', 'floral', 'romantico', 'suave'],
+    benefits: [
+      'Perfil floral suave',
+      'Sensación reconfortante',
+      'Acompaña momentos de calma',
+    ],
+    aromas: ['rosa', 'floral', 'delicado', 'suave'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -356,15 +392,19 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Bugambilia',
     description:
-      'Esencia floral vibrante que alivia la tos y fortalece el sistema respiratorio.',
+      'Inhalador aromático personal de perfil floral y verde, pensado para una sensación suave y fresca al respirar.',
     longDescription:
-      'La Bugambilia es una flor tropical conocida en la medicina tradicional mexicana por sus propiedades expectorantes y antiinflamatorias. Ayuda a aliviar la tos y fortalecer el sistema inmunologico.',
+      'Este inhalador aromático destaca el perfil floral y ligeramente herbal de la Bugambilia. Su carácter ligero acompaña respiraciones pausadas y brinda una experiencia personal suave y reconfortante.',
     price: 60,
     currency: 'MXN',
     image: '/products/bugambilia.jpg',
     category: ProductCategory.LINEA_RESFRIADO,
-    benefits: ['Alivia la tos', 'Expectorante', 'Fortalece inmunidad'],
-    aromas: ['bugambilia', 'floral', 'expectorante', 'respiratorio'],
+    benefits: [
+      'Perfil floral y verde',
+      'Sensación fresca y ligera',
+      'Acompaña respiraciones pausadas',
+    ],
+    aromas: ['bugambilia', 'floral', 'verde', 'suave'],
     presentation: '10ml',
     origin: '100% Natural',
     inStock: true,
@@ -376,14 +416,18 @@ export const DEFAULT_PRODUCTS: DefaultProductSeed[] = [
   {
     name: 'Manzanilla',
     description:
-      'Suavidad calmante que relaja el cuerpo y promueve el sueno reparador.',
+      'Inhalador aromático personal de notas florales suaves, ideal para acompañar momentos de relajación y descanso.',
     longDescription:
-      'La Manzanilla es una de las plantas medicinales mas apreciadas por sus propiedades calmantes y antiinflamatorias. Su aroma suave ayuda a reducir la ansiedad y promover un sueno tranquilo.',
+      'Este inhalador aromático presenta el perfil floral, dulce y delicado de la Manzanilla. Su suavidad está pensada para acompañar pausas tranquilas, rutinas nocturnas y momentos de descanso personal.',
     price: 60,
     currency: 'MXN',
     image: '/products/manzanilla.jpg',
     category: ProductCategory.LINEA_ANSIEDAD_ESTRES,
-    benefits: ['Calmante natural', 'Promueve el sueno', 'Reduce ansiedad'],
+    benefits: [
+      'Sensación de calma',
+      'Perfil floral suave',
+      'Acompaña la rutina de descanso',
+    ],
     aromas: ['manzanilla', 'floral suave', 'calmante', 'dulce'],
     presentation: '10ml',
     origin: '100% Natural',

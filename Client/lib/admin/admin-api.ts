@@ -5,6 +5,7 @@ import type {
   UpdateCompanyContentInput,
 } from "@/lib/company/company-content.types"
 import type {
+  CustomerReceiptStatus,
   DraftOrderIssue,
   DraftOrderPreviewItem,
   OrderStatus,
@@ -376,6 +377,10 @@ export interface AdminOrderListItem {
   id: string
   reference: string
   status: AdminOrderStatus
+  customerReceiptStatus: CustomerReceiptStatus
+  customerReceiptRequestedAt?: string
+  customerReceiptConfirmedAt?: string
+  customerReceiptIssueReportedAt?: string
   customerName: string
   customerEmail: string
   customerPhone: string
@@ -392,6 +397,8 @@ export interface AdminOrderListItem {
 export interface AdminOrderDetail extends AdminOrderListItem {
   channel: string
   customerNotes?: string
+  customerReceiptIssueNote?: string
+  customerReceiptReportId?: string
   customerUserId?: string
   customerUserEmail?: string
   shippingAddress?: {

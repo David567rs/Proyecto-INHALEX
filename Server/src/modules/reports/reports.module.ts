@@ -23,5 +23,6 @@ import {
   ],
   controllers: [ReportsController, AdminReportsController],
   providers: [ReportsService, RolesGuard],
+  exports: [ReportsService],
 })
 export class ReportsModule {}

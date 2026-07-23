@@ -7,33 +7,39 @@ import { cn } from "@/lib/utils"
 const benefits = [
   {
     icon: Leaf,
-    title: "100% Natural",
-    description: "Todos nuestros productos están elaborados con ingredientes naturales, sin químicos ni aditivos artificiales.",
+    title: "Perfiles para explorar",
+    description:
+      "Encuentra alternativas florales, herbales, frescas, cálidas y especiadas para elegir de acuerdo con tu preferencia.",
   },
   {
     icon: Shield,
-    title: "Calidad Garantizada",
-    description: "Cada producto pasa por estrictos controles de calidad para asegurar su pureza y efectividad.",
+    title: "Información transparente",
+    description:
+      "Consulta la presentación, el precio, la disponibilidad y las opiniones asociadas a cada producto antes de decidir.",
   },
   {
     icon: Heart,
-    title: "Bienestar Integral",
-    description: "Diseñados para promover tu salud respiratoria y equilibrio emocional de manera natural.",
+    title: "Bienestar cotidiano",
+    description:
+      "Una experiencia aromática de uso personal pensada para acompañar pausas y momentos de tu rutina diaria.",
   },
   {
     icon: Sparkles,
-    title: "Fórmulas Únicas",
-    description: "Combinaciones exclusivas de plantas medicinales desarrolladas por expertos en aromaterapia.",
+    title: "Catálogo organizado",
+    description:
+      "Explora los aromas por línea de bienestar y compara sus perfiles desde una experiencia clara y ordenada.",
   },
   {
     icon: Droplets,
-    title: "Fácil Aplicación",
-    description: "Spray práctico que puedes usar en cualquier momento: frota en tus manos e inhala profundamente.",
+    title: "Formato práctico",
+    description:
+      "Su presentación compacta es fácil de llevar y está pensada para integrarse de manera sencilla a tus pausas personales.",
   },
   {
     icon: Wind,
-    title: "Alivio Inmediato",
-    description: "Siente el efecto refrescante y descongestionante desde la primera inhalación.",
+    title: "Experiencia personal",
+    description:
+      "Elige el perfil aromático que más te agrade y consulta recomendaciones de uso, detalles y reseñas en un mismo lugar.",
   },
 ]
 
@@ -78,14 +84,14 @@ export function BenefitsSection() {
           )}
         >
           <span className="inline-block px-4 py-1.5 bg-primary/10 rounded-full text-sm font-medium text-primary mb-4">
-            Por Qué Elegirnos
+            Conoce la experiencia
           </span>
           <h2 className="public-display-heading mb-4 text-3xl text-foreground text-balance sm:text-4xl lg:text-5xl">
-            Beneficios de INHALEX
+            Lo que distingue a INHALEX
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto text-pretty">
-            Descubre por qué miles de personas confían en nuestros productos naturales
-            para su bienestar respiratorio diario.
+            Información clara, perfiles variados y una experiencia digital diseñada para
+            ayudarte a encontrar un aroma de acuerdo con tus preferencias.
           </p>
         </div>
 

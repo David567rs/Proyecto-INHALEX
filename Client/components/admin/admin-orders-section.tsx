@@ -6,13 +6,16 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock3,
   History,
   Loader2,
+  MessageSquareWarning,
   PackageCheck,
   RefreshCw,
   Search,
   ShieldCheck,
   ShoppingBag,
+  Truck,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { Badge } from "@/components/ui/badge";
@@ -70,7 +73,7 @@ const STATUS_LABELS: Record<AdminOrderStatus, string> = {
   pending_review: "Pendiente de revision",
   confirmed: "Confirmado",
   cancelled: "Cancelado",
-  completed: "Completado",
+  completed: "Entregado",
 };
 
 const STATUS_ACTION_MESSAGES: Record<
@@ -80,7 +83,18 @@ const STATUS_ACTION_MESSAGES: Record<
   pending_review: "El pedido sigue pendiente de revision.",
   confirmed: "Pedido confirmado por el equipo.",
   cancelled: "Pedido cancelado y existencias liberadas.",
-  completed: "Pedido completado y piezas descontadas del inventario.",
+  completed:
+    "Pedido marcado como entregado. El cliente ya puede confirmar recepcion o reportar una incidencia.",
+};
+
+const CUSTOMER_RECEIPT_LABELS: Record<
+  AdminOrderListItem["customerReceiptStatus"],
+  string
+> = {
+  not_required: "Sin recepcion",
+  pending: "Cliente por confirmar",
+  confirmed: "Cliente confirmo",
+  issue_reported: "Incidencia reportada",
 };
 
 function formatDate(value?: string) {
@@ -109,6 +123,60 @@ function getStatusTone(status: AdminOrderStatus) {
   if (status === "pending_review")
     return "border-amber-200 bg-amber-50 text-amber-700";
   return "border-stone-200 bg-stone-100 text-stone-700";
+}
+
+function getCustomerReceiptStatus(
+  order?: Pick<AdminOrderListItem, "customerReceiptStatus" | "status"> | null,
+) {
+  if (!order || order.status !== "completed") return "not_required";
+  return order.customerReceiptStatus ?? "pending";
+}
+
+function getCustomerReceiptTone(
+  status: AdminOrderListItem["customerReceiptStatus"],
+) {
+  if (status === "confirmed")
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (status === "issue_reported")
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  if (status === "pending") return "border-primary/20 bg-primary/10 text-primary";
+  return "border-stone-200 bg-stone-100 text-stone-700";
+}
+
+function getCustomerReceiptIcon(
+  status: AdminOrderListItem["customerReceiptStatus"],
+) {
+  if (status === "confirmed") return CheckCircle2;
+  if (status === "issue_reported") return MessageSquareWarning;
+  if (status === "pending") return Truck;
+  return PackageCheck;
+}
+
+function getCustomerReceiptDate(order: AdminOrderListItem) {
+  if (order.customerReceiptStatus === "confirmed")
+    return order.customerReceiptConfirmedAt;
+  if (order.customerReceiptStatus === "issue_reported")
+    return order.customerReceiptIssueReportedAt;
+  if (order.customerReceiptStatus === "pending")
+    return order.customerReceiptRequestedAt ?? order.completedAt;
+  return order.completedAt;
+}
+
+function getCustomerReceiptMessage(order: AdminOrderListItem) {
+  const status = getCustomerReceiptStatus(order);
+  if (status === "confirmed")
+    return "El cliente confirmo que recibio el pedido. Esta entrega queda cerrada desde su punto de vista.";
+  if (status === "issue_reported")
+    return "El cliente reporto un problema de entrega. Revisa el modulo de reportes antes de cerrar seguimiento.";
+  if (status === "pending")
+    return "El equipo ya marco el pedido como entregado. El cliente todavia debe confirmar recepcion desde su cuenta.";
+  return "Este pedido no requiere confirmacion de recepcion del cliente.";
+}
+
+function shouldShowCustomerReceipt(
+  order?: Pick<AdminOrderListItem, "status"> | null,
+) {
+  return order?.status === "completed";
 }
 
 function getFulfillmentTone(fulfillment?: string) {
@@ -314,10 +382,10 @@ export function AdminOrdersSection() {
         icon: CheckCircle2,
       },
       {
-        label: "Completados",
+        label: "Entregados",
         value: summary.completed,
-        helper: "Reservas cerradas",
-        icon: PackageCheck,
+        helper: "Listos para recepcion",
+        icon: Truck,
       },
       {
         label: "Revision manual",
@@ -699,6 +767,23 @@ export function AdminOrdersSection() {
                             >
                               {STATUS_LABELS[order.status]}
                             </Badge>
+                            {shouldShowCustomerReceipt(order) ? (
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "rounded-full",
+                                  getCustomerReceiptTone(
+                                    getCustomerReceiptStatus(order),
+                                  ),
+                                )}
+                              >
+                                {
+                                  CUSTOMER_RECEIPT_LABELS[
+                                    getCustomerReceiptStatus(order)
+                                  ]
+                                }
+                              </Badge>
+                            ) : null}
                             {order.needsManualReview ? (
                               <Badge
                                 variant="outline"
@@ -794,6 +879,23 @@ export function AdminOrdersSection() {
                       >
                         {STATUS_LABELS[selectedOrder.status]}
                       </Badge>
+                      {shouldShowCustomerReceipt(selectedOrder) ? (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded-full",
+                            getCustomerReceiptTone(
+                              getCustomerReceiptStatus(selectedOrder),
+                            ),
+                          )}
+                        >
+                          {
+                            CUSTOMER_RECEIPT_LABELS[
+                              getCustomerReceiptStatus(selectedOrder)
+                            ]
+                          }
+                        </Badge>
+                      ) : null}
                       {selectedOrder.needsManualReview ? (
                         <Badge
                           variant="outline"
@@ -843,10 +945,108 @@ export function AdminOrdersSection() {
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                       Faltan {pendingFulfillmentUnits} piezas por surtir. Si ya
                       entraron al inventario, el sistema intentara reservarlas
-                      automaticamente al marcar este pedido como completado.
+                      automaticamente al marcar este pedido como entregado.
                     </div>
                   ) : null}
                 </div>
+
+                {shouldShowCustomerReceipt(selectedOrder) ? (
+                  <div className="admin-section-card overflow-hidden p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "rounded-full border p-2",
+                            getCustomerReceiptTone(
+                              getCustomerReceiptStatus(selectedOrder),
+                            ),
+                          )}
+                        >
+                          {(() => {
+                            const ReceiptIcon = getCustomerReceiptIcon(
+                              getCustomerReceiptStatus(selectedOrder),
+                            );
+                            return <ReceiptIcon className="h-4 w-4" />;
+                          })()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Recepcion del cliente
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            {getCustomerReceiptMessage(selectedOrder)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "rounded-full",
+                          getCustomerReceiptTone(
+                            getCustomerReceiptStatus(selectedOrder),
+                          ),
+                        )}
+                      >
+                        {
+                          CUSTOMER_RECEIPT_LABELS[
+                            getCustomerReceiptStatus(selectedOrder)
+                          ]
+                        }
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Solicitud
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-foreground">
+                          {formatDate(
+                            selectedOrder.customerReceiptRequestedAt ??
+                              selectedOrder.completedAt,
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-border/60 bg-background/80 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Ultima respuesta
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-foreground">
+                          {formatDate(getCustomerReceiptDate(selectedOrder))}
+                        </p>
+                      </div>
+                    </div>
+
+                    {getCustomerReceiptStatus(selectedOrder) ===
+                    "issue_reported" ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                        <div className="flex items-center gap-2 font-semibold">
+                          <MessageSquareWarning className="h-4 w-4" />
+                          Incidencia de entrega
+                        </div>
+                        {selectedOrder.customerReceiptIssueNote ? (
+                          <p className="mt-2">
+                            {selectedOrder.customerReceiptIssueNote}
+                          </p>
+                        ) : null}
+                        {selectedOrder.customerReceiptReportId ? (
+                          <p className="mt-2 text-xs">
+                            Folio de reporte:{" "}
+                            {selectedOrder.customerReceiptReportId}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {getCustomerReceiptStatus(selectedOrder) === "pending" ? (
+                      <div className="mt-4 flex items-center gap-2 rounded-xl border border-primary/15 bg-primary/[0.05] px-4 py-3 text-sm text-primary">
+                        <Clock3 className="h-4 w-4" />
+                        Esperando validacion del cliente en su dashboard.
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className="admin-section-card p-4">
                   <div className="flex items-center gap-2">
@@ -1187,9 +1387,9 @@ export function AdminOrdersSection() {
                       {actionLoading === "completed" ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <PackageCheck className="mr-2 h-4 w-4" />
+                        <Truck className="mr-2 h-4 w-4" />
                       )}
-                      Marcar completado
+                      Marcar entregado
                     </Button>
 
                     <Button
@@ -1221,8 +1421,9 @@ export function AdminOrdersSection() {
                   ) : null}
 
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Confirmar mantiene la reserva activa, completar consume la
-                    reserva y cancelar libera existencias al inventario.
+                    Confirmar mantiene la reserva activa, marcar entregado
+                    consume la reserva y cancelar libera existencias al
+                    inventario.
                   </p>
                 </div>
               </>

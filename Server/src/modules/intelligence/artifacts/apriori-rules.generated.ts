@@ -1,0 +1,669 @@
+/* eslint-disable prettier/prettier */
+/* Archivo generado por ml/src/train_apriori.py. No editar manualmente. */
+import type { AprioriArtifact } from '../intelligence-artifact.types';
+
+export const APRIORI_RULES_ARTIFACT = {
+  "schemaVersion": "1.0",
+  "model": {
+    "name": "Apriori",
+    "version": "1.0.0",
+    "isSynthetic": true,
+    "generatedAt": "2026-07-23T12:07:37.645715+00:00",
+    "datasetSha256": "535d331afd5cef163c08d444aeb14a145b2513ae401e08de6f13a5d56fe19acf"
+  },
+  "training": {
+    "transactions": 1674,
+    "periodStart": "2025-01-10T14:00:43-06:00",
+    "periodEnd": "2026-06-30T19:36:22-06:00",
+    "minSupport": 0.008,
+    "minConfidence": 0.1,
+    "minLift": 1.05
+  },
+  "metrics": {
+    "rules": 36,
+    "catalogCoverage": 1.0,
+    "temporalTop1HitRate": 0.149826,
+    "temporalTrainTransactions": 1339,
+    "temporalValidationTransactions": 335
+  },
+  "rules": [
+    {
+      "antecedentSlugs": [
+        "vaporub"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentSlug": "eucalipto",
+      "consequentName": "Eucalipto",
+      "support": 0.035245,
+      "confidence": 0.269406,
+      "lift": 1.87911,
+      "cooccurrenceCount": 59,
+      "score": 0.506244
+    },
+    {
+      "antecedentSlugs": [
+        "eucalipto"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentSlug": "vaporub",
+      "consequentName": "Vaporub",
+      "support": 0.035245,
+      "confidence": 0.245833,
+      "lift": 1.87911,
+      "cooccurrenceCount": 59,
+      "score": 0.461948
+    },
+    {
+      "antecedentSlugs": [
+        "toronjil"
+      ],
+      "antecedentNames": [
+        "Toronjil"
+      ],
+      "consequentSlug": "lavanda",
+      "consequentName": "Lavanda",
+      "support": 0.031661,
+      "confidence": 0.271795,
+      "lift": 1.636635,
+      "cooccurrenceCount": 53,
+      "score": 0.444829
+    },
+    {
+      "antecedentSlugs": [
+        "vaporub"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentSlug": "menta",
+      "consequentName": "Menta",
+      "support": 0.031661,
+      "confidence": 0.242009,
+      "lift": 1.731296,
+      "cooccurrenceCount": 53,
+      "score": 0.418989
+    },
+    {
+      "antecedentSlugs": [
+        "menta"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentSlug": "vaporub",
+      "consequentName": "Vaporub",
+      "support": 0.031661,
+      "confidence": 0.226496,
+      "lift": 1.731296,
+      "cooccurrenceCount": 53,
+      "score": 0.392131
+    },
+    {
+      "antecedentSlugs": [
+        "menta"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentSlug": "eucalipto",
+      "consequentName": "Eucalipto",
+      "support": 0.031661,
+      "confidence": 0.226496,
+      "lift": 1.579808,
+      "cooccurrenceCount": 53,
+      "score": 0.35782
+    },
+    {
+      "antecedentSlugs": [
+        "eucalipto"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentSlug": "menta",
+      "consequentName": "Menta",
+      "support": 0.031661,
+      "confidence": 0.220833,
+      "lift": 1.579808,
+      "cooccurrenceCount": 53,
+      "score": 0.348874
+    },
+    {
+      "antecedentSlugs": [
+        "anis-estrella"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentSlug": "manzanilla",
+      "consequentName": "Manzanilla",
+      "support": 0.019713,
+      "confidence": 0.23913,
+      "lift": 1.429658,
+      "cooccurrenceCount": 33,
+      "score": 0.341875
+    },
+    {
+      "antecedentSlugs": [
+        "hierbabuena"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentSlug": "menta",
+      "consequentName": "Menta",
+      "support": 0.021505,
+      "confidence": 0.214286,
+      "lift": 1.532967,
+      "cooccurrenceCount": 36,
+      "score": 0.328493
+    },
+    {
+      "antecedentSlugs": [
+        "lavanda"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentSlug": "toronjil",
+      "consequentName": "Toronjil",
+      "support": 0.031661,
+      "confidence": 0.190647,
+      "lift": 1.636635,
+      "cooccurrenceCount": 53,
+      "score": 0.31202
+    },
+    {
+      "antecedentSlugs": [
+        "menta"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentSlug": "hierbabuena",
+      "consequentName": "Hierbabuena",
+      "support": 0.021505,
+      "confidence": 0.153846,
+      "lift": 1.532967,
+      "cooccurrenceCount": 36,
+      "score": 0.235841
+    },
+    {
+      "antecedentSlugs": [
+        "jengibre"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentSlug": "canela",
+      "consequentName": "Canela",
+      "support": 0.015532,
+      "confidence": 0.152047,
+      "lift": 1.438002,
+      "cooccurrenceCount": 26,
+      "score": 0.218644
+    },
+    {
+      "antecedentSlugs": [
+        "rosas-de-castilla"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla"
+      ],
+      "consequentSlug": "manzanilla",
+      "consequentName": "Manzanilla",
+      "support": 0.019713,
+      "confidence": 0.188571,
+      "lift": 1.127388,
+      "cooccurrenceCount": 33,
+      "score": 0.212593
+    },
+    {
+      "antecedentSlugs": [
+        "canela"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentSlug": "jengibre",
+      "consequentName": "Jengibre",
+      "support": 0.015532,
+      "confidence": 0.146893,
+      "lift": 1.438002,
+      "cooccurrenceCount": 26,
+      "score": 0.211232
+    },
+    {
+      "antecedentSlugs": [
+        "jengibre"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentSlug": "bugambilia",
+      "consequentName": "Bugambilia",
+      "support": 0.015532,
+      "confidence": 0.152047,
+      "lift": 1.383295,
+      "cooccurrenceCount": 26,
+      "score": 0.210326
+    },
+    {
+      "antecedentSlugs": [
+        "lavanda"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentSlug": "manzanilla",
+      "consequentName": "Manzanilla",
+      "support": 0.030466,
+      "confidence": 0.183453,
+      "lift": 1.096788,
+      "cooccurrenceCount": 51,
+      "score": 0.201209
+    },
+    {
+      "antecedentSlugs": [
+        "manzanilla"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentSlug": "lavanda",
+      "consequentName": "Lavanda",
+      "support": 0.030466,
+      "confidence": 0.182143,
+      "lift": 1.096788,
+      "cooccurrenceCount": 51,
+      "score": 0.199772
+    },
+    {
+      "antecedentSlugs": [
+        "bugambilia"
+      ],
+      "antecedentNames": [
+        "Bugambilia"
+      ],
+      "consequentSlug": "jengibre",
+      "consequentName": "Jengibre",
+      "support": 0.015532,
+      "confidence": 0.141304,
+      "lift": 1.383295,
+      "cooccurrenceCount": 26,
+      "score": 0.195466
+    },
+    {
+      "antecedentSlugs": [
+        "hierbabuena"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentSlug": "manzanilla",
+      "consequentName": "Manzanilla",
+      "support": 0.017921,
+      "confidence": 0.178571,
+      "lift": 1.067602,
+      "cooccurrenceCount": 30,
+      "score": 0.190643
+    },
+    {
+      "antecedentSlugs": [
+        "mirra-y-azafran"
+      ],
+      "antecedentNames": [
+        "Mirra y Azafrán"
+      ],
+      "consequentSlug": "manzanilla",
+      "consequentName": "Manzanilla",
+      "support": 0.013142,
+      "confidence": 0.177419,
+      "lift": 1.060714,
+      "cooccurrenceCount": 22,
+      "score": 0.188191
+    },
+    {
+      "antecedentSlugs": [
+        "copal"
+      ],
+      "antecedentNames": [
+        "Copal"
+      ],
+      "consequentSlug": "cafe",
+      "consequentName": "Café",
+      "support": 0.008363,
+      "confidence": 0.126126,
+      "lift": 1.446131,
+      "cooccurrenceCount": 14,
+      "score": 0.182395
+    },
+    {
+      "antecedentSlugs": [
+        "hierbabuena"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentSlug": "eucalipto",
+      "consequentName": "Eucalipto",
+      "support": 0.016129,
+      "confidence": 0.160714,
+      "lift": 1.120982,
+      "cooccurrenceCount": 27,
+      "score": 0.180158
+    },
+    {
+      "antecedentSlugs": [
+        "cafe"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentSlug": "canela",
+      "consequentName": "Canela",
+      "support": 0.011947,
+      "confidence": 0.136986,
+      "lift": 1.295565,
+      "cooccurrenceCount": 20,
+      "score": 0.177475
+    },
+    {
+      "antecedentSlugs": [
+        "manzanilla"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentSlug": "anis-estrella",
+      "consequentName": "Anís Estrella",
+      "support": 0.019713,
+      "confidence": 0.117857,
+      "lift": 1.429658,
+      "cooccurrenceCount": 33,
+      "score": 0.168495
+    },
+    {
+      "antecedentSlugs": [
+        "canela"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentSlug": "bugambilia",
+      "consequentName": "Bugambilia",
+      "support": 0.014337,
+      "confidence": 0.135593,
+      "lift": 1.233604,
+      "cooccurrenceCount": 24,
+      "score": 0.167268
+    },
+    {
+      "antecedentSlugs": [
+        "bugambilia"
+      ],
+      "antecedentNames": [
+        "Bugambilia"
+      ],
+      "consequentSlug": "canela",
+      "consequentName": "Canela",
+      "support": 0.014337,
+      "confidence": 0.130435,
+      "lift": 1.233604,
+      "cooccurrenceCount": 24,
+      "score": 0.160905
+    },
+    {
+      "antecedentSlugs": [
+        "romero"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentSlug": "jengibre",
+      "consequentName": "Jengibre",
+      "support": 0.011947,
+      "confidence": 0.122699,
+      "lift": 1.201162,
+      "cooccurrenceCount": 20,
+      "score": 0.147382
+    },
+    {
+      "antecedentSlugs": [
+        "canela"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentSlug": "cafe",
+      "consequentName": "Café",
+      "support": 0.011947,
+      "confidence": 0.112994,
+      "lift": 1.295565,
+      "cooccurrenceCount": 20,
+      "score": 0.146392
+    },
+    {
+      "antecedentSlugs": [
+        "jengibre"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentSlug": "romero",
+      "consequentName": "Romero",
+      "support": 0.011947,
+      "confidence": 0.116959,
+      "lift": 1.201162,
+      "cooccurrenceCount": 20,
+      "score": 0.140487
+    },
+    {
+      "antecedentSlugs": [
+        "manzanilla"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentSlug": "rosas-de-castilla",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.019713,
+      "confidence": 0.117857,
+      "lift": 1.127388,
+      "cooccurrenceCount": 33,
+      "score": 0.132871
+    },
+    {
+      "antecedentSlugs": [
+        "cafe"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentSlug": "toronjil",
+      "consequentName": "Toronjil",
+      "support": 0.010753,
+      "confidence": 0.123288,
+      "lift": 1.058377,
+      "cooccurrenceCount": 18,
+      "score": 0.130485
+    },
+    {
+      "antecedentSlugs": [
+        "eucalipto"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentSlug": "hierbabuena",
+      "consequentName": "Hierbabuena",
+      "support": 0.016129,
+      "confidence": 0.1125,
+      "lift": 1.120982,
+      "cooccurrenceCount": 27,
+      "score": 0.12611
+    },
+    {
+      "antecedentSlugs": [
+        "romero"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentSlug": "bugambilia",
+      "consequentName": "Bugambilia",
+      "support": 0.01135,
+      "confidence": 0.116564,
+      "lift": 1.060483,
+      "cooccurrenceCount": 19,
+      "score": 0.123615
+    },
+    {
+      "antecedentSlugs": [
+        "cafe"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentSlug": "romero",
+      "consequentName": "Romero",
+      "support": 0.009558,
+      "confidence": 0.109589,
+      "lift": 1.125473,
+      "cooccurrenceCount": 16,
+      "score": 0.123339
+    },
+    {
+      "antecedentSlugs": [
+        "manzanilla"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentSlug": "hierbabuena",
+      "consequentName": "Hierbabuena",
+      "support": 0.017921,
+      "confidence": 0.107143,
+      "lift": 1.067602,
+      "cooccurrenceCount": 30,
+      "score": 0.114386
+    },
+    {
+      "antecedentSlugs": [
+        "bugambilia"
+      ],
+      "antecedentNames": [
+        "Bugambilia"
+      ],
+      "consequentSlug": "romero",
+      "consequentName": "Romero",
+      "support": 0.01135,
+      "confidence": 0.103261,
+      "lift": 1.060483,
+      "cooccurrenceCount": 19,
+      "score": 0.109506
+    }
+  ],
+  "popularFallbacks": [
+    {
+      "slug": "manzanilla",
+      "name": "Manzanilla",
+      "support": 0.167264,
+      "transactionCount": 280
+    },
+    {
+      "slug": "lavanda",
+      "name": "Lavanda",
+      "support": 0.166069,
+      "transactionCount": 278
+    },
+    {
+      "slug": "eucalipto",
+      "name": "Eucalipto",
+      "support": 0.143369,
+      "transactionCount": 240
+    },
+    {
+      "slug": "menta",
+      "name": "Menta",
+      "support": 0.139785,
+      "transactionCount": 234
+    },
+    {
+      "slug": "vaporub",
+      "name": "Vaporub",
+      "support": 0.130824,
+      "transactionCount": 219
+    },
+    {
+      "slug": "toronjil",
+      "name": "Toronjil",
+      "support": 0.116487,
+      "transactionCount": 195
+    },
+    {
+      "slug": "bugambilia",
+      "name": "Bugambilia",
+      "support": 0.109916,
+      "transactionCount": 184
+    },
+    {
+      "slug": "canela",
+      "name": "Canela",
+      "support": 0.105735,
+      "transactionCount": 177
+    },
+    {
+      "slug": "rosas-de-castilla",
+      "name": "Rosas de Castilla",
+      "support": 0.10454,
+      "transactionCount": 175
+    },
+    {
+      "slug": "jengibre",
+      "name": "Jengibre",
+      "support": 0.102151,
+      "transactionCount": 171
+    },
+    {
+      "slug": "hierbabuena",
+      "name": "Hierbabuena",
+      "support": 0.100358,
+      "transactionCount": 168
+    },
+    {
+      "slug": "romero",
+      "name": "Romero",
+      "support": 0.097372,
+      "transactionCount": 163
+    },
+    {
+      "slug": "cafe",
+      "name": "Café",
+      "support": 0.087216,
+      "transactionCount": 146
+    },
+    {
+      "slug": "anis-estrella",
+      "name": "Anís Estrella",
+      "support": 0.082437,
+      "transactionCount": 138
+    },
+    {
+      "slug": "mirra-y-azafran",
+      "name": "Mirra y Azafrán",
+      "support": 0.074074,
+      "transactionCount": 124
+    },
+    {
+      "slug": "copal",
+      "name": "Copal",
+      "support": 0.066308,
+      "transactionCount": 111
+    }
+  ]
+} satisfies AprioriArtifact;

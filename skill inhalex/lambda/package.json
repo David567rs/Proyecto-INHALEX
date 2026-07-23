@@ -4,7 +4,7 @@
   "description": "Skill de INHALEX Bienestar con APL y conexión a backend",
   "main": "index.js",
   "scripts": {
-    "test": "node test/util.test.js",
+    "test": "node test/util.test.js && node test/model.test.js && node test/handler.test.js",
     "check": "node --check index.js && node --check util.js"
   },
   "author": "INHALEX",

@@ -26,15 +26,22 @@ import { UserStatus } from '../users/enums/user-status.enum';
 import { ShippingAddressResponse } from '../users/schemas/user.schema';
 import { UsersService } from '../users/users.service';
 import { SalesService } from '../sales/sales.service';
+import { ReportsService } from '../reports/reports.service';
+import {
+  CustomerReportPriority,
+  CustomerReportType,
+} from '../reports/schemas/customer-report.schema';
 import { ConfirmOrderDto } from './dto/confirm-order.dto';
 import { CreateOrderDraftDto } from './dto/create-order-draft.dto';
 import { ListAdminOrdersQueryDto } from './dto/list-admin-orders-query.dto';
 import { OrderDraftItemDto } from './dto/order-draft-item.dto';
 import { PreviewOrderDraftDto } from './dto/preview-order-draft.dto';
+import { ReportOrderReceiptDto } from './dto/report-order-receipt.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderStatus } from './enums/order-status.enum';
 import {
   Order,
+  OrderCustomerReceiptStatus,
   OrderDocument,
   OrderIssueSeverity,
   OrderItemFulfillment,
@@ -125,6 +132,7 @@ export interface AdminOrderListItemResponse {
   id: string;
   reference: string;
   status: OrderStatus;
+  customerReceiptStatus: OrderCustomerReceiptStatus;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -136,6 +144,9 @@ export interface AdminOrderListItemResponse {
   confirmedAt?: string;
   cancelledAt?: string;
   completedAt?: string;
+  customerReceiptRequestedAt?: string;
+  customerReceiptConfirmedAt?: string;
+  customerReceiptIssueReportedAt?: string;
 }
 
 export interface AdminOrderDetailResponse extends AdminOrderListItemResponse {
@@ -143,11 +154,30 @@ export interface AdminOrderDetailResponse extends AdminOrderListItemResponse {
   customerNotes?: string;
   customerUserId?: string;
   customerUserEmail?: string;
+  customerReceiptIssueNote?: string;
+  customerReceiptReportId?: string;
   shippingAddress?: AdminShippingAddressResponse;
   items: OrderPreviewItem[];
   issues: DraftOrderIssue[];
   statusNotes: AdminOrderStatusNoteResponse[];
   lastValidatedAt?: string;
+}
+
+export interface CustomerReceiptOrderResponse {
+  id: string;
+  reference: string;
+  status: OrderStatus;
+  customerReceiptStatus: OrderCustomerReceiptStatus;
+  totalItems: number;
+  subtotal: number;
+  currency: string;
+  completedAt?: string;
+  customerReceiptRequestedAt?: string;
+  customerReceiptConfirmedAt?: string;
+  customerReceiptIssueReportedAt?: string;
+  customerReceiptIssueNote?: string;
+  customerReceiptReportId?: string;
+  items: OrderPreviewItem[];
 }
 
 export interface AdminOrdersResponse {
@@ -214,6 +244,7 @@ export class OrdersService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly salesService: SalesService,
+    private readonly reportsService: ReportsService,
     private readonly notificationsService?: NotificationsService,
   ) {}
 
@@ -497,6 +528,156 @@ export class OrdersService {
     }
   }
 
+  async listReceiptConfirmationOrders(
+    user: JwtPayload,
+  ): Promise<CustomerReceiptOrderResponse[]> {
+    const orders = await this.orderModel
+      .find({
+        status: OrderStatus.COMPLETED,
+        ...this.buildCustomerOrderFilters(user),
+      })
+      .sort({
+        customerReceiptRequestedAt: -1,
+        completedAt: -1,
+        createdAt: -1,
+      })
+      .limit(12)
+      .exec();
+
+    return orders.map((order) => this.mapCustomerReceiptOrder(order));
+  }
+
+  async confirmCustomerReceipt(
+    id: string,
+    user: JwtPayload,
+  ): Promise<CustomerReceiptOrderResponse> {
+    const order = await this.findOwnedCompletedOrderOrThrow(id, user);
+    const receiptStatus = this.getEffectiveCustomerReceiptStatus(order);
+
+    if (receiptStatus === OrderCustomerReceiptStatus.CONFIRMED) {
+      return this.mapCustomerReceiptOrder(order);
+    }
+
+    if (receiptStatus === OrderCustomerReceiptStatus.ISSUE_REPORTED) {
+      throw new ConflictException(
+        'Este pedido ya tiene una incidencia de entrega registrada. El equipo la revisara desde reportes.',
+      );
+    }
+
+    const now = new Date();
+    const updatedOrder = await this.orderModel
+      .findOneAndUpdate(
+        {
+          _id: order._id,
+          status: OrderStatus.COMPLETED,
+          ...this.buildCustomerOrderFilters(user),
+        },
+        {
+          $set: {
+            customerReceiptStatus: OrderCustomerReceiptStatus.CONFIRMED,
+            customerReceiptConfirmedAt: now,
+          },
+          $push: {
+            statusNotes: this.buildStatusNote(
+              OrderStatus.COMPLETED,
+              'Cliente confirmo la recepcion del pedido.',
+              this.toOrderActorSnapshot(user),
+            ),
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      )
+      .exec();
+
+    if (!updatedOrder) {
+      throw new ConflictException(
+        'No pudimos confirmar la recepcion porque el pedido cambio. Recarga la cuenta e intenta de nuevo.',
+      );
+    }
+
+    await this.notifyCustomerOrder(
+      updatedOrder,
+      'Recepcion confirmada',
+      `Gracias por confirmar que recibiste el pedido ${updatedOrder.reference}.`,
+      CustomerNotificationSeverity.SUCCESS,
+    );
+
+    return this.mapCustomerReceiptOrder(updatedOrder);
+  }
+
+  async reportCustomerReceiptIssue(
+    id: string,
+    user: JwtPayload,
+    reportOrderReceiptDto: ReportOrderReceiptDto,
+  ): Promise<CustomerReceiptOrderResponse> {
+    const order = await this.findOwnedCompletedOrderOrThrow(id, user);
+    const receiptStatus = this.getEffectiveCustomerReceiptStatus(order);
+
+    if (receiptStatus === OrderCustomerReceiptStatus.CONFIRMED) {
+      throw new ConflictException(
+        'Este pedido ya fue confirmado como recibido. Si necesitas ayuda, envia un reporte desde tu cuenta.',
+      );
+    }
+
+    if (receiptStatus === OrderCustomerReceiptStatus.ISSUE_REPORTED) {
+      return this.mapCustomerReceiptOrder(order);
+    }
+
+    const message =
+      reportOrderReceiptDto.note?.trim() ||
+      `El cliente reporto un problema con la entrega del pedido ${order.reference}.`;
+
+    const report = await this.reportsService.create(user, {
+      type: CustomerReportType.DELIVERY,
+      title: `Problema con entrega ${order.reference}`,
+      message,
+      orderReference: order.reference,
+      priority: CustomerReportPriority.HIGH,
+    });
+
+    const now = new Date();
+    const updatedOrder = await this.orderModel
+      .findOneAndUpdate(
+        {
+          _id: order._id,
+          status: OrderStatus.COMPLETED,
+          ...this.buildCustomerOrderFilters(user),
+        },
+        {
+          $set: {
+            customerReceiptStatus:
+              OrderCustomerReceiptStatus.ISSUE_REPORTED,
+            customerReceiptIssueReportedAt: now,
+            customerReceiptIssueNote: message,
+            customerReceiptReportId: report.id,
+          },
+          $push: {
+            statusNotes: this.buildStatusNote(
+              OrderStatus.COMPLETED,
+              'Cliente reporto un problema con la entrega.',
+              this.toOrderActorSnapshot(user),
+            ),
+          },
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true,
+        },
+      )
+      .exec();
+
+    if (!updatedOrder) {
+      throw new ConflictException(
+        'El reporte se envio, pero no pudimos enlazarlo al pedido. El equipo ya podra revisarlo desde reportes.',
+      );
+    }
+
+    return this.mapCustomerReceiptOrder(updatedOrder);
+  }
+
   private async confirmReviewedOrder(
     order: OrderDocument,
     note: string | undefined,
@@ -696,20 +877,23 @@ export class OrdersService {
         completedMutations.push(item);
       }
 
+      const completedAt = new Date();
       const updatedOrder = await this.orderModel
         .findOneAndUpdate(
           { _id: workingOrder._id, status: workingOrder.status },
           {
             $set: {
               status: OrderStatus.COMPLETED,
-              completedAt: new Date(),
+              completedAt,
               needsManualReview: false,
-              lastValidatedAt: new Date(),
+              lastValidatedAt: completedAt,
+              customerReceiptStatus: OrderCustomerReceiptStatus.PENDING,
+              customerReceiptRequestedAt: completedAt,
             },
             $push: {
               statusNotes: this.buildStatusNote(
                 OrderStatus.COMPLETED,
-                note?.trim() || 'Pedido marcado como completado.',
+                note?.trim() || 'Pedido marcado como entregado por el equipo.',
                 actor,
               ),
             },
@@ -736,8 +920,8 @@ export class OrdersService {
 
       await this.notifyCustomerOrder(
         updatedOrder,
-        'Pedido completado',
-        `Tu pedido ${updatedOrder.reference} fue completado. Ya puedes calificar tus articulos adquiridos.`,
+        'Confirma tu entrega',
+        `Tu pedido ${updatedOrder.reference} fue marcado como entregado. En tu cuenta puedes confirmar la recepcion o reportar un problema.`,
         CustomerNotificationSeverity.SUCCESS,
       );
 
@@ -1230,6 +1414,18 @@ export class OrdersService {
     return filters;
   }
 
+  private buildCustomerOrderFilters(user: JwtPayload): Record<string, unknown> {
+    const email = user.email.trim().toLowerCase();
+
+    return {
+      $or: [
+        { customerUserId: user.sub },
+        { customerUserEmail: email },
+        { 'customer.email': email },
+      ],
+    };
+  }
+
   private async findOrderOrThrow(id: string): Promise<OrderDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid order id');
@@ -1238,6 +1434,31 @@ export class OrdersService {
     const order = await this.orderModel.findById(id).exec();
     if (!order) {
       throw new NotFoundException('Order not found');
+    }
+
+    return order;
+  }
+
+  private async findOwnedCompletedOrderOrThrow(
+    id: string,
+    user: JwtPayload,
+  ): Promise<OrderDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid order id');
+    }
+
+    const order = await this.orderModel
+      .findOne({
+        _id: new Types.ObjectId(id),
+        status: OrderStatus.COMPLETED,
+        ...this.buildCustomerOrderFilters(user),
+      })
+      .exec();
+
+    if (!order) {
+      throw new NotFoundException(
+        'No encontramos una entrega completada para esta cuenta.',
+      );
     }
 
     return order;
@@ -1265,6 +1486,23 @@ export class OrdersService {
     }
   }
 
+  private getEffectiveCustomerReceiptStatus(
+    order: OrderDocument,
+  ): OrderCustomerReceiptStatus {
+    if (order.status !== OrderStatus.COMPLETED) {
+      return OrderCustomerReceiptStatus.NOT_REQUIRED;
+    }
+
+    if (
+      order.customerReceiptStatus &&
+      order.customerReceiptStatus !== OrderCustomerReceiptStatus.NOT_REQUIRED
+    ) {
+      return order.customerReceiptStatus;
+    }
+
+    return OrderCustomerReceiptStatus.PENDING;
+  }
+
   private mapAdminOrderListItem(
     order: OrderDocument,
   ): AdminOrderListItemResponse {
@@ -1272,6 +1510,7 @@ export class OrdersService {
       id: order.id,
       reference: order.reference,
       status: order.status,
+      customerReceiptStatus: this.getEffectiveCustomerReceiptStatus(order),
       customerName: order.customer.name,
       customerEmail: order.customer.email,
       customerPhone: order.customer.phone,
@@ -1283,6 +1522,57 @@ export class OrdersService {
       confirmedAt: order.confirmedAt?.toISOString(),
       cancelledAt: order.cancelledAt?.toISOString(),
       completedAt: order.completedAt?.toISOString(),
+      customerReceiptRequestedAt:
+        order.customerReceiptRequestedAt?.toISOString(),
+      customerReceiptConfirmedAt:
+        order.customerReceiptConfirmedAt?.toISOString(),
+      customerReceiptIssueReportedAt:
+        order.customerReceiptIssueReportedAt?.toISOString(),
+    };
+  }
+
+  private mapCustomerReceiptOrder(
+    order: OrderDocument,
+  ): CustomerReceiptOrderResponse {
+    return {
+      id: order.id,
+      reference: order.reference,
+      status: order.status,
+      customerReceiptStatus: this.getEffectiveCustomerReceiptStatus(order),
+      totalItems: order.totalItems,
+      subtotal: order.subtotal,
+      currency: order.currency,
+      completedAt: order.completedAt?.toISOString(),
+      customerReceiptRequestedAt:
+        order.customerReceiptRequestedAt?.toISOString() ??
+        order.completedAt?.toISOString(),
+      customerReceiptConfirmedAt:
+        order.customerReceiptConfirmedAt?.toISOString(),
+      customerReceiptIssueReportedAt:
+        order.customerReceiptIssueReportedAt?.toISOString(),
+      customerReceiptIssueNote: order.customerReceiptIssueNote,
+      customerReceiptReportId: order.customerReceiptReportId,
+      items: order.items.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        productSlug: item.productSlug,
+        image: item.image,
+        category: item.category,
+        presentation: item.presentation,
+        origin: item.origin,
+        unitPrice: item.unitPrice,
+        currency: item.currency,
+        requestedQuantity: item.requestedQuantity,
+        quantity: item.quantity,
+        subtotal: item.subtotal,
+        fulfillment: item.fulfillment,
+        stockAvailable: item.stockAvailable,
+        reservedQuantity: item.reservedQuantity,
+        backorderQuantity: item.backorderQuantity,
+        inventoryTracked: item.inventoryTracked,
+        allowBackorder: item.allowBackorder,
+        message: item.message,
+      })),
     };
   }
 
@@ -1293,6 +1583,8 @@ export class OrdersService {
       customerNotes: order.customer.notes,
       customerUserId: order.customerUserId,
       customerUserEmail: order.customerUserEmail,
+      customerReceiptIssueNote: order.customerReceiptIssueNote,
+      customerReceiptReportId: order.customerReceiptReportId,
       shippingAddress: order.shippingAddress
         ? {
             id: order.shippingAddress.sourceAddressId,

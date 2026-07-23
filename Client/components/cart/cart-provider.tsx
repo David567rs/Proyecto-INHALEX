@@ -31,6 +31,12 @@ import {
 } from "@/lib/orders/orders-api"
 import { getAccessToken } from "@/lib/auth/token-storage"
 import { getProductDisplayPrice } from "@/lib/products/promotions"
+import {
+  fetchBasketRecommendations,
+  type BasketRecommendation,
+  type RecommendationModel,
+  type RecommendationSource,
+} from "@/lib/recommendations/recommendations-api"
 import type { CartItem, Product } from "@/lib/types/product"
 
 const CART_STORAGE_KEY = "inhalex-cart-v1"
@@ -54,6 +60,10 @@ interface CartContextValue {
   syncError: string
   isSheetOpen: boolean
   lastDraft: ConfirmedOrder | null
+  recommendation: BasketRecommendation | null
+  recommendationModel: RecommendationModel | null
+  recommendationSource: RecommendationSource
+  isRecommendationLoading: boolean
   addItem: (product: Product, quantity?: number) => void
   updateItemQuantity: (productId: string, quantity: number) => void
   removeItem: (productId: string) => void
@@ -219,6 +229,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncError, setSyncError] = useState("")
   const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [recommendation, setRecommendation] =
+    useState<BasketRecommendation | null>(null)
+  const [recommendationModel, setRecommendationModel] =
+    useState<RecommendationModel | null>(null)
+  const [recommendationSource, setRecommendationSource] =
+    useState<RecommendationSource>("none")
+  const [isRecommendationLoading, setIsRecommendationLoading] = useState(false)
   const lastIssueSignatureRef = useRef("")
   const itemsRef = useRef<CartItem[]>([])
   const lastRemoteUserIdRef = useRef<string | null>(null)
@@ -328,6 +345,68 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!isReady || typeof window === "undefined") return
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   }, [isReady, items])
+
+  const recommendationProductSignature = useMemo(
+    () =>
+      [...new Set(items.map((item) => item.id))]
+        .sort((left, right) => left.localeCompare(right))
+        .join("|"),
+    [items],
+  )
+
+  useEffect(() => {
+    if (!isReady || !recommendationProductSignature) {
+      setRecommendation(null)
+      setRecommendationModel(null)
+      setRecommendationSource("none")
+      setIsRecommendationLoading(false)
+      return
+    }
+
+    const productIds = recommendationProductSignature.split("|").filter(Boolean)
+    let isCancelled = false
+
+    setRecommendation(null)
+    setRecommendationModel(null)
+    setRecommendationSource("none")
+
+    const timeoutId = window.setTimeout(async () => {
+      setIsRecommendationLoading(true)
+
+      try {
+        const response = await fetchBasketRecommendations(productIds, 1)
+        if (isCancelled) return
+
+        const currentProductIds = new Set(itemsRef.current.map((item) => item.id))
+        const nextRecommendation =
+          response.recommendations.find(
+            (candidate) => !currentProductIds.has(candidate.product.id),
+          ) ?? null
+
+        setRecommendation(nextRecommendation)
+        setRecommendationModel(response.model)
+        setRecommendationSource(
+          nextRecommendation ? response.source : "none",
+        )
+      } catch {
+        if (isCancelled) return
+
+        // Recommendations enhance the cart but never block shopping or checkout.
+        setRecommendation(null)
+        setRecommendationModel(null)
+        setRecommendationSource("none")
+      } finally {
+        if (!isCancelled) {
+          setIsRecommendationLoading(false)
+        }
+      }
+    }, 280)
+
+    return () => {
+      isCancelled = true
+      window.clearTimeout(timeoutId)
+    }
+  }, [isReady, recommendationProductSignature])
 
   useEffect(() => {
     if (!isReady) return
@@ -559,6 +638,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       syncError,
       isSheetOpen,
       lastDraft,
+      recommendation,
+      recommendationModel,
+      recommendationSource,
+      isRecommendationLoading,
       addItem,
       updateItemQuantity,
       removeItem,
@@ -579,6 +662,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items,
       lastDraft,
       preview,
+      recommendation,
+      recommendationModel,
+      recommendationSource,
+      isRecommendationLoading,
       removeItem,
       syncError,
       updateItemQuantity,

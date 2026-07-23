@@ -55,7 +55,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
     label: "Equilibrio emocional",
     headline: "Una colecci\u00f3n pensada para soltar la tensi\u00f3n y recuperar centro con cada inhalaci\u00f3n.",
     description:
-      "Integra perfiles florales, especiados y bals\u00e1micos que ayudan a crear un ambiente m\u00e1s suave, estable y reconfortante.",
+      "Integra perfiles florales, especiados y bals\u00e1micos para una experiencia arom\u00e1tica personal suave, estable y reconfortante.",
     ritual:
       "Acompa\u00f1a pausas conscientes, momentos de sobrecarga mental y espacios donde necesitas volver a tu eje.",
     image: `${LINEAS_IMAGE_BASE}/ansiedad-estres.png`,
@@ -79,14 +79,14 @@ export const LINEA_CONFIGS: LineaConfig[] = [
   {
     id: "linea-resfriado",
     name: "L\u00ednea resfriado",
-    label: "Alivio respiratorio",
-    headline: "Notas c\u00e1lidas y bot\u00e1nicas para acompa\u00f1ar temporadas de resfriado y malestar.",
+    label: "Bienestar respiratorio",
+    headline: "Notas c\u00e1lidas y bot\u00e1nicas para acompa\u00f1ar respiraciones pausadas en temporadas fr\u00edas.",
     description:
-      "Su selecci\u00f3n equilibra frescura respiratoria con acordes especiados para brindar una sensaci\u00f3n de alivio y confort.",
+      "Su selecci\u00f3n combina perfiles frescos y especiados para brindar una sensaci\u00f3n respiratoria agradable y reconfortante.",
     ritual:
-      "Pensada para d\u00edas fr\u00edos, congesti\u00f3n ligera y momentos donde el cuerpo pide calor, aire y bienestar.",
+      "Pensada para d\u00edas fr\u00edos y momentos en los que buscas calidez, frescura y una pausa de bienestar personal.",
     image: `${LINEAS_IMAGE_BASE}/resfriado.png`,
-    highlights: ["Respiro m\u00e1s claro", "Aromas especiados", "Sensaci\u00f3n reconfortante"],
+    highlights: ["Frescura al respirar", "Aromas especiados", "Sensaci\u00f3n reconfortante"],
     heroGradient: "from-[#f7efe4] via-[#fffaf4] to-[#eef4ee]",
     heroGlow: "bg-amber-200/65",
     frameSurface:
@@ -111,7 +111,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
     description:
       "Re\u00fane aromas mentolados y herbales con una sensaci\u00f3n limpia, directa y muy refrescante para el d\u00eda a d\u00eda.",
     ritual:
-      "Perfecta para comenzar la ma\u00f1ana, despejar la respiraci\u00f3n o regalar un momento de frescura inmediata.",
+      "Perfecta para comenzar la ma\u00f1ana, acompa\u00f1ar una respiraci\u00f3n pausada o regalarte un momento de frescura.",
     image: `${LINEAS_IMAGE_BASE}/verde.png`,
     highlights: ["Sensaci\u00f3n fresca", "Tonos mentolados", "Energ\u00eda bot\u00e1nica"],
     heroGradient: "from-[#edf6f0] via-[#fbfdfb] to-[#edf7f4]",

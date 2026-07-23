@@ -8,6 +8,9 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '../users/enums/user-role.enum';
 import { SalesService } from './sales.service';
 import {
   GetSalesHistoryDto,
@@ -22,7 +25,8 @@ import {
 } from './dto/sales-depletion-forecast.dto';
 
 @Controller('sales')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
@@ -60,9 +64,7 @@ export class SalesController {
 
   @Get('overview')
   @HttpCode(HttpStatus.OK)
-  async getSalesOverview(
-    @Query() query: GetSalesOverviewDto,
-  ): Promise<any> {
+  async getSalesOverview(@Query() query: GetSalesOverviewDto): Promise<any> {
     return this.salesService.getSalesOverview(query);
   }
 

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { ArrowRight, ChevronLeft, Leaf, Sparkles, Star, Wind } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
+import { ProductDetailScrollReset } from "@/components/navigation/product-detail-scroll-reset"
 import { Button } from "@/components/ui/button"
 import { getLineaConfig, getLineaHref, LINEA_CONFIGS } from "@/lib/products/lineas"
 import { resolveProductCollectionImage } from "@/lib/products/product-images"
@@ -104,6 +105,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(248,250,248,0.98),rgba(255,255,255,1)_24%,rgba(249,251,249,0.96))]">
+      <ProductDetailScrollReset routeKey={slug} />
       <Header />
 
       <main className="flex-1 pt-24 lg:pt-28">
@@ -181,7 +183,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
                       variant="outline"
                       className="rounded-full border-border/60 bg-white/74 px-6 text-foreground shadow-[0_16px_34px_-26px_rgba(15,23,42,0.14)] hover:bg-white"
                     >
-                      <Link href="/">
+                      <Link href="/productos">
                         <ChevronLeft className="mr-2 h-4 w-4" />
                         Volver al catálogo
                       </Link>
@@ -242,7 +244,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
                     Aromas
                   </p>
                   <p className="mt-2 text-3xl font-semibold text-foreground">{lineProducts.length}</p>
-                  <p className="mt-1 text-sm text-foreground/62">Productos activos en esta l\u00ednea.</p>
+                  <p className="mt-1 text-sm text-foreground/62">Productos activos en esta línea.</p>
                 </div>
 
                 <div
@@ -252,10 +254,10 @@ export default async function LineaPage({ params }: LineaPageProps) {
                   )}
                 >
                   <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-foreground/48">
-                    Notas arom\u00e1ticas
+                    Notas aromáticas
                   </p>
                   <p className="mt-2 text-3xl font-semibold text-foreground">{aromaticNotes.length}</p>
-                  <p className="mt-1 text-sm text-foreground/62">Perfil detectado en el cat\u00e1logo.</p>
+                  <p className="mt-1 text-sm text-foreground/62">Perfil detectado en el catálogo.</p>
                 </div>
 
                 <div
@@ -265,11 +267,11 @@ export default async function LineaPage({ params }: LineaPageProps) {
                   )}
                 >
                   <p className="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-foreground/48">
-                    Valoraci\u00f3n
+                    Valoración
                   </p>
                   <p className="mt-2 text-3xl font-semibold text-foreground">{averageRating ?? "Nuevo"}</p>
                   <p className="mt-1 text-sm text-foreground/62">
-                    {totalReviews > 0 ? `${totalReviews} rese\u00f1as acumuladas.` : "L\u00ednea lista para descubrir."}
+                    {totalReviews > 0 ? `${totalReviews} reseñas acumuladas.` : "Línea lista para descubrir."}
                   </p>
                 </div>
               </div>
@@ -287,7 +289,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
             >
               <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-foreground/75">
                 <Wind className="h-4 w-4 text-primary" />
-                Perfil de la l\u00ednea
+                Perfil de la línea
               </div>
               <p className="mt-4 text-lg leading-8 text-foreground/80">{linea.ritual}</p>
 
@@ -311,7 +313,7 @@ export default async function LineaPage({ params }: LineaPageProps) {
 
               {lineProducts.length === 0 ? (
                 <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                  Los aromas activos se mostrar\u00e1n aqu\u00ed en cuanto esta l\u00ednea tenga productos publicados.
+                  Los aromas activos se mostrarán aquí en cuanto esta línea tenga productos publicados.
                 </p>
               ) : (
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -336,10 +338,10 @@ export default async function LineaPage({ params }: LineaPageProps) {
         <section id="aromas" className="container mx-auto px-4 py-10 lg:py-16">
           <div className="mb-8 max-w-2xl">
             <span className="inline-flex rounded-full border border-primary/10 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary">
-              Colecci\u00f3n de aromas
+              Colección de aromas
             </span>
             <h2 className="mt-4 text-3xl font-serif font-bold text-foreground sm:text-4xl">
-              Cada l\u00ednea vive en sus aromas
+              Cada línea vive en sus aromas
             </h2>
             <p className="mt-4 text-lg leading-8 text-muted-foreground">
               Estos son los productos que forman {linea.name}. Cada uno conserva su personalidad,
@@ -457,7 +459,10 @@ export default async function LineaPage({ params }: LineaPageProps) {
                         {product.inStock ? "Disponible ahora" : "Disponible bajo pedido"}
                       </span>
                       <Button asChild className="rounded-full px-5 shadow-[0_18px_32px_-24px_rgba(16,112,58,0.4)]">
-                        <Link href={`/productos/${product.slug ?? product.id}`}>
+                        <Link
+                          href={`/productos/${product.slug ?? product.id}`}
+                          scroll
+                        >
                           Ver aroma
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
@@ -470,51 +475,168 @@ export default async function LineaPage({ params }: LineaPageProps) {
           )}
         </section>
 
-        <section className="page-fade-up page-fade-up-delay-3 container mx-auto px-4 pb-16 lg:pb-24">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <span className="inline-flex rounded-full border border-primary/10 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary">
-                Otras líneas
-              </span>
-              <h2 className="mt-4 text-3xl font-serif font-bold text-foreground">
-                Sigue explorando INHALEX
-              </h2>
-            </div>
-          </div>
+        {otherLineas.length > 0 && (
+          <section
+            aria-labelledby="otras-lineas-title"
+            className="page-fade-up page-fade-up-delay-3 relative overflow-hidden border-y border-emerald-100/60 bg-[linear-gradient(145deg,rgba(247,251,248,0.96),rgba(255,255,255,1)_48%,rgba(250,248,240,0.84))] py-16 lg:py-24"
+          >
+            <div
+              className="pointer-events-none absolute -left-24 top-8 h-72 w-72 rounded-full bg-emerald-100/55 blur-3xl"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-lime-100/45 blur-3xl"
+              aria-hidden="true"
+            />
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {otherLineas.map((item, index) => (
-              <Link
-                key={item.id}
-                href={getLineaHref(item.id)}
-                className="page-fade-up public-card-lift group overflow-hidden rounded-[1.8rem] border border-border/60 bg-white/92 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.14)] backdrop-blur-sm transition-all duration-500 hover:border-primary/20 hover:shadow-[0_30px_60px_-42px_rgba(15,23,42,0.18)]"
-                style={{ animationDelay: `${180 + index * 80}ms` }}
-              >
-                <div className={cn("relative aspect-[4/3] overflow-hidden bg-gradient-to-br", item.heroGradient)}>
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.12),transparent_58%)]" />
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-contain p-4 transition-transform duration-700 group-hover:scale-[1.04]"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-                  />
-                </div>
-                <div className="p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary/70">
-                    {item.label}
+            <div className="container relative mx-auto px-4">
+              <div className="mb-10 flex flex-col gap-6 lg:mb-12 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary shadow-[0_14px_32px_-24px_rgba(15,112,58,0.3)]">
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                    Explora otros rituales
+                  </span>
+                  <h2
+                    id="otras-lineas-title"
+                    className="mt-5 max-w-3xl text-3xl font-serif font-bold leading-tight text-foreground sm:text-4xl"
+                  >
+                    Continúa tu recorrido por INHALEX
+                  </h2>
+                  <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+                    Cada línea acompaña un momento distinto de tu día. Descubre
+                    la experiencia aromática que mejor conecta contigo.
                   </p>
-                  <h3 className="mt-2 text-2xl font-semibold text-foreground">{item.name}</h3>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
-                  <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-primary">
-                    Abrir línea
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-                  </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+
+                <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-100 bg-white/75 px-4 py-2.5 text-sm font-medium text-emerald-900 shadow-[0_16px_34px_-26px_rgba(15,112,58,0.3)]">
+                  <Leaf className="h-4 w-4 text-primary" aria-hidden="true" />
+                  {otherLineas.length} líneas por descubrir
+                </span>
+              </div>
+
+              <ul
+                className="grid list-none gap-6 p-0 lg:grid-cols-2"
+                role="list"
+              >
+                {otherLineas.map((item, index) => {
+                  const productCount = allProducts.filter(
+                    (product) => product.category === item.id,
+                  ).length
+
+                  return (
+                    <li key={item.id} className="h-full">
+                      <Link
+                        href={getLineaHref(item.id)}
+                        className="page-fade-up public-card-lift group grid h-full overflow-hidden rounded-[2rem] border border-white/90 bg-white/94 shadow-[0_28px_70px_-48px_rgba(15,52,31,0.32)] transition-all duration-500 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_38px_82px_-48px_rgba(15,84,43,0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 focus-visible:ring-offset-4 motion-reduce:transform-none motion-reduce:transition-none sm:grid-cols-[minmax(12rem,0.82fr)_minmax(0,1.18fr)]"
+                        style={{ animationDelay: `${180 + index * 70}ms` }}
+                      >
+                        <div
+                          className={cn(
+                            "relative m-3 min-h-[16.5rem] overflow-hidden rounded-[1.55rem] bg-gradient-to-br sm:mr-0 sm:min-h-full",
+                            item.heroGradient,
+                          )}
+                        >
+                          <Image
+                            src={item.image}
+                            alt=""
+                            fill
+                            className="scale-125 object-cover opacity-[0.16] blur-xl transition-transform duration-700 group-hover:scale-[1.32] motion-reduce:transition-none"
+                            sizes="(max-width: 640px) 100vw, 22vw"
+                            aria-hidden="true"
+                          />
+                          <div
+                            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.74),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.18),rgba(255,255,255,0.5))]"
+                            aria-hidden="true"
+                          />
+                          <div
+                            className={cn(
+                              "absolute left-1/2 top-1/2 h-[82%] w-[74%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-55 blur-3xl transition-opacity duration-500 group-hover:opacity-80",
+                              item.heroGlow,
+                            )}
+                            aria-hidden="true"
+                          />
+
+                          <span className="absolute left-4 top-4 z-20 inline-flex rounded-full border border-white/80 bg-white/82 px-3 py-1.5 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-emerald-900 shadow-sm backdrop-blur-md">
+                            Línea INHALEX
+                          </span>
+                          <span
+                            className="absolute right-4 top-4 z-20 font-serif text-3xl font-bold text-foreground/12"
+                            aria-hidden="true"
+                          >
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+
+                          <div className="absolute left-1/2 top-1/2 z-10 h-[78%] aspect-[2/3] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[1.35rem] border border-white/85 bg-white/24 shadow-[0_26px_52px_-26px_rgba(15,23,42,0.48)] transition-all duration-700 group-hover:-translate-y-[51%] group-hover:scale-[1.035] group-hover:shadow-[0_32px_64px_-26px_rgba(15,84,43,0.48)] motion-reduce:transform-none motion-reduce:transition-none">
+                            <Image
+                              src={item.image}
+                              alt=""
+                              fill
+                              className="object-cover"
+                              style={{ objectPosition: item.heroImagePosition }}
+                              sizes="(max-width: 640px) 42vw, 15vw"
+                              aria-hidden="true"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex min-h-full flex-col p-6 sm:p-7">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full border px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.16em]",
+                                item.badgeSurface,
+                              )}
+                            >
+                              {item.label}
+                            </span>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {productCount}{" "}
+                              {productCount === 1 ? "aroma" : "aromas"}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-5 text-2xl font-semibold leading-tight text-foreground sm:text-[1.7rem]">
+                            {item.name}
+                          </h3>
+                          <p className="mt-3 line-clamp-3 text-sm leading-7 text-muted-foreground sm:text-[0.95rem]">
+                            {item.description}
+                          </p>
+
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            {item.highlights.slice(0, 2).map((highlight) => (
+                              <span
+                                key={highlight}
+                                className={cn(
+                                  "rounded-full border px-3 py-1.5 text-xs font-medium",
+                                  item.chipSurface,
+                                )}
+                              >
+                                {highlight}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="mt-auto flex items-center justify-between border-t border-emerald-100/70 pt-6">
+                            <span className="text-sm font-semibold text-primary">
+                              Explorar línea
+                              <span className="sr-only"> {item.name}</span>
+                            </span>
+                            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/10 bg-primary/8 text-primary transition-all duration-300 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground group-focus-visible:border-primary group-focus-visible:bg-primary group-focus-visible:text-primary-foreground motion-reduce:transition-none">
+                              <ArrowRight
+                                className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none"
+                                aria-hidden="true"
+                              />
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          </section>
+        )}
       </main>
 
       <Footer />

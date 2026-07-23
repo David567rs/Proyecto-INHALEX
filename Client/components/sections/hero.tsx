@@ -9,9 +9,9 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const features = [
-  { icon: Leaf, text: "100% Natural" },
-  { icon: Droplets, text: "Esencias Puras" },
-  { icon: Wind, text: "Alivio Inmediato" },
+  { icon: Leaf, text: "Perfiles aromáticos" },
+  { icon: Droplets, text: "Formato portátil" },
+  { icon: Wind, text: "Uso personal" },
 ]
 
 export function Hero() {
@@ -33,7 +33,7 @@ export function Hero() {
       <div className="absolute inset-0">
         <Image
           src="/images/fondo.png"
-          alt="Laboratorio de plantas naturales"
+          alt="Composición botánica de INHALEX"
           fill
           priority
           className="object-cover object-center"
@@ -62,7 +62,7 @@ export function Hero() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
-              Productos 100% Naturales
+              Inhaladores aromáticos INHALEX
             </div>
 
             <div className="space-y-5">
@@ -88,9 +88,9 @@ export function Hero() {
               </h1>
 
               <p className="max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
-                Descubre nuestra seleccion de productos naturales disenados para tu bienestar
-                respiratorio. Cada esencia ofrece una experiencia fresca de alivio para
-                congestion nasal, dolor de cabeza, resfriado, gripe y tos.
+                Descubre una selección de perfiles aromáticos pensados para acompañar tus
+                pausas y rutinas cotidianas. Explora nuestras líneas y elige el aroma que
+                mejor se adapte a tu momento.
               </p>
             </div>
 
@@ -100,7 +100,7 @@ export function Hero() {
                 onClick={scrollToCatalog}
                 className="group h-14 rounded-2xl px-8 text-base font-medium shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/25"
               >
-                Ver Productos
+                Ver productos
                 <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
 
@@ -110,7 +110,7 @@ export function Hero() {
                 size="lg"
                 className="h-14 rounded-2xl border-white/60 bg-white/65 px-8 text-base font-medium backdrop-blur-sm hover:bg-white/85"
               >
-                <Link href="/nosotros">Conocer Mas</Link>
+                <Link href="/nosotros">Conocer más</Link>
               </Button>
             </div>
 
@@ -143,12 +143,12 @@ export function Hero() {
       </div>
 
       <div className="absolute bottom-7 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 lg:flex">
-        <span className="text-xs text-muted-foreground">Descubre mas</span>
+        <span className="text-xs text-muted-foreground">Descubre más</span>
         <button
           type="button"
           onClick={scrollToCatalog}
           className="flex h-11 w-7 items-start justify-center rounded-full border border-primary/20 bg-white/70 pt-2 backdrop-blur-sm transition hover:border-primary/35 hover:bg-white"
-          aria-label="Ir al catalogo"
+          aria-label="Ir al catálogo"
         >
           <span className="h-3 w-1.5 rounded-full bg-primary animate-scroll-down" />
         </button>

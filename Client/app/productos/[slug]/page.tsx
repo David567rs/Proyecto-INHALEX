@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ProductDetailPurchase } from "@/components/products/product-detail-purchase"
 import { ProductRatingSummary } from "@/components/products/product-rating-summary"
 import { ProductReviewsPanel } from "@/components/products/product-reviews-panel"
+import { ProductDetailScrollReset } from "@/components/navigation/product-detail-scroll-reset"
 import {
   resolveProductDisplayImage,
   resolveProductImagePosition,
@@ -98,6 +99,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
   return (
     <div className="min-h-screen flex flex-col">
+      <ProductDetailScrollReset routeKey={slug} />
       <Header />
 
       <main className="flex-1 pt-24 lg:pt-28">
@@ -105,6 +107,13 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
           <div className="page-fade-up mb-4 text-sm text-muted-foreground">
             <Link href="/" className="hover:text-primary transition-colors">
               Inicio
+            </Link>
+            <span className="mx-2">/</span>
+            <Link
+              href="/productos"
+              className="hover:text-primary transition-colors"
+            >
+              Productos
             </Link>
             <span className="mx-2">/</span>
             <span className="text-foreground">{product.name}</span>
@@ -139,7 +148,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <div className="page-fade-up page-fade-up-delay-2 rounded-[30px] border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,244,237,0.96))] p-6 shadow-[0_28px_70px_-42px_rgba(64,50,30,0.22)] lg:p-8">
               <div className="mb-4 flex flex-wrap gap-2">
                 <span className="rounded-full border border-primary/10 bg-primary/8 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-primary">
-                  Producto INHALEX
+                  Inhalador INHALEX
                 </span>
                 {hasOffer ? (
                   <span className="rounded-full border border-amber-100 bg-amber-50 px-3 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-amber-700">
@@ -178,6 +187,10 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
 
               <p className="mt-5 leading-8 text-muted-foreground">
                 {product.longDescription || product.description}
+              </p>
+
+              <p className="mt-3 text-xs leading-5 text-muted-foreground/75">
+                Producto aromático de uso personal. No sustituye la orientación ni la atención médica.
               </p>
 
               <div className="mt-6 rounded-2xl border border-stone-200/80 bg-white/82 p-5 shadow-[0_18px_36px_-32px_rgba(64,50,30,0.2)]">
@@ -226,14 +239,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                   className="rounded-full border-stone-200/80 bg-white shadow-[0_12px_24px_-20px_rgba(64,50,30,0.2)]"
                   asChild
                 >
-                  <Link href="/">Volver al catalogo</Link>
+                  <Link href="/productos" scroll>
+                    Volver al catálogo
+                  </Link>
                 </Button>
               </div>
             </div>
           </div>
 
           <div className="mx-auto max-w-[1060px]">
-            <ProductReviewsPanel productId={product.id} />
+            <ProductReviewsPanel
+              productId={product.id}
+              productName={product.name}
+              rating={product.rating}
+              reviewCount={product.reviews}
+            />
           </div>
         </section>
       </main>

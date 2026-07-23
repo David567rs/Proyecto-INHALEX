@@ -211,14 +211,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Toronjil',
         slug: 'toronjil',
         description:
-            'Frescura citrica y herbacea que alivia el estres y proporciona serenidad.',
+            'Inhalador aromático personal de notas cítricas y herbales, ideal para acompañar pausas de calma y relajación.',
         category: 'linea-insomnio',
         benefits: [
-            'Alivia el estres',
-            'Promueve la calma',
-            'Aroma refrescante'
+            'Sensación de calma',
+            'Perfil cítrico y herbal',
+            'Ideal para pausas de relajación'
         ],
-        aromas: ['toronjil', 'melisa', 'citrico', 'herbaceo'],
+        aromas: ['toronjil', 'melisa', 'cítrico', 'herbáceo'],
         price: 60,
         stockAvailable: 16,
         rating: 4.8,
@@ -226,12 +226,16 @@ const FALLBACK_PRODUCT_DATA = [
     },
     {
         id: 'fallback-mirra-y-azafran',
-        name: 'Mirra y Azafran',
+        name: 'Mirra y Azafrán',
         slug: 'mirra-y-azafran',
         description:
-            'Combinacion exotica y sofisticada que eleva el espiritu y proporciona bienestar.',
+            'Inhalador aromático personal de perfil resinoso y especiado, pensado para momentos de enfoque y bienestar.',
         category: 'linea-ansiedad-estres',
-        benefits: ['Aroma exotico', 'Eleva el espiritu', 'Sofisticado'],
+        benefits: [
+            'Perfil resinoso y especiado',
+            'Sensación envolvente',
+            'Ideal para pausas conscientes'
+        ],
         aromas: ['mirra', 'azafran', 'resina', 'especiado'],
         price: 60,
         stockAvailable: 23,
@@ -243,12 +247,12 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Copal',
         slug: 'copal',
         description:
-            'Esencia ancestral purificadora que limpia el ambiente y proporciona paz interior.',
+            'Inhalador aromático personal de notas resinosas y amaderadas que acompaña momentos de pausa y concentración.',
         category: 'linea-estimulante',
         benefits: [
-            'Purifica el ambiente',
-            'Promueve la meditacion',
-            'Conexion espiritual'
+            'Perfil resinoso y amaderado',
+            'Sensación de profundidad',
+            'Acompaña momentos de introspección'
         ],
         aromas: ['copal', 'resina', 'amaderado', 'ritual'],
         price: 60,
@@ -258,15 +262,15 @@ const FALLBACK_PRODUCT_DATA = [
     },
     {
         id: 'fallback-anis-estrella',
-        name: 'Anis Estrella',
+        name: 'Anís Estrella',
         slug: 'anis-estrella',
         description:
-            'Dulzura especiada unica que reconforta y proporciona calidez aromatica.',
+            'Inhalador aromático personal de notas dulces y especiadas, con una sensación cálida y reconfortante.',
         category: 'linea-ansiedad-estres',
         benefits: [
-            'Aroma reconfortante',
-            'Proporciona calidez',
-            'Dulce y especiado'
+            'Perfil dulce y especiado',
+            'Sensación cálida',
+            'Acompaña la relajación'
         ],
         aromas: ['anis', 'especiado', 'dulce', 'estrella'],
         price: 60,
@@ -279,12 +283,12 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Eucalipto',
         slug: 'eucalipto',
         description:
-            'Frescura mentolada que despeja las vias respiratorias y revitaliza los sentidos.',
+            'Inhalador aromático personal de perfil mentolado que brinda una sensación fresca al respirar.',
         category: 'linea-verde',
         benefits: [
-            'Despeja vias respiratorias',
-            'Alivia congestion',
-            'Revitaliza'
+            'Sensación de frescura',
+            'Perfil mentolado',
+            'Acompaña respiraciones conscientes'
         ],
         aromas: ['eucalipto', 'mentolado', 'fresco', 'respiratorio'],
         price: 60,
@@ -297,12 +301,12 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Lavanda',
         slug: 'lavanda',
         description:
-            'Aroma floral relajante que calma la mente y favorece el descanso profundo.',
+            'Inhalador aromático personal de notas florales suaves, ideal para acompañar momentos de calma y descanso.',
         category: 'linea-insomnio',
         benefits: [
-            'Calma la mente',
-            'Favorece el descanso',
-            'Alivia tension'
+            'Sensación de calma',
+            'Perfil floral suave',
+            'Acompaña la rutina de descanso'
         ],
         aromas: ['lavanda', 'floral', 'calmante', 'suave'],
         price: 60,
@@ -315,12 +319,12 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Menta',
         slug: 'menta',
         description:
-            'Frescura intensa que activa la mente y proporciona energia instantanea.',
+            'Inhalador aromático personal de frescura intensa, pensado para acompañar momentos de atención y energía.',
         category: 'linea-verde',
         benefits: [
-            'Activa la mente',
-            'Proporciona energia',
-            'Alivia dolor de cabeza'
+            'Sensación refrescante',
+            'Perfil mentolado intenso',
+            'Acompaña momentos de enfoque'
         ],
         aromas: ['menta', 'fresco', 'mentolado', 'estimulante'],
         price: 60,
@@ -333,14 +337,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Romero',
         slug: 'romero',
         description:
-            'Esencia herbacea vigorizante que mejora la concentracion y la memoria.',
+            'Inhalador aromático personal de notas herbales y verdes, ideal para acompañar momentos de claridad y enfoque.',
         category: 'linea-resfriado',
         benefits: [
-            'Mejora concentracion',
-            'Fortalece memoria',
-            'Vigorizante'
+            'Perfil herbal y verde',
+            'Sensación vigorizante',
+            'Acompaña la concentración'
         ],
-        aromas: ['romero', 'herbaceo', 'verde', 'mediterraneo'],
+        aromas: ['romero', 'herbáceo', 'verde', 'mediterraneo'],
         price: 60,
         stockAvailable: 25,
         rating: 4.6,
@@ -351,14 +355,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Canela',
         slug: 'canela',
         description:
-            'Calidez especiada que reconforta el cuerpo y estimula la circulacion.',
+            'Inhalador aromático personal de notas calidas y especiadas que brinda una experiencia reconfortante.',
         category: 'linea-resfriado',
         benefits: [
-            'Reconforta el cuerpo',
-            'Estimula circulacion',
-            'Aroma calido'
+            'Sensación cálida',
+            'Perfil dulce y especiado',
+            'Acompaña momentos de confort'
         ],
-        aromas: ['canela', 'especiado', 'calido', 'dulce'],
+        aromas: ['canela', 'especiado', 'cálido', 'dulce'],
         price: 60,
         stockAvailable: 25,
         rating: 4.7,
@@ -369,14 +373,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Jengibre',
         slug: 'jengibre',
         description:
-            'Energia picante y revitalizante que activa el cuerpo y despeja la mente.',
+            'Inhalador aromático personal de perfil cálido y especiado, pensado para una experiencia vigorizante.',
         category: 'linea-resfriado',
         benefits: [
-            'Revitalizante',
-            'Despeja vias respiratorias',
-            'Mejora circulacion'
+            'Sensación revitalizante',
+            'Perfil cálido y especiado',
+            'Acompaña momentos de actividad'
         ],
-        aromas: ['jengibre', 'picante', 'calido', 'especiado'],
+        aromas: ['jengibre', 'picante', 'cálido', 'especiado'],
         price: 60,
         stockAvailable: 25,
         rating: 4.8,
@@ -384,12 +388,16 @@ const FALLBACK_PRODUCT_DATA = [
     },
     {
         id: 'fallback-cafe',
-        name: 'Cafe',
+        name: 'Café',
         slug: 'cafe',
         description:
-            'Aroma intenso y estimulante que despierta los sentidos y activa la mente.',
+            'Inhalador aromático personal de notas tostadas e intensas, ideal para acompañar momentos de energía y atención.',
         category: 'linea-estimulante',
-        benefits: ['Estimulante', 'Combate fatiga', 'Despierta los sentidos'],
+        benefits: [
+            'Perfil tostado e intenso',
+            'Sensación energica',
+            'Acompaña momentos de enfoque'
+        ],
         aromas: ['cafe', 'tostado', 'intenso', 'estimulante'],
         price: 60,
         stockAvailable: 21,
@@ -401,10 +409,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Hierbabuena',
         slug: 'hierbabuena',
         description:
-            'Frescura suave y digestiva que calma el estomago y refresca el aliento.',
+            'Inhalador aromático personal de perfil verde y mentolado, con una sensación suave y refrescante.',
         category: 'linea-verde',
-        benefits: ['Digestiva', 'Refresca el aliento', 'Aroma suave'],
-        aromas: ['hierbabuena', 'menta suave', 'fresco', 'digestivo'],
+        benefits: [
+            'Frescura suave',
+            'Perfil herbal y mentolado',
+            'Acompaña respiraciones pausadas'
+        ],
+        aromas: ['hierbabuena', 'menta suave', 'fresco', 'herbal'],
         price: 60,
         stockAvailable: 25,
         rating: 4.6,
@@ -415,9 +427,13 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Vaporub',
         slug: 'vaporub',
         description:
-            'Planta aromatica descongestionante que alivia sintomas de gripe y resfriado.',
+            'Inhalador aromático personal de perfil mentolado intenso, pensado para brindar una sensación fresca al respirar.',
         category: 'linea-verde',
-        benefits: ['Descongestionante', 'Alivia gripe', 'Alivio inmediato'],
+        benefits: [
+            'Frescura mentolada intensa',
+            'Sensación fresca al inhalar',
+            'Acompaña respiraciones conscientes'
+        ],
         aromas: ['vaporub', 'mentolado', 'respiratorio', 'fresco'],
         price: 60,
         stockAvailable: 25,
@@ -429,10 +445,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Rosas de Castilla',
         slug: 'rosas-de-castilla',
         description:
-            'Delicadeza floral romantica que calma emociones y nutre el espiritu.',
+            'Inhalador aromático personal de notas florales suaves, ideal para acompañar respiraciones tranquilas y momentos de calma.',
         category: 'linea-ansiedad-estres',
-        benefits: ['Calma emociones', 'Aroma romantico', 'Nutre el espiritu'],
-        aromas: ['rosa', 'floral', 'romantico', 'suave'],
+        benefits: [
+            'Perfil floral suave',
+            'Sensación reconfortante',
+            'Acompaña momentos de calma'
+        ],
+        aromas: ['rosa', 'floral', 'delicado', 'suave'],
         price: 60,
         stockAvailable: 5,
         rating: 4.5,
@@ -443,10 +463,14 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Bugambilia',
         slug: 'bugambilia',
         description:
-            'Esencia floral vibrante que alivia la tos y fortalece el sistema respiratorio.',
+            'Inhalador aromático personal de perfil floral y verde, pensado para una sensación suave y fresca al respirar.',
         category: 'linea-resfriado',
-        benefits: ['Alivia la tos', 'Expectorante', 'Fortalece inmunidad'],
-        aromas: ['bugambilia', 'floral', 'expectorante', 'respiratorio'],
+        benefits: [
+            'Perfil floral y verde',
+            'Sensación fresca y ligera',
+            'Acompaña respiraciones pausadas'
+        ],
+        aromas: ['bugambilia', 'floral', 'verde', 'suave'],
         price: 60,
         stockAvailable: 25,
         rating: 4.7,
@@ -457,12 +481,12 @@ const FALLBACK_PRODUCT_DATA = [
         name: 'Manzanilla',
         slug: 'manzanilla',
         description:
-            'Suavidad calmante que relaja el cuerpo y promueve el sueno reparador.',
+            'Inhalador aromático personal de notas florales suaves, ideal para acompañar momentos de relajación y descanso.',
         category: 'linea-ansiedad-estres',
         benefits: [
-            'Calmante natural',
-            'Promueve el sueno',
-            'Reduce ansiedad'
+            'Sensación de calma',
+            'Perfil floral suave',
+            'Acompaña la rutina de descanso'
         ],
         aromas: ['manzanilla', 'floral suave', 'calmante', 'dulce'],
         price: 60,
@@ -781,43 +805,133 @@ function normalizeText(value) {
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
+}
+
+function buildUnavailableProductSpeech(productName) {
+    const requestedProduct = String(productName || '')
+        .trim()
+        .replace(/^(?:el|la)\s+/i, '')
+        .replace(/^(?:aroma|esencia)(?:\s+de)?\s+/i, '')
+        .replace(/[.!?¡¿]+$/g, '')
+        .trim();
+
+    if (!requestedProduct) {
+        return (
+            'No pude identificar el aroma que solicitaste. ' +
+            'Te mostraré los aromas que tenemos disponibles.'
+        );
+    }
+
+    return (
+        'Por el momento, el aroma de ' +
+        requestedProduct +
+        ' no forma parte de nuestro catálogo. ' +
+        'Te mostraré los aromas que tenemos disponibles.'
+    );
 }
 
 function makeSlug(value) {
     return normalizeText(value)
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9]+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
 }
 
 const PRODUCT_ALIAS_MAP = {
+    'torongil': 'toronjil',
+
     'azafran': 'mirra-y-azafran',
     'mirra': 'mirra-y-azafran',
     'mirra-azafran': 'mirra-y-azafran',
     'mirra-con-azafran': 'mirra-y-azafran',
+    'mira-y-azafran': 'mirra-y-azafran',
+
+    'resina-copal': 'copal',
 
     'anis': 'anis-estrella',
     'anis-estrellado': 'anis-estrella',
+    'anis-de-estrella': 'anis-estrella',
+
+    'eucalito': 'eucalipto',
+
+    'labanda': 'lavanda',
+    'la-banda': 'lavanda',
+    'floral-lavanda': 'lavanda',
 
     'cafe': 'cafe',
     'cafecito': 'cafe',
 
     'gingibre': 'jengibre',
+    'gengibre': 'jengibre',
+    'jenjibre': 'jengibre',
 
     'hierba-buena': 'hierbabuena',
+    'yerbabuena': 'hierbabuena',
+    'yerba-buena': 'hierbabuena',
 
     'melisa': 'toronjil',
 
     'rosa-de-castilla': 'rosas-de-castilla',
+    'rosa-castilla': 'rosas-de-castilla',
     'rosas-castilla': 'rosas-de-castilla',
     'rosas': 'rosas-de-castilla',
 
     'vapo-rub': 'vaporub',
     'vapor-rub': 'vaporub',
-    'vaporizante': 'vaporub'
+    'vaporu': 'vaporub',
+    'vaporizante': 'vaporub',
+
+    'buganvilia': 'bugambilia',
+    'buganvilla': 'bugambilia',
+    'bugambilias': 'bugambilia'
 };
+
+function normalizeProductQuery(value) {
+    let querySlug = makeSlug(value);
+
+    if (!querySlug) {
+        return '';
+    }
+
+    for (let iteration = 0; iteration < 8; iteration += 1) {
+        const aliasedSlug = PRODUCT_ALIAS_MAP[querySlug];
+
+        if (aliasedSlug) {
+            return aliasedSlug;
+        }
+
+        let nextSlug = querySlug;
+
+        if (/(?:-natural|-fresco|-fresca|-por-favor)$/.test(nextSlug)) {
+            nextSlug = nextSlug.replace(
+                /(?:-natural|-fresco|-fresca|-por-favor)$/,
+                ''
+            );
+        } else if (/^(?:aroma|esencia)(?:-de)?-/.test(nextSlug)) {
+            nextSlug = nextSlug.replace(
+                /^(?:aroma|esencia)(?:-de)?-/,
+                ''
+            );
+        } else if (/^de-/.test(nextSlug)) {
+            nextSlug = nextSlug.replace(/^de-/, '');
+        } else if (/^(?:el|la|los|las|un|una)-/.test(nextSlug)) {
+            nextSlug = nextSlug.replace(
+                /^(?:el|la|los|las|un|una)-/,
+                ''
+            );
+        }
+
+        if (!nextSlug || nextSlug === querySlug) {
+            break;
+        }
+
+        querySlug = nextSlug;
+    }
+
+    return PRODUCT_ALIAS_MAP[querySlug] || querySlug;
+}
 
 function normalizeBenefits(benefits) {
     if (Array.isArray(benefits)) {
@@ -878,11 +992,11 @@ function softenHealthClaims(value) {
     return value
         .replace(
             /despeja (las )?v[ií]as respiratorias/gi,
-            'aporta una sensacion fresca para respirar con mas comodidad'
+            'aporta una sensación fresca para respirar con mas comodidad'
         )
         .replace(
             /alivia congesti[oó]n/gi,
-            'acompaña una sensacion de respiracion despejada'
+            'acompaña una sensación de respiración despejada'
         )
         .replace(
             /alivia s[ií]ntomas de gripe y resfriado/gi,
@@ -890,7 +1004,7 @@ function softenHealthClaims(value) {
         )
         .replace(
             /alivia la tos/gi,
-            'aporta una sensacion herbal reconfortante'
+            'aporta una sensación herbal reconfortante'
         )
         .replace(
             /alivia gripe/gi,
@@ -926,11 +1040,11 @@ function softenHealthClaims(value) {
         )
         .replace(
             /estimula la circulaci[oó]n/gi,
-            'ofrece una sensacion calida y reconfortante'
+            'ofrece una sensación cálida y reconfortante'
         )
         .replace(
             /mejora circulaci[oó]n/gi,
-            'aporta una sensacion calida y revitalizante'
+            'aporta una sensación cálida y revitalizante'
         )
         .replace(
             /mejora (la )?concentraci[oó]n( y la memoria)?/gi,
@@ -942,7 +1056,7 @@ function softenHealthClaims(value) {
         )
         .replace(
             /calma el est[oó]mago/gi,
-            'ofrece una sensacion digestiva suave'
+            'ofrece una sensación digestiva suave'
         )
         .replace(
             /calma emociones/gi,
@@ -1205,47 +1319,25 @@ async function getProducts() {
 }
 
 function findProduct(products, productName) {
-    const searchValue = normalizeText(productName);
-    const searchSlug = makeSlug(productName);
-    const canonicalSearchSlug =
-        PRODUCT_ALIAS_MAP[searchSlug] ||
-        searchSlug;
+    const querySlug = normalizeProductQuery(productName);
 
-    if (!searchValue || !Array.isArray(products)) {
+    if (!querySlug || !Array.isArray(products)) {
         return null;
     }
 
     return products.find(function(product) {
-        const normalizedName = normalizeText(product.name);
-        const normalizedSlug = normalizeText(product.slug);
-        const normalizedId = normalizeText(product.id);
+        if (!product || typeof product !== 'object') {
+            return false;
+        }
 
-        const productSlug = makeSlug(product.slug);
-        const productIdSlug = makeSlug(product.id);
-
-        const normalizedAromas = Array.isArray(product.aromas)
-            ? product.aromas.map(normalizeText)
-            : [];
-
-        const aromaSlugs = Array.isArray(product.aromas)
-            ? product.aromas.map(makeSlug)
-            : [];
-
-        return (
-            normalizedName === searchValue ||
-            normalizedSlug === searchValue ||
-            normalizedId === searchValue ||
-            productSlug === canonicalSearchSlug ||
-            productIdSlug === canonicalSearchSlug ||
-            normalizedName.includes(searchValue) ||
-            searchValue.includes(normalizedName) ||
-            normalizedSlug.includes(searchValue) ||
-            searchValue.includes(normalizedSlug) ||
-            productSlug.includes(canonicalSearchSlug) ||
-            canonicalSearchSlug.includes(productSlug) ||
-            normalizedAromas.includes(searchValue) ||
-            aromaSlugs.includes(canonicalSearchSlug)
-        );
+        return [
+            product.name,
+            product.slug,
+            product.id
+        ]
+            .map(makeSlug)
+            .filter(Boolean)
+            .includes(querySlug);
     }) || null;
 }
 
@@ -1921,7 +2013,9 @@ module.exports = {
     unlinkAlexaAccount,
 
     normalizeText,
+    buildUnavailableProductSpeech,
     makeSlug,
+    normalizeProductQuery,
     normalizeProduct,
     normalizeAccessCode,
     maskAccessCode,

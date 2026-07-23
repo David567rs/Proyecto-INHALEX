@@ -55,19 +55,19 @@ export function Footer() {
             </Link>
 
             <p className="mt-4 max-w-sm text-[0.97rem] leading-7 text-muted-foreground">
-              Productos aromaticos para respirar con mas calma, claridad y bienestar, con
-              una experiencia visual y sensorial mas cuidada en cada linea.
+              Inhaladores aromáticos personales para acompañar pausas y rutinas
+              cotidianas, con una experiencia visual y sensorial cuidada en cada línea.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
-                100% Natural
+                Perfiles aromáticos
               </span>
               <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
-                Aromas por linea
+                Aromas por línea
               </span>
               <span className="rounded-full border border-emerald-100/80 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700">
-                Bienestar diario
+                Uso personal
               </span>
             </div>
           </section>

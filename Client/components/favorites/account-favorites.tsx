@@ -39,7 +39,7 @@ export function AccountFavorites() {
             Todavia no guardaste productos favoritos.
           </p>
           <Button asChild variant="outline" className="mt-4 rounded-full">
-            <Link href="/#catalogo">Explorar productos</Link>
+            <Link href="/productos">Explorar productos</Link>
           </Button>
         </div>
       ) : (

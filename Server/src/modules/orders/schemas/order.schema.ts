@@ -17,6 +17,13 @@ export enum OrderIssueSeverity {
   ERROR = 'error',
 }
 
+export enum OrderCustomerReceiptStatus {
+  NOT_REQUIRED = 'not_required',
+  PENDING = 'pending',
+  CONFIRMED = 'confirmed',
+  ISSUE_REPORTED = 'issue_reported',
+}
+
 @Schema({ _id: false, versionKey: false })
 export class OrderItemSnapshot {
   @Prop({ required: true })
@@ -249,6 +256,29 @@ export class Order {
 
   @Prop({ type: Date })
   completedAt?: Date;
+
+  @Prop({
+    type: String,
+    enum: OrderCustomerReceiptStatus,
+    default: OrderCustomerReceiptStatus.NOT_REQUIRED,
+    index: true,
+  })
+  customerReceiptStatus: OrderCustomerReceiptStatus;
+
+  @Prop({ type: Date })
+  customerReceiptRequestedAt?: Date;
+
+  @Prop({ type: Date })
+  customerReceiptConfirmedAt?: Date;
+
+  @Prop({ type: Date })
+  customerReceiptIssueReportedAt?: Date;
+
+  @Prop({ trim: true, maxlength: 1000 })
+  customerReceiptIssueNote?: string;
+
+  @Prop({ trim: true, maxlength: 64 })
+  customerReceiptReportId?: string;
 
   @Prop({ type: [OrderStatusNoteSnapshotSchema], default: [] })
   statusNotes: OrderStatusNoteSnapshot[];

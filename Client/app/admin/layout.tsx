@@ -88,7 +88,7 @@ const REPORTES_LINK: AdminNavLink = {
 const VENTAS_LINK: AdminNavLink = {
   href: "/admin/ventas",
   label: "Ventas",
-  description: "Reportes y graficas",
+  description: "Reportes y modelos",
   icon: BarChart3,
   isActive: (pathname) => pathname.startsWith("/admin/ventas"),
 };

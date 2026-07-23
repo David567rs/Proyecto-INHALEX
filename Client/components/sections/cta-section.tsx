@@ -6,7 +6,19 @@ import { ArrowRight, Leaf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export function CTASection() {
+interface CTASectionProps {
+  productCount: number
+  categoryCount: number
+  availableCount: number
+  isLoading?: boolean
+}
+
+export function CTASection({
+  productCount,
+  categoryCount,
+  availableCount,
+  isLoading = false,
+}: CTASectionProps) {
   const [isVisible, setIsVisible] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
 
@@ -57,11 +69,11 @@ export function CTASection() {
           )}
         >
           <h2 className="public-display-heading mb-6 text-3xl text-balance text-primary-foreground sm:text-4xl lg:text-5xl">
-            Respira Mejor, Vive Mejor
+            Encuentra un aroma para tu momento
           </h2>
           <p className="text-lg lg:text-xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto text-pretty leading-relaxed">
-            Únete a miles de personas que han encontrado alivio natural con INHALEX.
-            Nuestros productos están diseñados para mejorar tu calidad de vida.
+            Recorre el catálogo de INHALEX, compara sus perfiles aromáticos y conoce la
+            disponibilidad de cada opción antes de elegir.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -70,8 +82,8 @@ export function CTASection() {
               size="lg"
               className="group bg-white px-8 py-6 text-base font-medium text-primary shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-2xl"
             >
-              <Link href="/#catalogo">
-                Explorar Productos
+              <Link href="/productos">
+                Explorar productos
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Button>
@@ -81,22 +93,30 @@ export function CTASection() {
               size="lg"
               className="px-8 py-6 text-base font-medium border-2 border-white/30 text-primary-foreground hover:bg-white/10 hover:border-white/50 bg-transparent transition-all duration-300"
             >
-              <Link href="/nosotros">Conoce Nuestra Historia</Link>
+              <Link href="/nosotros">Conoce nuestra historia</Link>
             </Button>
           </div>
 
           {/* Stats */}
           <div
             className={cn(
-              "grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-10 border-t border-white/20 transition-all duration-1000 delay-300",
+              "mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 border-t border-white/20 pt-10 transition-all delay-300 duration-1000 sm:grid-cols-3",
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             )}
           >
             {[
-              { value: "10K+", label: "Clientes Felices" },
-              { value: "8", label: "Productos Naturales" },
-              { value: "100%", label: "Ingredientes Naturales" },
-              { value: "4.8", label: "Calificación Promedio" },
+              {
+                value: isLoading ? "—" : productCount,
+                label: "Aromas en catálogo",
+              },
+              {
+                value: isLoading ? "—" : categoryCount,
+                label: "Líneas para explorar",
+              },
+              {
+                value: isLoading ? "—" : availableCount,
+                label: "Opciones disponibles",
+              },
             ].map((stat) => (
               <div key={stat.label} className="text-center transition-transform duration-500 hover:-translate-y-1">
                 <p className="text-3xl lg:text-4xl font-bold text-primary-foreground mb-1">
