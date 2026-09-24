@@ -176,6 +176,57 @@ PAIR_AFFINITIES = {
     "hierbabuena": {"menta", "manzanilla"},
 }
 
+# Conjuntos que representan compras temáticas poco frecuentes pero recurrentes.
+# No se añaden al dataset como una etiqueta: únicamente influyen en la selección
+# de artículos de algunas canastas, permitiendo que Apriori encuentre patrones
+# de 3 y 4 antecedentes a partir de compras plausibles de varios inhaladores.
+ROUTINE_BUNDLES = {
+    "descanso": (
+        "lavanda",
+        "manzanilla",
+        "toronjil",
+        "rosas-de-castilla",
+        "anis-estrella",
+    ),
+    "frescura": (
+        "eucalipto",
+        "menta",
+        "hierbabuena",
+        "vaporub",
+        "romero",
+    ),
+    "calidez": (
+        "canela",
+        "jengibre",
+        "anis-estrella",
+        "cafe",
+        "copal",
+    ),
+    "botanica": (
+        "copal",
+        "mirra-y-azafran",
+        "romero",
+        "bugambilia",
+        "rosas-de-castilla",
+    ),
+}
+
+ROUTINES_BY_PRIMARY_CATEGORY = {
+    "linea-insomnio": ("descanso",),
+    "linea-ansiedad-estres": ("descanso", "calidez"),
+    "linea-verde": ("frescura",),
+    "linea-resfriado": ("frescura", "calidez"),
+    "linea-estimulante": ("calidez", "botanica"),
+}
+
+ROUTINE_PROBABILITY_BY_SEGMENT = {
+    "nuevo": 0.03,
+    "ocasional": 0.07,
+    "recurrente": 0.13,
+    "leal": 0.22,
+    "inactivo": 0.04,
+}
+
 INTERACTION_STRENGTH = {
     "view": 1.0,
     "search_click": 1.5,
@@ -477,7 +528,25 @@ def choose_products(
     available = catalog.copy()
     selected: list[dict[str, Any]] = []
     selected_slugs: set[str] = set()
-    for _ in range(min(size, len(available))):
+
+    # Una minoría de compras representa una selección temática completa.
+    # Los productos siguen viniendo del catálogo y no se crea información
+    # artificial fuera de la estructura real de pedidos.
+    routine_probability = ROUTINE_PROBABILITY_BY_SEGMENT[customer["reference_segment"]]
+    if rng.random() < routine_probability:
+        routine_names = ROUTINES_BY_PRIMARY_CATEGORY[customer["primary_category"]]
+        routine_name = weighted_choice(rng, list(routine_names), [1.0] * len(routine_names))
+        products_by_slug = {product["slug"]: product for product in available}
+        for slug in ROUTINE_BUNDLES[routine_name]:
+            product = products_by_slug.get(slug)
+            if product is None:
+                continue
+            selected.append(product)
+            selected_slugs.add(slug)
+            available.remove(product)
+
+    target_size = max(size, len(selected))
+    for _ in range(min(target_size - len(selected), len(available))):
         weights = [product_weight(customer, item, value, selected_slugs) for item in available]
         product = weighted_choice(rng, available, weights)
         selected.append(product)
@@ -1640,17 +1709,17 @@ def main() -> int:
     )
     recommendation_path = output_dir / "dataset_recomendacion_aromas.csv"
     demand_path = output_dir / "dataset_prediccion_demanda.csv"
-    segmentation_path = output_dir / "dataset_segmentacion_clientes.csv"
-
     if args.validate_only:
         recommendation_rows = read_csv(recommendation_path)
         demand_rows = read_csv(demand_path)
-        segmentation_rows = read_csv(segmentation_path)
+        # La segmentacion fue descartada como propuesta activa. Se conserva
+        # solamente en memoria para mantener la validacion interna heredada,
+        # sin volver a publicar un tercer dataset.
+        _, _, segmentation_rows = generate(config, catalog)
     else:
         recommendation_rows, demand_rows, segmentation_rows = generate(config, catalog)
         write_csv(recommendation_path, recommendation_rows, RECOMMENDATION_COLUMNS)
         write_csv(demand_path, demand_rows, DEMAND_COLUMNS)
-        write_csv(segmentation_path, segmentation_rows, SEGMENTATION_COLUMNS)
 
     report = validate_generated(
         recommendation_rows,
@@ -1659,6 +1728,9 @@ def main() -> int:
         catalog,
         config,
     )
+    # El reporte publico solo describe las dos propuestas que permanecen
+    # dentro del alcance actual del proyecto.
+    report.get("row_counts", {}).pop("segmentation", None)
     report_path = output_dir / "validation-report.json"
     report_path.write_text(
         json.dumps(report, ensure_ascii=False, indent=2),

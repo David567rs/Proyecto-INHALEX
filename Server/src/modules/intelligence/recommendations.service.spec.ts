@@ -131,7 +131,7 @@ function buildArtifact(
   overrides: Partial<AprioriArtifact> = {},
 ): AprioriArtifact {
   return {
-    schemaVersion: '1.0',
+    schemaVersion: '1.1',
     model: {
       name: 'Apriori',
       version: 'apriori-test-v1',
@@ -146,11 +146,16 @@ function buildArtifact(
       minSupport: 0.05,
       minConfidence: 0.3,
       minLift: 1,
+      maxItemsetSize: 5,
+      maxAntecedentSize: 4,
     },
     metrics: {
       rules: 0,
+      multiAntecedentRules: 0,
+      maxAntecedentSizeFound: 0,
       catalogCoverage: 0.75,
       temporalTop1HitRate: 0.6,
+      temporalEvaluatedContexts: 20,
       temporalTrainTransactions: 96,
       temporalValidationTransactions: 24,
     },
@@ -302,6 +307,40 @@ describe('RecommendationsService', () => {
       }),
     );
     expect(productModel.find).toHaveBeenCalledTimes(1);
+  });
+
+  it('prioriza una regla con varios aromas de contexto sobre una regla simple', async () => {
+    products = [
+      buildProduct('lavanda'),
+      buildProduct('toronjil'),
+      buildProduct('rosas-de-castilla'),
+      buildProduct('manzanilla'),
+    ];
+    useArtifact(
+      buildArtifact({
+        rules: [
+          buildRule(['lavanda'], 'manzanilla', { score: 0.99 }),
+          buildRule(
+            ['lavanda', 'toronjil', 'rosas-de-castilla'],
+            'manzanilla',
+            { score: 0.45 },
+          ),
+        ],
+      }),
+    );
+
+    const response = await recommend(
+      ['id-lavanda', 'id-toronjil', 'id-rosas-de-castilla'],
+      1,
+    );
+
+    expect(response.source).toBe('apriori');
+    expect(response.recommendations[0].basedOn).toEqual([
+      'Lavanda',
+      'Toronjil',
+      'Rosas De Castilla',
+    ]);
+    expect(response.recommendations[0].product.slug).toBe('manzanilla');
   });
 
   it('salta productos inactivos o sin existencias y conserva un candidato disponible', async () => {

@@ -30,9 +30,11 @@ reproducibles a partir del generador y ocupan varios megabytes.
 
 ## Pipeline desplegable de las propuestas 1 y 2
 
-Las propuestas de recomendación y demanda ya cuentan con scripts de
-entrenamiento separados de las libretas. Las libretas explican y ejecutan el
-proceso, pero la lógica reutilizable vive en `ml/src/`.
+Las propuestas de recomendación y demanda cuentan con scripts reutilizables en
+`ml/src/` y con libretas que desarrollan visiblemente el ciclo completo:
+comprensión del negocio, perfilado, ETL, preparación, modelado, evaluación y
+exportación. Las libretas no cargan credenciales ni usan CSV como fuente de
+producción; el CSV es la evidencia reproducible del desarrollo sintético.
 
 ### Propuesta 1: recomendación con Apriori
 
@@ -48,15 +50,28 @@ exactamente:
 - `tid`: identificador único de la compra.
 - `items`: slugs únicos y ordenados, separados por `|`.
 
-El segundo comando ejecuta una implementación propia de Apriori para reglas
-singleton `A -> B`, realiza una evaluación cronológica 80/20 y genera:
+El segundo comando ejecuta una implementación propia de Apriori multinivel:
+forma itemsets frecuentes de dos hasta cinco aromas y deriva reglas del tipo
+`A + B + C -> D` (hasta cuatro aromas como antecedente). La aplicación usa la
+bolsa completa como contexto y recomienda un aroma individual que no esté
+presente. Se realiza una evaluación cronológica 80/20 ocultando un aroma de
+cada canasta futura y genera:
 
 - `ml/artifacts/apriori-rules.v1.json`: artefacto canónico.
 - `Server/src/modules/intelligence/artifacts/apriori-rules.generated.ts`:
   constante desplegable `APRIORI_RULES_ARTIFACT`.
 
-Los umbrales predeterminados son soporte `0.008`, confianza `0.10` y lift
-`1.05`. Se pueden ajustar con argumentos de línea de comandos.
+Los umbrales predeterminados son soporte `0.008`, confianza `0.10`, lift
+`1.05` y un itemset máximo de cinco aromas. Se pueden ajustar con argumentos
+de línea de comandos.
+
+La libreta `notebooks/01_apriori_inhalex.ipynb` usa y justifica una
+configuración académica balanceada de soporte `0.02`, confianza `0.40` y lift
+`1.10`. Además exporta `artifacts/apriori-rules.flask.v1.json`, un contrato
+independiente para la futura API Flask: acepta toda la bolsa, activa reglas con
+antecedentes de uno a cuatro aromas, consolida resultados por aroma y devuelve
+un Top-3 con fallback de popularidad. Se mantiene separado del artefacto
+canónico actual de NestJS para no cambiar todavía el sistema web.
 
 ### Propuesta 2: regresión mensual Ridge
 
@@ -82,6 +97,14 @@ ajusta el modelo final con todo el histórico disponible y genera:
 El stock no forma parte del entrenamiento. El backend lo consulta después para
 convertir el pronóstico en una recomendación operativa de reabastecimiento.
 
+La libreta `notebooks/02_demanda_mensual_inhalex.ipynb` valida
+cronológicamente Ridge con distintas regularizaciones y exporta, sin conectar
+a la aplicación todavía, `artifacts/monthly-demand-flask-pipeline.v1.joblib`
+y `artifacts/monthly-demand-flask-manifest.v1.json`. El manifiesto declara el
+orden, origen MongoDB, cálculo y elegibilidad de cada variable; Flask deberá
+reconstruirlas desde `pedidos`, `productos` y `reseñas_producto`, nunca leer
+los CSV.
+
 ### Validación y libretas
 
 ```powershell
@@ -94,8 +117,8 @@ Las libretas vigentes son:
 - `ml/notebooks/01_apriori_inhalex.ipynb`
 - `ml/notebooks/02_demanda_mensual_inhalex.ipynb`
 
-Ambas llaman a los scripts anteriores, muestran los datasets, explican las
-métricas y terminan con una puerta de calidad. Los JSON contienen
+Ambas desarrollan el procedimiento completo en celdas, muestran los datasets,
+explican las métricas y terminan con una puerta de calidad. Los JSON contienen
 `isSynthetic: true`; sus métricas demuestran el pipeline académico y no deben
 presentarse como rendimiento garantizado sobre ventas futuras reales.
 

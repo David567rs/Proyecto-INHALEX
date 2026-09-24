@@ -15,12 +15,8 @@ import pandas as pd
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATASET = (
-    REPO_ROOT / "ml" / "exports" / "dataset_apriori_transacciones.csv"
-)
-DEFAULT_SOURCE = (
-    REPO_ROOT / "ml" / "exports" / "dataset_recomendacion_aromas.csv"
-)
+DEFAULT_DATASET = REPO_ROOT / "ml" / "exports" / "dataset_apriori_transacciones.csv"
+DEFAULT_SOURCE = REPO_ROOT / "ml" / "exports" / "dataset_recomendacion_aromas.csv"
 DEFAULT_CATALOG = REPO_ROOT / "ml" / "config" / "product-catalog.json"
 DEFAULT_JSON_OUTPUT = REPO_ROOT / "ml" / "artifacts" / "apriori-rules.v1.json"
 DEFAULT_TS_OUTPUT = (
@@ -36,7 +32,14 @@ DEFAULT_TS_OUTPUT = (
 
 @dataclass(frozen=True)
 class AssociationRule:
-    antecedent: str
+    """Regla X → Y obtenida de un conjunto frecuente de Apriori.
+
+    El consecuente se mantiene unitario porque la aplicación recomienda el
+    siguiente aroma individual. El antecedente sí puede contener de uno a
+    cuatro aromas cuando se entrena con itemsets de hasta cinco productos.
+    """
+
+    antecedent: tuple[str, ...]
     consequent: str
     support: float
     confidence: float
@@ -50,7 +53,7 @@ class AssociationRule:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Entrena reglas de asociación Apriori para INHALEX."
+        description="Entrena reglas de asociación Apriori multinivel para INHALEX."
     )
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
@@ -60,9 +63,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-support", type=float, default=0.008)
     parser.add_argument("--min-confidence", type=float, default=0.10)
     parser.add_argument("--min-lift", type=float, default=1.05)
-    parser.add_argument("--max-len", type=int, default=2)
+    parser.add_argument(
+        "--max-len",
+        type=int,
+        default=5,
+        help="Tamaño máximo del itemset frecuente (2 a 5).",
+    )
     parser.add_argument("--train-ratio", type=float, default=0.80)
-    parser.add_argument("--version", default="1.0.0")
+    parser.add_argument("--version", default="2.0.0")
     parser.add_argument(
         "--generated-at",
         help="Fecha ISO opcional para compilaciones completamente reproducibles.",
@@ -133,8 +141,77 @@ def load_order_dates(source_path: Path) -> dict[str, pd.Timestamp]:
     )
     if purchases.empty or purchases["occurred_at"].isna().any():
         raise ValueError("No se pudo construir el índice temporal de compras")
+    return purchases.groupby("order_id")["occurred_at"].min().to_dict()
+
+
+def candidate_itemsets(
+    previous_level: set[frozenset[str]], size: int
+) -> set[frozenset[str]]:
+    """Une y poda candidatos mediante la propiedad antimonótona de Apriori."""
+
+    candidates: set[frozenset[str]] = set()
+    ordered_previous = sorted(previous_level, key=lambda itemset: tuple(sorted(itemset)))
+    for index, left in enumerate(ordered_previous):
+        for right in ordered_previous[index + 1 :]:
+            candidate = left | right
+            if len(candidate) != size:
+                continue
+            if all(
+                frozenset(subset) in previous_level
+                for subset in combinations(candidate, size - 1)
+            ):
+                candidates.add(candidate)
+    return candidates
+
+
+def frequent_itemset_counts(
+    baskets: list[frozenset[str]], min_support: float, max_len: int
+) -> tuple[dict[frozenset[str], int], Counter[str]]:
+    """Cuenta itemsets frecuentes de tamaño 1..max_len con Apriori."""
+
+    total = len(baskets)
+    minimum_count = max(1, math.ceil(min_support * total))
+    singleton_counts: Counter[str] = Counter()
+    for basket in baskets:
+        singleton_counts.update(basket)
+
+    frequent_counts: dict[frozenset[str], int] = {
+        frozenset((item,)): count
+        for item, count in singleton_counts.items()
+        if count >= minimum_count
+    }
+    previous_level = set(frequent_counts)
+
+    for size in range(2, max_len + 1):
+        candidates = candidate_itemsets(previous_level, size)
+        if not candidates:
+            break
+        counts: Counter[frozenset[str]] = Counter()
+        for basket in baskets:
+            for subset in combinations(sorted(basket), size):
+                itemset = frozenset(subset)
+                if itemset in candidates:
+                    counts[itemset] += 1
+        current_level = {
+            itemset: count for itemset, count in counts.items() if count >= minimum_count
+        }
+        if not current_level:
+            break
+        frequent_counts.update(current_level)
+        previous_level = set(current_level)
+
+    return frequent_counts, singleton_counts
+
+
+def rule_sort_key(rule: AssociationRule) -> tuple[Any, ...]:
     return (
-        purchases.groupby("order_id")["occurred_at"].min().to_dict()
+        -len(rule.antecedent),
+        -rule.score,
+        -rule.lift,
+        -rule.confidence,
+        -rule.support,
+        rule.antecedent,
+        rule.consequent,
     )
 
 
@@ -145,10 +222,8 @@ def train_rules(
     min_lift: float,
     max_len: int,
 ) -> tuple[list[AssociationRule], Counter[str]]:
-    if max_len != 2:
-        raise ValueError(
-            "Esta implementación auditable genera reglas A→B y requiere max_len=2"
-        )
+    if not (2 <= max_len <= 5):
+        raise ValueError("max_len debe estar entre 2 y 5")
     if not (0 < min_support <= 1):
         raise ValueError("min_support debe estar entre 0 y 1")
     if not (0 < min_confidence <= 1):
@@ -160,27 +235,22 @@ def train_rules(
     total = len(transactions)
     if total == 0:
         raise ValueError("No hay transacciones para entrenar Apriori")
-    minimum_count = max(1, math.ceil(min_support * total))
 
-    singleton_counts: Counter[str] = Counter()
-    for basket in transactions:
-        singleton_counts.update(basket)
-    frequent_singletons = {
-        item for item, count in singleton_counts.items() if count >= minimum_count
-    }
-
-    pair_counts: Counter[tuple[str, str]] = Counter()
-    for basket in transactions:
-        candidates = sorted(basket & frequent_singletons)
-        pair_counts.update(combinations(candidates, 2))
-
+    itemset_counts, singleton_counts = frequent_itemset_counts(
+        transactions, min_support, max_len
+    )
     rules: list[AssociationRule] = []
-    for (left, right), cooccurrence_count in pair_counts.items():
-        support = cooccurrence_count / total
-        if support < min_support:
+    for itemset, cooccurrence_count in itemset_counts.items():
+        if len(itemset) < 2:
             continue
-        for antecedent, consequent in [(left, right), (right, left)]:
-            confidence = cooccurrence_count / singleton_counts[antecedent]
+        support = cooccurrence_count / total
+        for consequent in sorted(itemset):
+            antecedent_set = itemset - {consequent}
+            antecedent_count = itemset_counts.get(antecedent_set)
+            if not antecedent_count:
+                continue
+            antecedent = tuple(sorted(antecedent_set))
+            confidence = cooccurrence_count / antecedent_count
             consequent_support = singleton_counts[consequent] / total
             lift = confidence / consequent_support
             if confidence < min_confidence or lift < min_lift:
@@ -195,16 +265,17 @@ def train_rules(
                     cooccurrence_count=cooccurrence_count,
                 )
             )
-    rules.sort(
-        key=lambda rule: (
-            -rule.score,
-            -rule.confidence,
-            -rule.support,
-            rule.antecedent,
-            rule.consequent,
-        )
-    )
+    rules.sort(key=rule_sort_key)
     return rules, singleton_counts
+
+
+def best_rule_for_context(
+    rules: list[AssociationRule], context: frozenset[str]
+) -> AssociationRule | None:
+    for rule in rules:
+        if rule.consequent not in context and set(rule.antecedent).issubset(context):
+            return rule
+    return None
 
 
 def temporal_evaluation(
@@ -214,7 +285,14 @@ def temporal_evaluation(
     min_lift: float,
     max_len: int,
     train_ratio: float,
-) -> tuple[float, int, int]:
+) -> tuple[float, int, int, int]:
+    """Evalúa Top-1 ocultando un producto de cada canasta posterior.
+
+    En cada intento se entrena sólo con el pasado. Para una canasta futura se
+    oculta un aroma, se usa el resto como contexto y se cuenta acierto si la
+    primera recomendación es justamente el aroma oculto.
+    """
+
     if not (0.5 <= train_ratio < 1):
         raise ValueError("train_ratio debe estar entre 0.5 y 1")
     split_index = int(len(ordered_transactions) * train_ratio)
@@ -230,32 +308,21 @@ def temporal_evaluation(
         min_lift,
         max_len,
     )
-    best_by_antecedent: dict[str, AssociationRule] = {}
-    for rule in rules:
-        current = best_by_antecedent.get(rule.antecedent)
-        if current is None or (
-            rule.score,
-            rule.confidence,
-            rule.support,
-        ) > (
-            current.score,
-            current.confidence,
-            current.support,
-        ):
-            best_by_antecedent[rule.antecedent] = rule
-
     attempts = 0
     hits = 0
     for _, basket in test:
-        for antecedent in basket:
-            rule = best_by_antecedent.get(antecedent)
+        if len(basket) < 2:
+            continue
+        for held_out in sorted(basket):
+            context = basket - {held_out}
+            rule = best_rule_for_context(rules, context)
             if rule is None:
                 continue
             attempts += 1
-            if rule.consequent in basket:
+            if rule.consequent == held_out:
                 hits += 1
     hit_rate = hits / attempts if attempts else 0.0
-    return hit_rate, len(train), len(test)
+    return hit_rate, len(train), len(test), attempts
 
 
 def build_artifact(
@@ -268,13 +335,9 @@ def build_artifact(
     missing_dates = sorted({tid for tid, _ in transactions} - set(order_dates))
     if missing_dates:
         raise ValueError(
-            f"No existe fecha para {len(missing_dates)} transacciones: "
-            f"{missing_dates[:3]}"
+            f"No existe fecha para {len(missing_dates)} transacciones: {missing_dates[:3]}"
         )
-    ordered = sorted(
-        transactions,
-        key=lambda item: (order_dates[item[0]], item[0]),
-    )
+    ordered = sorted(transactions, key=lambda item: (order_dates[item[0]], item[0]))
     rules, singleton_counts = train_rules(
         (basket for _, basket in ordered),
         args.min_support,
@@ -282,22 +345,26 @@ def build_artifact(
         args.min_lift,
         args.max_len,
     )
-    hit_rate, temporal_train_size, temporal_test_size = temporal_evaluation(
-        ordered,
-        args.min_support,
-        args.min_confidence,
-        args.min_lift,
-        args.max_len,
-        args.train_ratio,
+    hit_rate, temporal_train_size, temporal_test_size, temporal_contexts = (
+        temporal_evaluation(
+            ordered,
+            args.min_support,
+            args.min_confidence,
+            args.min_lift,
+            args.max_len,
+            args.train_ratio,
+        )
     )
     total = len(ordered)
-    covered_antecedents = {rule.antecedent for rule in rules}
+    covered_consequents = {rule.consequent for rule in rules}
+    max_antecedent_size_found = max(len(rule.antecedent) for rule in rules)
+    multi_antecedent_rules = sum(len(rule.antecedent) >= 2 for rule in rules)
     generated_at = args.generated_at or datetime.now(timezone.utc).isoformat()
 
     artifact_rules = [
         {
-            "antecedentSlugs": [rule.antecedent],
-            "antecedentNames": [name_by_slug[rule.antecedent]],
+            "antecedentSlugs": list(rule.antecedent),
+            "antecedentNames": [name_by_slug[slug] for slug in rule.antecedent],
             "consequentSlug": rule.consequent,
             "consequentName": name_by_slug[rule.consequent],
             "support": round(rule.support, 6),
@@ -315,13 +382,10 @@ def build_artifact(
             "support": round(count / total, 6),
             "transactionCount": count,
         }
-        for slug, count in sorted(
-            singleton_counts.items(),
-            key=lambda item: (-item[1], item[0]),
-        )
+        for slug, count in sorted(singleton_counts.items(), key=lambda item: (-item[1], item[0]))
     ]
     artifact: dict[str, Any] = {
-        "schemaVersion": "1.0",
+        "schemaVersion": "1.1",
         "model": {
             "name": "Apriori",
             "version": args.version,
@@ -336,13 +400,16 @@ def build_artifact(
             "minSupport": args.min_support,
             "minConfidence": args.min_confidence,
             "minLift": args.min_lift,
+            "maxItemsetSize": args.max_len,
+            "maxAntecedentSize": args.max_len - 1,
         },
         "metrics": {
             "rules": len(artifact_rules),
-            "catalogCoverage": round(
-                len(covered_antecedents) / len(name_by_slug), 6
-            ),
+            "multiAntecedentRules": multi_antecedent_rules,
+            "maxAntecedentSizeFound": max_antecedent_size_found,
+            "catalogCoverage": round(len(covered_consequents) / len(name_by_slug), 6),
             "temporalTop1HitRate": round(hit_rate, 6),
+            "temporalEvaluatedContexts": temporal_contexts,
             "temporalTrainTransactions": temporal_train_size,
             "temporalValidationTransactions": temporal_test_size,
         },
@@ -357,16 +424,25 @@ def validate_artifact(artifact: dict[str, Any], valid_slugs: set[str]) -> None:
     rules = artifact["rules"]
     if not rules:
         raise ValueError("Apriori no produjo reglas con los umbrales elegidos")
+    multi_antecedent_rules = 0
     for rule in rules:
         antecedents = rule["antecedentSlugs"]
-        if len(antecedents) != 1:
-            raise ValueError("Cada regla desplegable debe tener un antecedente")
-        if antecedents[0] == rule["consequentSlug"]:
-            raise ValueError("Una regla no puede recomendar el mismo producto")
+        if not antecedents:
+            raise ValueError("Cada regla debe tener al menos un antecedente")
+        if len(antecedents) > artifact["training"]["maxAntecedentSize"]:
+            raise ValueError("La regla excede el tamaño máximo de antecedente")
+        if len(set(antecedents)) != len(antecedents):
+            raise ValueError("Una regla contiene antecedentes duplicados")
+        if rule["consequentSlug"] in antecedents:
+            raise ValueError("Una regla no puede recomendar un producto ya antecedente")
         if set(antecedents + [rule["consequentSlug"]]) - valid_slugs:
             raise ValueError("Una regla contiene slugs fuera del catálogo")
         if rule["support"] <= 0 or rule["confidence"] <= 0 or rule["lift"] <= 0:
             raise ValueError("Las métricas de reglas deben ser positivas")
+        if len(antecedents) >= 2:
+            multi_antecedent_rules += 1
+    if multi_antecedent_rules == 0:
+        raise ValueError("El artefacto debe incluir reglas con dos o más antecedentes")
     fallback_slugs = {item["slug"] for item in artifact["popularFallbacks"]}
     if fallback_slugs != valid_slugs:
         raise ValueError("Los fallbacks deben cubrir el catálogo completo")
@@ -374,10 +450,7 @@ def validate_artifact(artifact: dict[str, Any], valid_slugs: set[str]) -> None:
 
 def write_json(path: Path, artifact: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(artifact, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    path.write_text(json.dumps(artifact, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def write_typescript(path: Path, artifact: dict[str, Any]) -> None:
@@ -388,8 +461,7 @@ def write_typescript(path: Path, artifact: dict[str, Any]) -> None:
         "/* Archivo generado por ml/src/train_apriori.py. No editar manualmente. */\n"
         "import type { AprioriArtifact } from "
         "'../intelligence-artifact.types';\n\n"
-        f"export const APRIORI_RULES_ARTIFACT = {serialized} "
-        "satisfies AprioriArtifact;\n",
+        f"export const APRIORI_RULES_ARTIFACT = {serialized} satisfies AprioriArtifact;\n",
         encoding="utf-8",
     )
 

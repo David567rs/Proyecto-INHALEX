@@ -15,7 +15,6 @@ from generate_synthetic_datasets import (
     DEMAND_COLUMNS,
     INCOMPATIBLE_INHALER_REVIEW_TERMS,
     RECOMMENDATION_COLUMNS,
-    SEGMENTATION_COLUMNS,
 )
 
 
@@ -60,7 +59,7 @@ def add_check(
     )
 
 
-def load_datasets() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def load_datasets() -> tuple[pd.DataFrame, pd.DataFrame]:
     recommendation = pd.read_csv(
         EXPORT_DIR / "dataset_recomendacion_aromas.csv",
         encoding="utf-8-sig",
@@ -78,11 +77,6 @@ def load_datasets() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         encoding="utf-8-sig",
         dtype={"product_id": "string"},
     )
-    segmentation = pd.read_csv(
-        EXPORT_DIR / "dataset_segmentacion_clientes.csv",
-        encoding="utf-8-sig",
-        dtype={"customer_key": "string"},
-    )
     recommendation["occurred_at"] = pd.to_datetime(
         recommendation["occurred_at"], utc=True, errors="coerce"
     )
@@ -92,10 +86,7 @@ def load_datasets() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     demand["mes_objetivo"] = pd.to_datetime(
         demand["mes_objetivo"], format="%Y-%m", errors="coerce"
     )
-    segmentation["snapshot_date"] = pd.to_datetime(
-        segmentation["snapshot_date"], errors="coerce"
-    )
-    return recommendation, demand, segmentation
+    return recommendation, demand
 
 
 def check_contract(
@@ -387,23 +378,23 @@ def validate_demand(results: list[CheckResult], frame: pd.DataFrame) -> None:
             row["producto"] == "Lavanda"
             and row["categoria"] == "linea-insomnio"
             and row["fecha_corte"] == pd.Timestamp("2026-05-31")
-            and row["demanda_lag_1m"] == 46
-            and row["demanda_lag_2m"] == 51
-            and row["demanda_lag_3m"] == 55
-            and np.isclose(row["promedio_demanda_3m"], 50.6667, atol=1e-4)
-            and row["pedidos_lag_1m"] == 38
-            and np.isclose(row["precio_promedio_lag_1m"], 56.48, atol=1e-4)
-            and np.isclose(row["rating_promedio_al_corte"], 4.2903, atol=1e-4)
-            and row["cantidad_resenas_al_corte"] == 31
+            and row["demanda_lag_1m"] == 59
+            and row["demanda_lag_2m"] == 31
+            and row["demanda_lag_3m"] == 51
+            and np.isclose(row["promedio_demanda_3m"], 47.0, atol=1e-4)
+            and row["pedidos_lag_1m"] == 42
+            and np.isclose(row["precio_promedio_lag_1m"], 56.19, atol=1e-4)
+            and np.isclose(row["rating_promedio_al_corte"], 4.3889, atol=1e-4)
+            and row["cantidad_resenas_al_corte"] == 36
             and row["numero_mes"] == 6
-            and row[target_column] == 55
+            and row[target_column] == 54
         )
     add_check(
         results, dataset, "ejemplo_lavanda_junio_verificado", "ERROR",
         example_ok,
         example.iloc[0].to_dict() if len(example) == 1 else len(example),
-        "46/51/55; prom=50.6667; pedidos=38; precio=56.48; "
-        "rating=4.2903/31; Y=55",
+        "59/31/51; prom=47.0; pedidos=42; precio=56.19; "
+        "rating=4.3889/36; Y=54",
     )
 
     nonzero_months = frame.groupby("product_id")[target_column].apply(
@@ -519,14 +510,12 @@ def validate_cross_dataset(
 
 
 def main() -> int:
-    recommendation, demand, segmentation = load_datasets()
+    recommendation, demand = load_datasets()
     results: list[CheckResult] = []
     check_contract(results, "recomendacion", recommendation, RECOMMENDATION_COLUMNS)
     check_contract(results, "demanda", demand, DEMAND_COLUMNS)
-    check_contract(results, "segmentacion", segmentation, SEGMENTATION_COLUMNS)
     validate_recommendation(results, recommendation)
     validate_demand(results, demand)
-    validate_segmentation(results, segmentation, recommendation)
     validate_cross_dataset(results, recommendation, demand)
 
     report = pd.DataFrame(asdict(item) for item in results)
@@ -542,7 +531,6 @@ def main() -> int:
         "row_counts": {
             "recommendation": int(len(recommendation)),
             "demand": int(len(demand)),
-            "segmentation": int(len(segmentation)),
         },
     }
     (EXPORT_DIR / "quality-summary.json").write_text(

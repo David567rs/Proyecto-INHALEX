@@ -33,11 +33,16 @@ export interface AprioriArtifact {
     minSupport: number;
     minConfidence: number;
     minLift: number;
+    maxItemsetSize: number;
+    maxAntecedentSize: number;
   };
   metrics: {
     rules: number;
+    multiAntecedentRules: number;
+    maxAntecedentSizeFound: number;
     catalogCoverage: number;
     temporalTop1HitRate: number;
+    temporalEvaluatedContexts: number;
     temporalTrainTransactions: number;
     temporalValidationTransactions: number;
   };

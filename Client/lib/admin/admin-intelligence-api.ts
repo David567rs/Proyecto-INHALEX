@@ -29,11 +29,16 @@ export interface RecommendationModelSummary {
     minSupport: number
     minConfidence: number
     minLift: number
+    maxItemsetSize: number
+    maxAntecedentSize: number
   }
   metrics: {
     rules: number
+    multiAntecedentRules: number
+    maxAntecedentSizeFound: number
     catalogCoverage: number
     temporalTop1HitRate: number
+    temporalEvaluatedContexts: number
   }
   health: {
     rules: number

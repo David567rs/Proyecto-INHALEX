@@ -1,0 +1,2406 @@
+{
+  "schemaVersion": "flask-association-rules.v1",
+  "artifactType": "association_rules",
+  "model": {
+    "name": "Apriori",
+    "minSupport": 0.02,
+    "minLift": 1.2,
+    "maxItemsetSize": 3,
+    "isSynthetic": true
+  },
+  "training": {
+    "transactions": 1661,
+    "products": 16,
+    "frequentItemsets": 76,
+    "associationRules": 150
+  },
+  "queryContract": {
+    "input": "product_id únicos presentes en la bolsa",
+    "match": "antecedentProductIds debe ser subconjunto de la bolsa",
+    "exclude": "no recomendar productos ya presentes",
+    "ranking": "score, lift, confidence y support de mayor a menor",
+    "fallback": "popularFallbacks excluyendo productos ya presentes",
+    "topN": 3,
+    "postValidation": "Flask debe validar producto activo, disponibilidad y stock"
+  },
+  "rules": [
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.052378,
+      "confidence": 0.956044,
+      "lift": 8.143533,
+      "score": 0.8933
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.051776,
+      "confidence": 0.955556,
+      "lift": 8.139373,
+      "score": 0.890233
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.051776,
+      "confidence": 0.924731,
+      "lift": 7.876813,
+      "score": 0.869096
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.052378,
+      "confidence": 0.966667,
+      "lift": 7.073275,
+      "score": 0.853073
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.052378,
+      "confidence": 0.896907,
+      "lift": 7.63981,
+      "score": 0.852748
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.051776,
+      "confidence": 0.955556,
+      "lift": 7.149449,
+      "score": 0.849713
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.047562,
+      "confidence": 0.897727,
+      "lift": 8.016801,
+      "score": 0.846598
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.051776,
+      "confidence": 0.955556,
+      "lift": 6.991973,
+      "score": 0.843267
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Romero",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.048164,
+      "confidence": 0.888889,
+      "lift": 7.937873,
+      "score": 0.84312
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.051776,
+      "confidence": 0.934783,
+      "lift": 6.994027,
+      "score": 0.836349
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.053582,
+      "confidence": 0.988889,
+      "lift": 6.317479,
+      "score": 0.835091
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.051776,
+      "confidence": 0.934783,
+      "lift": 6.839973,
+      "score": 0.830044
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.051776,
+      "confidence": 0.924731,
+      "lift": 6.918822,
+      "score": 0.829883
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Copal",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.052378,
+      "confidence": 0.925532,
+      "lift": 6.772284,
+      "score": 0.826887
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.05298,
+      "confidence": 0.907216,
+      "lift": 6.787777,
+      "score": 0.82408
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.05298,
+      "confidence": 0.967033,
+      "lift": 6.177853,
+      "score": 0.819277
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.051776,
+      "confidence": 0.851485,
+      "lift": 7.252907,
+      "score": 0.818868
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.048164,
+      "confidence": 0.851064,
+      "lift": 7.600092,
+      "score": 0.816544
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.053582,
+      "confidence": 0.881188,
+      "lift": 6.593034,
+      "score": 0.810067
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.052378,
+      "confidence": 0.878788,
+      "lift": 6.575075,
+      "score": 0.803058
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.051174,
+      "confidence": 0.923913,
+      "lift": 6.315307,
+      "score": 0.802172
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.052378,
+      "confidence": 0.935484,
+      "lift": 5.976303,
+      "score": 0.79766
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.051776,
+      "confidence": 0.934783,
+      "lift": 5.971823,
+      "score": 0.794508
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.048164,
+      "confidence": 0.941176,
+      "lift": 6.27829,
+      "score": 0.792814
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.047562,
+      "confidence": 0.929412,
+      "lift": 6.352893,
+      "score": 0.78917
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.052378,
+      "confidence": 0.861386,
+      "lift": 6.302918,
+      "score": 0.786053
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.051776,
+      "confidence": 0.955556,
+      "lift": 5.549573,
+      "score": 0.784227
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.048164,
+      "confidence": 0.898876,
+      "lift": 6.40787,
+      "score": 0.78386
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Copal",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.051776,
+      "confidence": 0.914894,
+      "lift": 5.844763,
+      "score": 0.782603
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.048164,
+      "confidence": 0.941176,
+      "lift": 5.966771,
+      "score": 0.780063
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.051776,
+      "confidence": 0.945055,
+      "lift": 5.488588,
+      "score": 0.778191
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.048766,
+      "confidence": 0.910112,
+      "lift": 6.071071,
+      "score": 0.776594
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.048164,
+      "confidence": 0.909091,
+      "lift": 6.064257,
+      "score": 0.773238
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.048164,
+      "confidence": 0.898876,
+      "lift": 6.144172,
+      "score": 0.773066
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Romero",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.049368,
+      "confidence": 0.911111,
+      "lift": 5.776166,
+      "score": 0.767591
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Romero",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.048164,
+      "confidence": 0.888889,
+      "lift": 6.075903,
+      "score": 0.766905
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.051174,
+      "confidence": 0.758929,
+      "lift": 6.777314,
+      "score": 0.76547
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.048164,
+      "confidence": 0.869565,
+      "lift": 6.198918,
+      "score": 0.765427
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.052378,
+      "confidence": 0.878788,
+      "lift": 5.614103,
+      "score": 0.763724
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.048164,
+      "confidence": 0.909091,
+      "lift": 5.763359,
+      "score": 0.760922
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Copal",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.051776,
+      "confidence": 0.914894,
+      "lift": 5.313421,
+      "score": 0.760854
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.049368,
+      "confidence": 0.87234,
+      "lift": 5.819106,
+      "score": 0.75628
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.046358,
+      "confidence": 0.885057,
+      "lift": 6.000328,
+      "score": 0.754324
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.052378,
+      "confidence": 0.896907,
+      "lift": 5.208961,
+      "score": 0.753248
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.051174,
+      "confidence": 0.85,
+      "lift": 5.67008,
+      "score": 0.750847
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.051776,
+      "confidence": 0.747826,
+      "lift": 6.369944,
+      "score": 0.747785
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.048766,
+      "confidence": 0.880435,
+      "lift": 5.581688,
+      "score": 0.746558
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.048164,
+      "confidence": 0.898876,
+      "lift": 5.429213,
+      "score": 0.743801
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.048164,
+      "confidence": 0.851064,
+      "lift": 5.817354,
+      "score": 0.743572
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.046358,
+      "confidence": 0.865169,
+      "lift": 5.86549,
+      "score": 0.7421
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.046358,
+      "confidence": 0.875,
+      "lift": 5.655156,
+      "score": 0.736805
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011",
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Café",
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.051776,
+      "confidence": 0.868687,
+      "lift": 5.045066,
+      "score": 0.734294
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.054184,
+      "confidence": 0.79646,
+      "lift": 5.312933,
+      "score": 0.731842
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.046358,
+      "confidence": 0.865169,
+      "lift": 5.591615,
+      "score": 0.73089
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.048766,
+      "confidence": 0.910112,
+      "lift": 4.892222,
+      "score": 0.728341
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.05298,
+      "confidence": 0.765217,
+      "lift": 5.599234,
+      "score": 0.727565
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.046358,
+      "confidence": 0.885057,
+      "lift": 5.345747,
+      "score": 0.72753
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.054184,
+      "confidence": 0.803571,
+      "lift": 5.094397,
+      "score": 0.725294
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.048164,
+      "confidence": 0.909091,
+      "lift": 4.886731,
+      "score": 0.725039
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.047562,
+      "confidence": 0.908046,
+      "lift": 4.881114,
+      "score": 0.721725
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.046358,
+      "confidence": 0.875,
+      "lift": 5.285,
+      "score": 0.721653
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.048164,
+      "confidence": 0.707965,
+      "lift": 6.3222,
+      "score": 0.716001
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.047562,
+      "confidence": 0.79,
+      "lift": 5.631717,
+      "score": 0.712658
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.051776,
+      "confidence": 0.811321,
+      "lift": 4.900377,
+      "score": 0.709035
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.046358,
+      "confidence": 0.865169,
+      "lift": 5.024633,
+      "score": 0.707682
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.048164,
+      "confidence": 0.808081,
+      "lift": 5.222655,
+      "score": 0.704741
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.04696,
+      "confidence": 0.876404,
+      "lift": 4.711029,
+      "score": 0.701365
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.054184,
+      "confidence": 0.737705,
+      "lift": 5.042502,
+      "score": 0.700967
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.048164,
+      "confidence": 0.784314,
+      "lift": 5.317327,
+      "score": 0.700605
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Hierbabuena",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.048164,
+      "confidence": 0.8,
+      "lift": 5.071756,
+      "score": 0.695841
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009",
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Canela",
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.053582,
+      "confidence": 0.773913,
+      "lift": 4.494649,
+      "score": 0.688015
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.048766,
+      "confidence": 0.663934,
+      "lift": 5.929006,
+      "score": 0.687797
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.048766,
+      "confidence": 0.794118,
+      "lift": 4.796471,
+      "score": 0.685322
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Anís Estrella",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.047562,
+      "confidence": 0.77451,
+      "lift": 5.005684,
+      "score": 0.681812
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.048766,
+      "confidence": 0.818182,
+      "lift": 4.398058,
+      "score": 0.677126
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.048766,
+      "confidence": 0.764151,
+      "lift": 4.615472,
+      "score": 0.667812
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Menta",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.048164,
+      "confidence": 0.714286,
+      "lift": 5.091968,
+      "score": 0.667776
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.051776,
+      "confidence": 0.716667,
+      "lift": 4.631842,
+      "score": 0.666138
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.04696,
+      "confidence": 0.735849,
+      "lift": 4.988756,
+      "score": 0.665355
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.048164,
+      "confidence": 0.707965,
+      "lift": 5.046906,
+      "score": 0.6638
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.046358,
+      "confidence": 0.777778,
+      "lift": 4.517094,
+      "score": 0.65745
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.04696,
+      "confidence": 0.735849,
+      "lift": 4.755818,
+      "score": 0.65582
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.051776,
+      "confidence": 0.754386,
+      "lift": 4.05513,
+      "score": 0.655246
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.048164,
+      "confidence": 0.754717,
+      "lift": 4.383164,
+      "score": 0.652391
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.048164,
+      "confidence": 0.701754,
+      "lift": 4.757608,
+      "score": 0.649865
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005",
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Eucalipto",
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.049368,
+      "confidence": 0.672131,
+      "lift": 4.791459,
+      "score": 0.64673
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Manzanilla",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.047562,
+      "confidence": 0.745283,
+      "lift": 4.328374,
+      "score": 0.644236
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.048766,
+      "confidence": 0.675,
+      "lift": 4.576224,
+      "score": 0.636155
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.07345,
+      "confidence": 0.48996,
+      "lift": 3.106196,
+      "score": 0.625632
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.069235,
+      "confidence": 0.518018,
+      "lift": 3.309338,
+      "score": 0.624279
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.07345,
+      "confidence": 0.465649,
+      "lift": 3.106196,
+      "score": 0.617437
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.048766,
+      "confidence": 0.675,
+      "lift": 3.920192,
+      "score": 0.609302
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.060205,
+      "confidence": 0.537634,
+      "lift": 3.674941,
+      "score": 0.604873
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.069235,
+      "confidence": 0.442308,
+      "lift": 3.309338,
+      "score": 0.598759
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006",
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Lavanda",
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.046358,
+      "confidence": 0.675439,
+      "lift": 3.92274,
+      "score": 0.598625
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.059603,
+      "confidence": 0.507692,
+      "lift": 3.714876,
+      "score": 0.593682
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.067429,
+      "confidence": 0.460905,
+      "lift": 3.074553,
+      "score": 0.587221
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.068031,
+      "confidence": 0.465021,
+      "lift": 2.948088,
+      "score": 0.586164
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.067429,
+      "confidence": 0.449799,
+      "lift": 3.074553,
+      "score": 0.583477
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.068031,
+      "confidence": 0.431298,
+      "lift": 2.948088,
+      "score": 0.574796
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.072246,
+      "confidence": 0.436364,
+      "lift": 2.345631,
+      "score": 0.57097
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.068633,
+      "confidence": 0.44358,
+      "lift": 2.679222,
+      "score": 0.570663
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.059603,
+      "confidence": 0.436123,
+      "lift": 3.714876,
+      "score": 0.569558
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.056592,
+      "confidence": 0.482051,
+      "lift": 3.606699,
+      "score": 0.56695
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.060205,
+      "confidence": 0.411523,
+      "lift": 3.674941,
+      "score": 0.562363
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.068633,
+      "confidence": 0.414545,
+      "lift": 2.679222,
+      "score": 0.560876
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.072246,
+      "confidence": 0.38835,
+      "lift": 2.345631,
+      "score": 0.554785
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.055388,
+      "confidence": 0.494624,
+      "lift": 3.299477,
+      "score": 0.553148
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.056592,
+      "confidence": 0.423423,
+      "lift": 3.606699,
+      "score": 0.547188
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.063817,
+      "confidence": 0.432653,
+      "lift": 2.325685,
+      "score": 0.530651
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.053582,
+      "confidence": 0.478495,
+      "lift": 3.03351,
+      "score": 0.528628
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.055388,
+      "confidence": 0.471795,
+      "lift": 2.740039,
+      "score": 0.522554
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-003"
+      ],
+      "antecedentNames": [
+        "Copal"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.054184,
+      "confidence": 0.461538,
+      "lift": 2.948521,
+      "score": 0.522166
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.058399,
+      "confidence": 0.427313,
+      "lift": 2.729871,
+      "score": 0.520805
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-012"
+      ],
+      "antecedentNames": [
+        "Hierbabuena"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.051174,
+      "confidence": 0.456989,
+      "lift": 3.257765,
+      "score": 0.519629
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.063817,
+      "confidence": 0.412451,
+      "lift": 2.217093,
+      "score": 0.519397
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.055388,
+      "confidence": 0.369478,
+      "lift": 3.299477,
+      "score": 0.510964
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.054786,
+      "confidence": 0.40991,
+      "lift": 2.999385,
+      "score": 0.509577
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.059603,
+      "confidence": 0.404082,
+      "lift": 2.440653,
+      "score": 0.506601
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.054786,
+      "confidence": 0.400881,
+      "lift": 2.999385,
+      "score": 0.506534
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.058399,
+      "confidence": 0.373077,
+      "lift": 2.729871,
+      "score": 0.502523
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.063817,
+      "confidence": 0.343042,
+      "lift": 2.325685,
+      "score": 0.500445
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.060807,
+      "confidence": 0.388462,
+      "lift": 2.256065,
+      "score": 0.499244
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-005",
+      "consequentName": "Eucalipto",
+      "support": 0.056592,
+      "confidence": 0.403433,
+      "lift": 2.557645,
+      "score": 0.49751
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.063817,
+      "confidence": 0.343042,
+      "lift": 2.217093,
+      "score": 0.496
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.059603,
+      "confidence": 0.36,
+      "lift": 2.440653,
+      "score": 0.491742
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-011"
+      ],
+      "antecedentNames": [
+        "Café"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.05599,
+      "confidence": 0.409692,
+      "lift": 2.379363,
+      "score": 0.489589
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.051174,
+      "confidence": 0.364807,
+      "lift": 3.257765,
+      "score": 0.488557
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-009",
+      "consequentName": "Canela",
+      "support": 0.060807,
+      "confidence": 0.353147,
+      "lift": 2.256065,
+      "score": 0.48734
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-009"
+      ],
+      "antecedentNames": [
+        "Canela"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.054184,
+      "confidence": 0.346154,
+      "lift": 2.948521,
+      "score": 0.483272
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.056592,
+      "confidence": 0.358779,
+      "lift": 2.557645,
+      "score": 0.482457
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-005"
+      ],
+      "antecedentNames": [
+        "Eucalipto"
+      ],
+      "consequentProductId": "SYN-PROD-012",
+      "consequentName": "Hierbabuena",
+      "support": 0.053582,
+      "confidence": 0.339695,
+      "lift": 3.03351,
+      "score": 0.481842
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-013",
+      "consequentName": "Vaporub",
+      "support": 0.054184,
+      "confidence": 0.386266,
+      "lift": 2.576659,
+      "score": 0.481572
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-010"
+      ],
+      "antecedentNames": [
+        "Jengibre"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.054184,
+      "confidence": 0.405405,
+      "lift": 2.35447,
+      "score": 0.478929
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-016",
+      "consequentName": "Manzanilla",
+      "support": 0.061409,
+      "confidence": 0.356643,
+      "lift": 1.917102,
+      "score": 0.477377
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-008"
+      ],
+      "antecedentNames": [
+        "Romero"
+      ],
+      "consequentProductId": "SYN-PROD-007",
+      "consequentName": "Menta",
+      "support": 0.05298,
+      "confidence": 0.377682,
+      "lift": 2.581607,
+      "score": 0.473417
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-013"
+      ],
+      "antecedentNames": [
+        "Vaporub"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.054184,
+      "confidence": 0.361446,
+      "lift": 2.576659,
+      "score": 0.473206
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-003",
+      "consequentName": "Copal",
+      "support": 0.055388,
+      "confidence": 0.321678,
+      "lift": 2.740039,
+      "score": 0.471953
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-016"
+      ],
+      "antecedentNames": [
+        "Manzanilla"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.061409,
+      "confidence": 0.330097,
+      "lift": 1.917102,
+      "score": 0.468429
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-007"
+      ],
+      "antecedentNames": [
+        "Menta"
+      ],
+      "consequentProductId": "SYN-PROD-008",
+      "consequentName": "Romero",
+      "support": 0.05298,
+      "confidence": 0.36214,
+      "lift": 2.581607,
+      "score": 0.468178
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.053582,
+      "confidence": 0.363265,
+      "lift": 2.347796,
+      "score": 0.461719
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-011",
+      "consequentName": "Café",
+      "support": 0.05599,
+      "confidence": 0.325175,
+      "lift": 2.379363,
+      "score": 0.461101
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.053582,
+      "confidence": 0.346304,
+      "lift": 2.347796,
+      "score": 0.456002
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-010",
+      "consequentName": "Jengibre",
+      "support": 0.054184,
+      "confidence": 0.314685,
+      "lift": 2.35447,
+      "score": 0.448349
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-014"
+      ],
+      "antecedentNames": [
+        "Rosas de Castilla"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.05298,
+      "confidence": 0.359184,
+      "lift": 2.086028,
+      "score": 0.446896
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-001"
+      ],
+      "antecedentNames": [
+        "Toronjil"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.052378,
+      "confidence": 0.338521,
+      "lift": 1.966028,
+      "score": 0.432287
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-014",
+      "consequentName": "Rosas de Castilla",
+      "support": 0.05298,
+      "confidence": 0.307692,
+      "lift": 2.086028,
+      "score": 0.42954
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-006"
+      ],
+      "antecedentNames": [
+        "Lavanda"
+      ],
+      "consequentProductId": "SYN-PROD-004",
+      "consequentName": "Anís Estrella",
+      "support": 0.053582,
+      "confidence": 0.323636,
+      "lift": 1.87958,
+      "score": 0.429196
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-006",
+      "consequentName": "Lavanda",
+      "support": 0.053582,
+      "confidence": 0.311189,
+      "lift": 1.87958,
+      "score": 0.425
+    },
+    {
+      "antecedentProductIds": [
+        "SYN-PROD-004"
+      ],
+      "antecedentNames": [
+        "Anís Estrella"
+      ],
+      "consequentProductId": "SYN-PROD-001",
+      "consequentName": "Toronjil",
+      "support": 0.052378,
+      "confidence": 0.304196,
+      "lift": 1.966028,
+      "score": 0.420717
+    }
+  ],
+  "popularFallbacks": [
+    {
+      "productId": "SYN-PROD-016",
+      "name": "Manzanilla",
+      "transactionCount": 309,
+      "support": 0.186033
+    },
+    {
+      "productId": "SYN-PROD-004",
+      "name": "Anís Estrella",
+      "transactionCount": 286,
+      "support": 0.172185
+    },
+    {
+      "productId": "SYN-PROD-006",
+      "name": "Lavanda",
+      "transactionCount": 275,
+      "support": 0.165563
+    },
+    {
+      "productId": "SYN-PROD-005",
+      "name": "Eucalipto",
+      "transactionCount": 262,
+      "support": 0.157736
+    },
+    {
+      "productId": "SYN-PROD-009",
+      "name": "Canela",
+      "transactionCount": 260,
+      "support": 0.156532
+    },
+    {
+      "productId": "SYN-PROD-001",
+      "name": "Toronjil",
+      "transactionCount": 257,
+      "support": 0.154726
+    },
+    {
+      "productId": "SYN-PROD-013",
+      "name": "Vaporub",
+      "transactionCount": 249,
+      "support": 0.14991
+    },
+    {
+      "productId": "SYN-PROD-014",
+      "name": "Rosas de Castilla",
+      "transactionCount": 245,
+      "support": 0.147502
+    },
+    {
+      "productId": "SYN-PROD-007",
+      "name": "Menta",
+      "transactionCount": 243,
+      "support": 0.146297
+    },
+    {
+      "productId": "SYN-PROD-008",
+      "name": "Romero",
+      "transactionCount": 233,
+      "support": 0.140277
+    },
+    {
+      "productId": "SYN-PROD-011",
+      "name": "Café",
+      "transactionCount": 227,
+      "support": 0.136665
+    },
+    {
+      "productId": "SYN-PROD-010",
+      "name": "Jengibre",
+      "transactionCount": 222,
+      "support": 0.133654
+    },
+    {
+      "productId": "SYN-PROD-003",
+      "name": "Copal",
+      "transactionCount": 195,
+      "support": 0.117399
+    },
+    {
+      "productId": "SYN-PROD-012",
+      "name": "Hierbabuena",
+      "transactionCount": 186,
+      "support": 0.111981
+    },
+    {
+      "productId": "SYN-PROD-015",
+      "name": "Bugambilia",
+      "transactionCount": 180,
+      "support": 0.108368
+    },
+    {
+      "productId": "SYN-PROD-002",
+      "name": "Mirra y Azafrán",
+      "transactionCount": 105,
+      "support": 0.063215
+    }
+  ]
+}

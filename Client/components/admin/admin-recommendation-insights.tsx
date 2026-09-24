@@ -142,9 +142,10 @@ export function AdminRecommendationInsights() {
             </h3>
             <p className="mt-2 text-sm leading-7 text-muted-foreground">
               Las reglas se entrenan con productos presentes dentro del mismo
-              pedido. La bolsa usa estas afinidades para sugerir una opción
-              complementaria disponible, sin alterar el pedido ni el
-              inventario.
+              pedido. Apriori identifica combinaciones de hasta{" "}
+              {summary.training.maxAntecedentSize} aromas y la bolsa usa el
+              contexto completo para sugerir una opción complementaria
+              disponible, sin alterar el pedido ni el inventario.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -178,7 +179,7 @@ export function AdminRecommendationInsights() {
           </div>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
             {
               label: "Canastas analizadas",
@@ -191,6 +192,14 @@ export function AdminRecommendationInsights() {
               value: summary.metrics.rules.toLocaleString("es-MX"),
               helper: `${usableRules.length} principales disponibles`,
               icon: Braces,
+            },
+            {
+              label: "Reglas combinadas",
+              value: summary.metrics.multiAntecedentRules.toLocaleString(
+                "es-MX",
+              ),
+              helper: `Hasta ${summary.metrics.maxAntecedentSizeFound} aromas como contexto`,
+              icon: Network,
             },
             {
               label: "Cobertura del catálogo",

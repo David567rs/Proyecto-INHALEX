@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "flask-monthly-demand.v1",
+  "artifactType": "monthly-demand-regression",
+  "model": {
+    "name": "Ridge",
+    "version": "2.0.0-simple-steps",
+    "alpha": 5.0,
+    "randomSeed": 20260717,
+    "isSynthetic": true
+  },
+  "target": {
+    "column": "Y_unidades_solicitadas_mes",
+    "unit": "unidades solicitadas por producto durante un mes",
+    "predictionMoment": "antes del inicio de mes_objetivo"
+  },
+  "featureContract": {
+    "orderedColumns": [
+      "product_id",
+      "categoria",
+      "demanda_lag_1m",
+      "demanda_lag_2m",
+      "demanda_lag_3m",
+      "promedio_demanda_3m",
+      "pedidos_lag_1m",
+      "precio_promedio_lag_1m",
+      "rating_promedio_al_corte",
+      "cantidad_resenas_al_corte",
+      "numero_mes",
+      "tendencia_calendario_meses"
+    ],
+    "rawColumns": [
+      "product_id",
+      "categoria",
+      "demanda_lag_1m",
+      "demanda_lag_2m",
+      "demanda_lag_3m",
+      "promedio_demanda_3m",
+      "pedidos_lag_1m",
+      "precio_promedio_lag_1m",
+      "rating_promedio_al_corte",
+      "cantidad_resenas_al_corte",
+      "numero_mes",
+      "tendencia_calendario_meses"
+    ],
+    "numericColumns": [
+      "demanda_lag_1m",
+      "demanda_lag_2m",
+      "demanda_lag_3m",
+      "promedio_demanda_3m",
+      "pedidos_lag_1m",
+      "precio_promedio_lag_1m",
+      "rating_promedio_al_corte",
+      "cantidad_resenas_al_corte",
+      "numero_mes",
+      "tendencia_calendario_meses"
+    ],
+    "categoricalColumns": [
+      "product_id",
+      "categoria"
+    ],
+    "encodedColumns": [
+      "demanda_lag_1m",
+      "demanda_lag_2m",
+      "demanda_lag_3m",
+      "promedio_demanda_3m",
+      "pedidos_lag_1m",
+      "precio_promedio_lag_1m",
+      "rating_promedio_al_corte",
+      "cantidad_resenas_al_corte",
+      "numero_mes",
+      "tendencia_calendario_meses",
+      "product_id_SYN-PROD-001",
+      "product_id_SYN-PROD-002",
+      "product_id_SYN-PROD-003",
+      "product_id_SYN-PROD-004",
+      "product_id_SYN-PROD-005",
+      "product_id_SYN-PROD-006",
+      "product_id_SYN-PROD-007",
+      "product_id_SYN-PROD-008",
+      "product_id_SYN-PROD-009",
+      "product_id_SYN-PROD-010",
+      "product_id_SYN-PROD-011",
+      "product_id_SYN-PROD-012",
+      "product_id_SYN-PROD-013",
+      "product_id_SYN-PROD-014",
+      "product_id_SYN-PROD-015",
+      "product_id_SYN-PROD-016",
+      "categoria_linea-ansiedad-estres",
+      "categoria_linea-estimulante",
+      "categoria_linea-insomnio",
+      "categoria_linea-resfriado",
+      "categoria_linea-verde"
+    ],
+    "minimumHistoryMonths": 3,
+    "eligibilityRule": "Predecir solo si existen demanda_lag_1m, demanda_lag_2m y demanda_lag_3m.",
+    "fallbackPolicy": "Si falta historial, informar historial_insuficiente y no inventar una prediccion Ridge.",
+    "nullPolicy": "Eliminar filas sin tres rezagos; imputar solo precio y rating faltantes con la mediana de entrenamiento.",
+    "featureDefinitions": [
+      {
+        "columna_final": "product_id",
+        "origen_mongo": "productos._id / pedidos.items[].productId",
+        "transformacion": "Categoria codificada con one-hot",
+        "rol": "X categorica"
+      },
+      {
+        "columna_final": "categoria",
+        "origen_mongo": "productos.category",
+        "transformacion": "Categoria codificada con one-hot",
+        "rol": "X categorica"
+      },
+      {
+        "columna_final": "demanda_lag_1m",
+        "origen_mongo": "pedidos.items[].requestedQuantity + createdAt",
+        "transformacion": "Suma del mes anterior",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "demanda_lag_2m",
+        "origen_mongo": "pedidos.items[].requestedQuantity + createdAt",
+        "transformacion": "Suma de dos meses antes",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "demanda_lag_3m",
+        "origen_mongo": "pedidos.items[].requestedQuantity + createdAt",
+        "transformacion": "Suma de tres meses antes",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "promedio_demanda_3m",
+        "origen_mongo": "Tres rezagos anteriores",
+        "transformacion": "Promedio de demanda_lag_1m a demanda_lag_3m",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "pedidos_lag_1m",
+        "origen_mongo": "pedidos._id + createdAt",
+        "transformacion": "Cantidad de pedidos del mes anterior",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "precio_promedio_lag_1m",
+        "origen_mongo": "pedidos.items[].unitPrice",
+        "transformacion": "Precio promedio del mes anterior",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "rating_promedio_al_corte",
+        "origen_mongo": "resenas_producto.rating + createdAt",
+        "transformacion": "Promedio disponible antes del corte",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "cantidad_resenas_al_corte",
+        "origen_mongo": "resenas_producto._id + createdAt",
+        "transformacion": "Cantidad acumulada antes del corte",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "numero_mes",
+        "origen_mongo": "mes_objetivo",
+        "transformacion": "Mes del calendario, conocido antes de predecir",
+        "rol": "X numerica"
+      },
+      {
+        "columna_final": "tendencia_calendario_meses",
+        "origen_mongo": "mes_objetivo",
+        "transformacion": "Meses transcurridos desde el inicio",
+        "rol": "X numerica"
+      }
+    ]
+  },
+  "sourceContract": {
+    "collections": [
+      "pedidos",
+      "productos",
+      "resenas_producto"
+    ],
+    "aggregationUnit": "producto-mes",
+    "futureRuntime": "Flask calcula las mismas variables desde MongoDB y no usa CSV."
+  },
+  "evaluation": {
+    "finalTestMonths": [
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "mae": 7.072361658150714,
+    "rmse": 9.815500251647476,
+    "r2": 0.34034264146836357
+  }
+}

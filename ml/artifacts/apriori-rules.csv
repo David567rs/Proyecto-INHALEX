@@ -1,0 +1,197 @@
+﻿antecedent_slugs,antecedent_names,consequent_slug,consequent_name,support,confidence,lift,score
+eucalipto|menta|romero,Eucalipto|Menta|Romero,hierbabuena,Hierbabuena,0.047562,0.9875,8.818481,8.70825
+menta|romero|vaporub,Menta|Romero|Vaporub,hierbabuena,Hierbabuena,0.047562,0.9875,8.818481,8.70825
+eucalipto|menta|romero|vaporub,Eucalipto|Menta|Romero|Vaporub,hierbabuena,Hierbabuena,0.047562,0.9875,8.818481,8.70825
+anis-estrella|cafe|jengibre,Anís Estrella|Café|Jengibre,copal,Copal,0.051776,1.0,8.517949,8.517949
+anis-estrella|cafe|canela|jengibre,Anís Estrella|Café|Canela|Jengibre,copal,Copal,0.051776,1.0,8.517949,8.517949
+anis-estrella|cafe|canela,Anís Estrella|Café|Canela,copal,Copal,0.051776,0.988506,8.420041,8.323259
+eucalipto|romero|vaporub,Eucalipto|Romero|Vaporub,hierbabuena,Hierbabuena,0.047562,0.963415,8.603396,8.288638
+cafe|canela|jengibre,Café|Canela|Jengibre,copal,Copal,0.051776,0.977273,8.324359,8.135169
+anis-estrella|canela|jengibre,Anís Estrella|Canela|Jengibre,copal,Copal,0.051776,0.966292,8.230827,7.953383
+cafe|jengibre,Café|Jengibre,copal,Copal,0.052378,0.956044,8.143533,7.785576
+anis-estrella|jengibre,Anís Estrella|Jengibre,copal,Copal,0.051776,0.955556,8.139373,7.777623
+anis-estrella|cafe|copal,Anís Estrella|Café|Copal,jengibre,Jengibre,0.051776,1.0,7.481982,7.481982
+anis-estrella|canela|copal,Anís Estrella|Canela|Copal,jengibre,Jengibre,0.051776,1.0,7.481982,7.481982
+anis-estrella|cafe|canela|copal,Anís Estrella|Café|Canela|Copal,jengibre,Jengibre,0.051776,1.0,7.481982,7.481982
+anis-estrella|canela|copal,Anís Estrella|Canela|Copal,cafe,Café,0.051776,1.0,7.317181,7.317181
+anis-estrella|copal|jengibre,Anís Estrella|Copal|Jengibre,cafe,Café,0.051776,1.0,7.317181,7.317181
+canela|copal|jengibre,Canela|Copal|Jengibre,cafe,Café,0.051776,1.0,7.317181,7.317181
+anis-estrella|canela|copal|jengibre,Anís Estrella|Canela|Copal|Jengibre,cafe,Café,0.051776,1.0,7.317181,7.317181
+anis-estrella|cafe|canela,Anís Estrella|Café|Canela,jengibre,Jengibre,0.051776,0.988506,7.395982,7.310971
+cafe|canela|copal,Café|Canela|Copal,jengibre,Jengibre,0.051776,0.988506,7.395982,7.310971
+anis-estrella|cafe,Anís Estrella|Café,copal,Copal,0.051776,0.924731,7.876813,7.283934
+menta|romero,Menta|Romero,hierbabuena,Hierbabuena,0.047562,0.897727,8.016801,7.196901
+eucalipto|hierbabuena|menta|vaporub,Eucalipto|Hierbabuena|Menta|Vaporub,romero,Romero,0.047562,1.0,7.128755,7.128755
+romero|vaporub,Romero|Vaporub,hierbabuena,Hierbabuena,0.048164,0.888889,7.937873,7.055887
+eucalipto|hierbabuena|menta,Eucalipto|Hierbabuena|Menta,romero,Romero,0.047562,0.9875,7.039646,6.95165
+eucalipto|menta|vaporub,Eucalipto|Menta|Vaporub,hierbabuena,Hierbabuena,0.047562,0.877778,7.83865,6.880593
+cafe|canela,Café|Canela,copal,Copal,0.052378,0.896907,7.63981,6.8522
+canela|copal,Canela|Copal,cafe,Café,0.052378,0.966667,7.073275,6.837499
+eucalipto|hierbabuena|romero|vaporub,Eucalipto|Hierbabuena|Romero|Vaporub,menta,Menta,0.047562,1.0,6.835391,6.835391
+anis-estrella|canela|jengibre,Anís Estrella|Canela|Jengibre,cafe,Café,0.051776,0.966292,7.070534,6.832201
+canela|copal,Canela|Copal,jengibre,Jengibre,0.051776,0.955556,7.149449,6.831696
+eucalipto|hierbabuena|vaporub,Eucalipto|Hierbabuena|Vaporub,romero,Romero,0.047562,0.975309,6.952737,6.781064
+anis-estrella|jengibre,Anís Estrella|Jengibre,cafe,Café,0.051776,0.955556,6.991973,6.681218
+eucalipto|menta|romero,Eucalipto|Menta|Romero,vaporub,Vaporub,0.048164,1.0,6.670683,6.670683
+hierbabuena|menta|romero,Hierbabuena|Menta|Romero,vaporub,Vaporub,0.047562,1.0,6.670683,6.670683
+eucalipto|hierbabuena|menta|romero,Eucalipto|Hierbabuena|Menta|Romero,vaporub,Vaporub,0.047562,1.0,6.670683,6.670683
+eucalipto|hierbabuena|romero,Eucalipto|Hierbabuena|Romero,menta,Menta,0.047562,0.9875,6.749949,6.665574
+hierbabuena|romero|vaporub,Hierbabuena|Romero|Vaporub,menta,Menta,0.047562,0.9875,6.749949,6.665574
+anis-estrella|lavanda|toronjil,Anís Estrella|Lavanda|Toronjil,rosas-de-castilla,Rosas de Castilla,0.045756,0.987013,6.691545,6.604642
+anis-estrella|lavanda|manzanilla|toronjil,Anís Estrella|Lavanda|Manzanilla|Toronjil,rosas-de-castilla,Rosas de Castilla,0.045756,0.987013,6.691545,6.604642
+anis-estrella|copal,Anís Estrella|Copal,jengibre,Jengibre,0.051776,0.934783,6.994027,6.537894
+eucalipto|romero|vaporub,Eucalipto|Romero|Vaporub,menta,Menta,0.048164,0.97561,6.668674,6.506024
+eucalipto|hierbabuena|menta,Eucalipto|Hierbabuena|Menta,vaporub,Vaporub,0.047562,0.9875,6.587299,6.504958
+eucalipto|hierbabuena|romero,Eucalipto|Hierbabuena|Romero,vaporub,Vaporub,0.047562,0.9875,6.587299,6.504958
+eucalipto|hierbabuena|vaporub,Eucalipto|Hierbabuena|Vaporub,menta,Menta,0.047562,0.975309,6.666616,6.502008
+eucalipto|romero,Eucalipto|Romero,hierbabuena,Hierbabuena,0.048164,0.851064,7.600092,6.468163
+anis-estrella|lavanda|manzanilla|rosas-de-castilla,Anís Estrella|Lavanda|Manzanilla|Rosas de Castilla,toronjil,Toronjil,0.045756,1.0,6.463035,6.463035
+anis-estrella|cafe,Anís Estrella|Café,jengibre,Jengibre,0.051776,0.924731,6.918822,6.39805
+anis-estrella|copal,Anís Estrella|Copal,cafe,Café,0.051776,0.934783,6.839973,6.393888
+anis-estrella|cafe|copal,Anís Estrella|Café|Copal,canela,Canela,0.051776,1.0,6.388462,6.388462
+anis-estrella|cafe|jengibre,Anís Estrella|Café|Jengibre,canela,Canela,0.051776,1.0,6.388462,6.388462
+anis-estrella|copal|jengibre,Anís Estrella|Copal|Jengibre,canela,Canela,0.051776,1.0,6.388462,6.388462
+anis-estrella|cafe|copal|jengibre,Anís Estrella|Café|Copal|Jengibre,canela,Canela,0.051776,1.0,6.388462,6.388462
+menta|romero|vaporub,Menta|Romero|Vaporub,eucalipto,Eucalipto,0.048164,1.0,6.339695,6.339695
+hierbabuena|menta|romero,Hierbabuena|Menta|Romero,eucalipto,Eucalipto,0.047562,1.0,6.339695,6.339695
+hierbabuena|menta|romero|vaporub,Hierbabuena|Menta|Romero|Vaporub,eucalipto,Eucalipto,0.047562,1.0,6.339695,6.339695
+anis-estrella|lavanda|rosas-de-castilla,Anís Estrella|Lavanda|Rosas de Castilla,toronjil,Toronjil,0.045756,0.987013,6.379099,6.296254
+anis-estrella|manzanilla|toronjil,Anís Estrella|Manzanilla|Toronjil,rosas-de-castilla,Rosas de Castilla,0.045756,0.962025,6.522139,6.274463
+copal|jengibre,Copal|Jengibre,cafe,Café,0.052378,0.925532,6.772284,6.267965
+anis-estrella|jengibre,Anís Estrella|Jengibre,canela,Canela,0.053582,0.988889,6.317479,6.247284
+cafe|copal|jengibre,Café|Copal|Jengibre,canela,Canela,0.051776,0.988506,6.315031,6.242444
+hierbabuena|romero|vaporub,Hierbabuena|Romero|Vaporub,eucalipto,Eucalipto,0.047562,0.9875,6.260448,6.182193
+anis-estrella|canela,Anís Estrella|Canela,copal,Copal,0.051776,0.851485,7.252907,6.175742
+cafe|canela,Café|Canela,jengibre,Jengibre,0.05298,0.907216,6.787777,6.157984
+hierbabuena|menta|vaporub,Hierbabuena|Menta|Vaporub,romero,Romero,0.047562,0.929412,6.625549,6.157863
+anis-estrella|manzanilla|rosas-de-castilla|toronjil,Anís Estrella|Manzanilla|Rosas de Castilla|Toronjil,lavanda,Lavanda,0.045756,1.0,6.04,6.04
+cafe|jengibre,Café|Jengibre,canela,Canela,0.05298,0.967033,6.177853,5.974187
+anis-estrella|lavanda|manzanilla,Anís Estrella|Lavanda|Manzanilla,rosas-de-castilla,Rosas de Castilla,0.045756,0.938272,6.361099,5.968438
+hierbabuena|romero,Hierbabuena|Romero,vaporub,Vaporub,0.048164,0.941176,6.27829,5.908978
+hierbabuena|romero,Hierbabuena|Romero,menta,Menta,0.047562,0.929412,6.352893,5.904453
+manzanilla|rosas-de-castilla|toronjil,Manzanilla|Rosas de Castilla|Toronjil,lavanda,Lavanda,0.046358,0.987179,5.962564,5.886121
+anis-estrella|rosas-de-castilla|toronjil,Anís Estrella|Rosas de Castilla|Toronjil,lavanda,Lavanda,0.045756,0.987013,5.961558,5.884136
+anis-estrella|lavanda|manzanilla,Anís Estrella|Lavanda|Manzanilla,toronjil,Toronjil,0.046358,0.950617,6.143873,5.840472
+lavanda|manzanilla|rosas-de-castilla,Lavanda|Manzanilla|Rosas de Castilla,toronjil,Toronjil,0.046358,0.950617,6.143873,5.840472
+hierbabuena|vaporub,Hierbabuena|Vaporub,menta,Menta,0.051174,0.923913,6.315307,5.834794
+anis-estrella|manzanilla|rosas-de-castilla,Anís Estrella|Manzanilla|Rosas de Castilla,toronjil,Toronjil,0.045756,0.95,6.139883,5.832889
+anis-estrella|canela,Anís Estrella|Canela,jengibre,Jengibre,0.053582,0.881188,6.593034,5.809703
+canela|copal|jengibre,Canela|Copal|Jengibre,anis-estrella,Anís Estrella,0.051776,1.0,5.807692,5.807692
+cafe|canela|copal|jengibre,Café|Canela|Copal|Jengibre,anis-estrella,Anís Estrella,0.051776,1.0,5.807692,5.807692
+cafe|copal,Café|Copal,jengibre,Jengibre,0.052378,0.878788,6.575075,5.778096
+eucalipto|hierbabuena,Eucalipto|Hierbabuena,romero,Romero,0.048164,0.898876,6.40787,5.759883
+anis-estrella|manzanilla|toronjil,Anís Estrella|Manzanilla|Toronjil,lavanda,Lavanda,0.046358,0.974684,5.887089,5.738048
+cafe|canela|copal,Café|Canela|Copal,anis-estrella,Anís Estrella,0.051776,0.988506,5.740937,5.674949
+cafe|copal|jengibre,Café|Copal|Jengibre,anis-estrella,Anís Estrella,0.051776,0.988506,5.740937,5.674949
+lavanda|manzanilla|rosas-de-castilla|toronjil,Lavanda|Manzanilla|Rosas de Castilla|Toronjil,anis-estrella,Anís Estrella,0.045756,0.987013,5.732268,5.657823
+eucalipto|menta|vaporub,Eucalipto|Menta|Vaporub,romero,Romero,0.048164,0.888889,6.336671,5.632597
+hierbabuena|romero,Hierbabuena|Romero,eucalipto,Eucalipto,0.048164,0.941176,5.966771,5.615785
+anis-estrella|cafe,Anís Estrella|Café,canela,Canela,0.052378,0.935484,5.976303,5.590735
+anis-estrella|copal,Anís Estrella|Copal,canela,Canela,0.051776,0.934783,5.971823,5.582356
+cafe|canela|jengibre,Café|Canela|Jengibre,anis-estrella,Anís Estrella,0.051776,0.977273,5.675699,5.546706
+eucalipto|hierbabuena,Eucalipto|Hierbabuena,vaporub,Vaporub,0.048766,0.910112,6.071071,5.525357
+eucalipto|hierbabuena,Eucalipto|Hierbabuena,menta,Menta,0.048164,0.898876,6.144172,5.522851
+manzanilla|rosas-de-castilla|toronjil,Manzanilla|Rosas de Castilla|Toronjil,anis-estrella,Anís Estrella,0.045756,0.974359,5.658777,5.51368
+menta|romero,Menta|Romero,vaporub,Vaporub,0.048164,0.909091,6.064257,5.512961
+hierbabuena|menta|vaporub,Hierbabuena|Menta|Vaporub,eucalipto,Eucalipto,0.047562,0.929412,5.892187,5.476268
+anis-estrella|manzanilla|rosas-de-castilla,Anís Estrella|Manzanilla|Rosas de Castilla,lavanda,Lavanda,0.045756,0.95,5.738,5.4511
+lavanda|manzanilla|toronjil,Lavanda|Manzanilla|Toronjil,rosas-de-castilla,Rosas de Castilla,0.046358,0.895349,6.0701,5.434857
+anis-estrella|canela,Anís Estrella|Canela,cafe,Café,0.052378,0.861386,6.302918,5.429246
+romero|vaporub,Romero|Vaporub,menta,Menta,0.048164,0.888889,6.075903,5.400803
+hierbabuena|vaporub,Hierbabuena|Vaporub,romero,Romero,0.048164,0.869565,6.198918,5.390363
+anis-estrella|lavanda|toronjil,Anís Estrella|Lavanda|Toronjil,manzanilla,Manzanilla,0.046358,1.0,5.375405,5.375405
+anis-estrella|lavanda|rosas-de-castilla|toronjil,Anís Estrella|Lavanda|Rosas de Castilla|Toronjil,manzanilla,Manzanilla,0.045756,1.0,5.375405,5.375405
+copal|jengibre,Copal|Jengibre,canela,Canela,0.051776,0.914894,5.844763,5.347336
+anis-estrella|toronjil,Anís Estrella|Toronjil,rosas-de-castilla,Rosas de Castilla,0.046358,0.885057,6.000328,5.310635
+canela|copal,Canela|Copal,anis-estrella,Anís Estrella,0.051776,0.955556,5.549573,5.302925
+romero|vaporub,Romero|Vaporub,eucalipto,Eucalipto,0.049368,0.911111,5.776166,5.262729
+lavanda|rosas-de-castilla|toronjil,Lavanda|Rosas de Castilla|Toronjil,anis-estrella,Anís Estrella,0.045756,0.95,5.517308,5.241442
+menta|romero,Menta|Romero,eucalipto,Eucalipto,0.048164,0.909091,5.763359,5.239417
+anis-estrella|lavanda|rosas-de-castilla,Anís Estrella|Lavanda|Rosas de Castilla,manzanilla,Manzanilla,0.045756,0.987013,5.305594,5.23669
+anis-estrella|rosas-de-castilla|toronjil,Anís Estrella|Rosas de Castilla|Toronjil,manzanilla,Manzanilla,0.045756,0.987013,5.305594,5.23669
+cafe|jengibre,Café|Jengibre,anis-estrella,Anís Estrella,0.051776,0.945055,5.488588,5.187018
+menta|vaporub,Menta|Vaporub,hierbabuena,Hierbabuena,0.051174,0.758929,6.777314,5.143497
+lavanda|manzanilla|rosas-de-castilla,Lavanda|Manzanilla|Rosas de Castilla,anis-estrella,Anís Estrella,0.045756,0.938272,5.449193,5.112823
+eucalipto|romero,Eucalipto|Romero,vaporub,Vaporub,0.049368,0.87234,5.819106,5.076242
+anis-estrella|lavanda,Anís Estrella|Lavanda,rosas-de-castilla,Rosas de Castilla,0.046358,0.865169,5.86549,5.074637
+lavanda|rosas-de-castilla|toronjil,Lavanda|Rosas de Castilla|Toronjil,manzanilla,Manzanilla,0.046358,0.9625,5.173827,4.979808
+eucalipto|romero,Eucalipto|Romero,menta,Menta,0.048164,0.851064,5.817354,4.95094
+anis-estrella|rosas-de-castilla,Anís Estrella|Rosas de Castilla,toronjil,Toronjil,0.046358,0.875,5.655156,4.948261
+cafe|copal,Café|Copal,canela,Canela,0.052378,0.878788,5.614103,4.933605
+hierbabuena|vaporub,Hierbabuena|Vaporub,eucalipto,Eucalipto,0.048766,0.880435,5.581688,4.914312
+rosas-de-castilla|toronjil,Rosas de Castilla|Toronjil,lavanda,Lavanda,0.048164,0.898876,5.429213,4.880192
+copal|jengibre,Copal|Jengibre,anis-estrella,Anís Estrella,0.051776,0.914894,5.313421,4.861215
+anis-estrella|lavanda,Anís Estrella|Lavanda,toronjil,Toronjil,0.046358,0.865169,5.591615,4.837689
+hierbabuena|menta,Hierbabuena|Menta,vaporub,Vaporub,0.051174,0.85,5.67008,4.819568
+canela|jengibre,Canela|Jengibre,copal,Copal,0.051776,0.747826,6.369944,4.76361
+anis-estrella|toronjil,Anís Estrella|Toronjil,lavanda,Lavanda,0.046358,0.885057,5.345747,4.731293
+cafe|canela,Café|Canela,anis-estrella,Anís Estrella,0.052378,0.896907,5.208961,4.671955
+lavanda|manzanilla|toronjil,Lavanda|Manzanilla|Toronjil,anis-estrella,Anís Estrella,0.046358,0.895349,5.199911,4.655734
+anis-estrella|rosas-de-castilla,Anís Estrella|Rosas de Castilla,lavanda,Lavanda,0.046358,0.875,5.285,4.624375
+eucalipto|menta,Eucalipto|Menta,hierbabuena,Hierbabuena,0.048164,0.707965,6.3222,4.475894
+anis-estrella|lavanda,Anís Estrella|Lavanda,manzanilla,Manzanilla,0.048766,0.910112,4.892222,4.452472
+hierbabuena|menta,Hierbabuena|Menta,romero,Romero,0.047562,0.79,5.631717,4.449056
+anis-estrella|rosas-de-castilla,Anís Estrella|Rosas de Castilla,manzanilla,Manzanilla,0.048164,0.909091,4.886731,4.442483
+anis-estrella|toronjil,Anís Estrella|Toronjil,manzanilla,Manzanilla,0.047562,0.908046,4.881114,4.432276
+cafe|copal,Café|Copal,anis-estrella,Anís Estrella,0.051776,0.868687,5.045066,4.382583
+rosas-de-castilla|toronjil,Rosas de Castilla|Toronjil,anis-estrella,Anís Estrella,0.046358,0.865169,5.024633,4.347154
+canela|jengibre,Canela|Jengibre,cafe,Café,0.05298,0.765217,5.599234,4.284631
+eucalipto|menta,Eucalipto|Menta,vaporub,Vaporub,0.054184,0.79646,5.312933,4.23154
+lavanda|rosas-de-castilla,Lavanda|Rosas de Castilla,toronjil,Toronjil,0.048164,0.808081,5.222655,4.220327
+anis-estrella|manzanilla,Anís Estrella|Manzanilla,rosas-de-castilla,Rosas de Castilla,0.048164,0.784314,5.317327,4.170452
+rosas-de-castilla|toronjil,Rosas de Castilla|Toronjil,manzanilla,Manzanilla,0.04696,0.876404,4.711029,4.128767
+menta|vaporub,Menta|Vaporub,eucalipto,Eucalipto,0.054184,0.803571,5.094397,4.093712
+hierbabuena|menta,Hierbabuena|Menta,eucalipto,Eucalipto,0.048164,0.8,5.071756,4.057405
+manzanilla|toronjil,Manzanilla|Toronjil,lavanda,Lavanda,0.051776,0.811321,4.900377,3.975778
+eucalipto|vaporub,Eucalipto|Vaporub,hierbabuena,Hierbabuena,0.048766,0.663934,5.929006,3.936471
+anis-estrella|manzanilla,Anís Estrella|Manzanilla,toronjil,Toronjil,0.047562,0.77451,5.005684,3.876951
+anis-estrella|manzanilla,Anís Estrella|Manzanilla,lavanda,Lavanda,0.048766,0.794118,4.796471,3.808962
+eucalipto|vaporub,Eucalipto|Vaporub,menta,Menta,0.054184,0.737705,5.042502,3.719878
+manzanilla|toronjil,Manzanilla|Toronjil,rosas-de-castilla,Rosas de Castilla,0.04696,0.735849,4.988756,3.670972
+menta|vaporub,Menta|Vaporub,romero,Romero,0.048164,0.714286,5.091968,3.63712
+lavanda|rosas-de-castilla,Lavanda|Rosas de Castilla,manzanilla,Manzanilla,0.048766,0.818182,4.398058,3.598411
+eucalipto|menta,Eucalipto|Menta,romero,Romero,0.048164,0.707965,5.046906,3.573031
+manzanilla|rosas-de-castilla,Manzanilla|Rosas de Castilla,lavanda,Lavanda,0.048766,0.764151,4.615472,3.526917
+lavanda|rosas-de-castilla,Lavanda|Rosas de Castilla,anis-estrella,Anís Estrella,0.046358,0.777778,4.517094,3.513295
+manzanilla|rosas-de-castilla,Manzanilla|Rosas de Castilla,toronjil,Toronjil,0.04696,0.735849,4.755818,3.499564
+canela|jengibre,Canela|Jengibre,anis-estrella,Anís Estrella,0.053582,0.773913,4.494649,3.478467
+lavanda|toronjil,Lavanda|Toronjil,rosas-de-castilla,Rosas de Castilla,0.048164,0.701754,4.757608,3.338672
+lavanda|manzanilla,Lavanda|Manzanilla,toronjil,Toronjil,0.051776,0.716667,4.631842,3.319487
+manzanilla|rosas-de-castilla,Manzanilla|Rosas de Castilla,anis-estrella,Anís Estrella,0.048164,0.754717,4.383164,3.308048
+manzanilla|toronjil,Manzanilla|Toronjil,anis-estrella,Anís Estrella,0.047562,0.745283,4.328374,3.225864
+eucalipto|vaporub,Eucalipto|Vaporub,romero,Romero,0.049368,0.672131,4.791459,3.220489
+lavanda|manzanilla,Lavanda|Manzanilla,rosas-de-castilla,Rosas de Castilla,0.048766,0.675,4.576224,3.088952
+lavanda|toronjil,Lavanda|Toronjil,manzanilla,Manzanilla,0.051776,0.754386,4.05513,3.059133
+lavanda|toronjil,Lavanda|Toronjil,anis-estrella,Anís Estrella,0.046358,0.675439,3.92274,2.64957
+lavanda|manzanilla,Lavanda|Manzanilla,anis-estrella,Anís Estrella,0.048766,0.675,3.920192,2.64613
+hierbabuena,Hierbabuena,menta,Menta,0.060205,0.537634,3.674941,1.975775
+copal,Copal,cafe,Café,0.059603,0.507692,3.714876,1.886014
+copal,Copal,jengibre,Jengibre,0.056592,0.482051,3.606699,1.738614
+jengibre,Jengibre,canela,Canela,0.069235,0.518018,3.309338,1.714297
+hierbabuena,Hierbabuena,vaporub,Vaporub,0.055388,0.494624,3.299477,1.632
+cafe,Café,copal,Copal,0.059603,0.436123,3.714876,1.620144
+jengibre,Jengibre,copal,Copal,0.056592,0.423423,3.606699,1.527161
+vaporub,Vaporub,eucalipto,Eucalipto,0.07345,0.48996,3.106196,1.521911
+menta,Menta,hierbabuena,Hierbabuena,0.060205,0.411523,3.674941,1.512322
+hierbabuena,Hierbabuena,romero,Romero,0.051174,0.456989,3.257765,1.488763
+canela,Canela,jengibre,Jengibre,0.069235,0.442308,3.309338,1.463746
+hierbabuena,Hierbabuena,eucalipto,Eucalipto,0.053582,0.478495,3.03351,1.451518
+eucalipto,Eucalipto,vaporub,Vaporub,0.07345,0.465649,3.106196,1.446397
+menta,Menta,vaporub,Vaporub,0.067429,0.460905,3.074553,1.417078
+vaporub,Vaporub,menta,Menta,0.067429,0.449799,3.074553,1.382932
+menta,Menta,eucalipto,Eucalipto,0.068031,0.465021,2.948088,1.370922
+copal,Copal,canela,Canela,0.054184,0.461538,2.948521,1.360856
+copal,Copal,anis-estrella,Anís Estrella,0.055388,0.471795,2.740039,1.292737
+eucalipto,Eucalipto,menta,Menta,0.068031,0.431298,2.948088,1.271504
+jengibre,Jengibre,cafe,Café,0.054786,0.40991,2.999385,1.229478
+cafe,Café,jengibre,Jengibre,0.054786,0.400881,2.999385,1.202397
+toronjil,Toronjil,lavanda,Lavanda,0.068633,0.44358,2.679222,1.188449
+cafe,Café,canela,Canela,0.058399,0.427313,2.729871,1.166509
+lavanda,Lavanda,toronjil,Toronjil,0.068633,0.414545,2.679222,1.110659
+romero,Romero,eucalipto,Eucalipto,0.056592,0.403433,2.557645,1.03184
+lavanda,Lavanda,manzanilla,Manzanilla,0.072246,0.436364,2.345631,1.023548
+rosas-de-castilla,Rosas de Castilla,manzanilla,Manzanilla,0.063817,0.432653,2.325685,1.006215
+rosas-de-castilla,Rosas de Castilla,lavanda,Lavanda,0.059603,0.404082,2.440653,0.986223
+cafe,Café,anis-estrella,Anís Estrella,0.05599,0.409692,2.379363,0.974805
+jengibre,Jengibre,anis-estrella,Anís Estrella,0.054184,0.405405,2.35447,0.954515
+toronjil,Toronjil,manzanilla,Manzanilla,0.063817,0.412451,2.217093,0.914443

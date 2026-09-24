@@ -8,8 +8,8 @@ export const MONTHLY_DEMAND_ARTIFACT = {
     "name": "Regresión Ridge",
     "version": "1.0.0",
     "isSynthetic": true,
-    "generatedAt": "2026-07-23T11:23:45.737742+00:00",
-    "datasetSha256": "e056e81df63b0e0568629062c0bab199dbe92f671fb8e7f76970658a08e7199f",
+    "generatedAt": "2026-08-02T23:41:39.618250+00:00",
+    "datasetSha256": "cee32ea4a78285ebda35c3c0b14818ca98fc536e9d562687ccc0077f42fbf7fc",
     "alpha": 50.0,
     "trainingPeriod": {
       "startMonth": "2025-04",
@@ -19,13 +19,13 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "finalTrainingRows": 240
     },
     "metrics": {
-      "mae": 8.3657,
-      "rmse": 10.5702,
-      "r2": 0.2319,
-      "baselineMae": 9.7708,
-      "improvementPct": 14.3813,
+      "mae": 7.865,
+      "rmse": 10.6104,
+      "r2": 0.2292,
+      "baselineMae": 10.3681,
+      "improvementPct": 24.1422,
       "intervalQuantile": 0.9,
-      "residualRadius": 18.0858
+      "residualRadius": 15.2622
     }
   },
   "targetMonth": "2026-07",
@@ -37,44 +37,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 18
-        },
-        {
-          "month": "2026-02",
-          "units": 13
-        },
-        {
-          "month": "2026-03",
-          "units": 14
-        },
-        {
-          "month": "2026-04",
-          "units": 7
-        },
-        {
-          "month": "2026-05",
           "units": 28
         },
         {
+          "month": "2026-02",
+          "units": 25
+        },
+        {
+          "month": "2026-03",
+          "units": 46
+        },
+        {
+          "month": "2026-04",
+          "units": 28
+        },
+        {
+          "month": "2026-05",
+          "units": 62
+        },
+        {
           "month": "2026-06",
-          "units": 20
+          "units": 41
         }
       ],
       "features": {
-        "demandLag1m": 20,
-        "demandLag2m": 28,
-        "demandLag3m": 7,
-        "averageDemand3m": 18.3333,
-        "ordersLag1m": 17,
+        "demandLag1m": 41,
+        "demandLag2m": 62,
+        "demandLag3m": 28,
+        "averageDemand3m": 43.6667,
+        "ordersLag1m": 33,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2174,
-        "reviewCountAsOf": 23,
+        "averageRatingAsOf": 4.2727,
+        "reviewCountAsOf": 44,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 25,
-        "lower": 7,
-        "upper": 43
+        "units": 56,
+        "lower": 40,
+        "upper": 71
       }
     },
     {
@@ -84,44 +84,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 22
+          "units": 23
         },
         {
           "month": "2026-02",
-          "units": 21
+          "units": 28
         },
         {
           "month": "2026-03",
-          "units": 11
+          "units": 29
         },
         {
           "month": "2026-04",
-          "units": 20
+          "units": 21
         },
         {
           "month": "2026-05",
-          "units": 18
+          "units": 16
         },
         {
           "month": "2026-06",
-          "units": 31
+          "units": 33
         }
       ],
       "features": {
-        "demandLag1m": 31,
-        "demandLag2m": 18,
-        "demandLag3m": 20,
-        "averageDemand3m": 23.0,
-        "ordersLag1m": 28,
+        "demandLag1m": 33,
+        "demandLag2m": 16,
+        "demandLag3m": 21,
+        "averageDemand3m": 23.3333,
+        "ordersLag1m": 25,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.3,
-        "reviewCountAsOf": 30,
+        "averageRatingAsOf": 4.3548,
+        "reviewCountAsOf": 31,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 33,
-        "lower": 15,
-        "upper": 52
+        "units": 32,
+        "lower": 17,
+        "upper": 47
       }
     },
     {
@@ -131,44 +131,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 3
+          "units": 21
         },
         {
           "month": "2026-02",
-          "units": 16
+          "units": 20
         },
         {
           "month": "2026-03",
-          "units": 19
+          "units": 27
         },
         {
           "month": "2026-04",
-          "units": 16
+          "units": 30
         },
         {
           "month": "2026-05",
-          "units": 26
+          "units": 46
         },
         {
           "month": "2026-06",
-          "units": 30
+          "units": 38
         }
       ],
       "features": {
-        "demandLag1m": 30,
-        "demandLag2m": 26,
-        "demandLag3m": 16,
-        "averageDemand3m": 24.0,
-        "ordersLag1m": 23,
+        "demandLag1m": 38,
+        "demandLag2m": 46,
+        "demandLag3m": 30,
+        "averageDemand3m": 38.0,
+        "ordersLag1m": 30,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.4762,
-        "reviewCountAsOf": 21,
+        "averageRatingAsOf": 4.2143,
+        "reviewCountAsOf": 42,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 30,
-        "lower": 12,
-        "upper": 48
+        "units": 49,
+        "lower": 34,
+        "upper": 64
       }
     },
     {
@@ -178,44 +178,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 16
+          "units": 23
         },
         {
           "month": "2026-02",
-          "units": 24
+          "units": 30
         },
         {
           "month": "2026-03",
-          "units": 24
+          "units": 39
         },
         {
           "month": "2026-04",
-          "units": 18
+          "units": 22
         },
         {
           "month": "2026-05",
-          "units": 27
+          "units": 37
         },
         {
           "month": "2026-06",
-          "units": 35
+          "units": 52
         }
       ],
       "features": {
-        "demandLag1m": 35,
-        "demandLag2m": 27,
-        "demandLag3m": 18,
-        "averageDemand3m": 26.6667,
-        "ordersLag1m": 29,
+        "demandLag1m": 52,
+        "demandLag2m": 37,
+        "demandLag3m": 22,
+        "averageDemand3m": 37.0,
+        "ordersLag1m": 37,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2759,
-        "reviewCountAsOf": 29,
+        "averageRatingAsOf": 3.9167,
+        "reviewCountAsOf": 36,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 35,
-        "lower": 17,
-        "upper": 53
+        "units": 44,
+        "lower": 29,
+        "upper": 60
       }
     },
     {
@@ -225,44 +225,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 9
+          "units": 14
         },
         {
           "month": "2026-02",
-          "units": 6
+          "units": 16
         },
         {
           "month": "2026-03",
-          "units": 17
+          "units": 33
         },
         {
           "month": "2026-04",
-          "units": 8
+          "units": 17
         },
         {
           "month": "2026-05",
-          "units": 32
+          "units": 26
         },
         {
           "month": "2026-06",
-          "units": 23
+          "units": 36
         }
       ],
       "features": {
-        "demandLag1m": 23,
-        "demandLag2m": 32,
-        "demandLag3m": 8,
-        "averageDemand3m": 21.0,
-        "ordersLag1m": 20,
+        "demandLag1m": 36,
+        "demandLag2m": 26,
+        "demandLag3m": 17,
+        "averageDemand3m": 26.3333,
+        "ordersLag1m": 28,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 3.3684,
-        "reviewCountAsOf": 19,
+        "averageRatingAsOf": 3.8929,
+        "reviewCountAsOf": 28,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 26,
-        "lower": 7,
-        "upper": 44
+        "units": 33,
+        "lower": 18,
+        "upper": 49
       }
     },
     {
@@ -272,44 +272,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 21
+          "units": 35
         },
         {
           "month": "2026-02",
-          "units": 36
+          "units": 24
         },
         {
           "month": "2026-03",
-          "units": 29
+          "units": 33
         },
         {
           "month": "2026-04",
-          "units": 26
+          "units": 19
         },
         {
           "month": "2026-05",
-          "units": 50
+          "units": 34
         },
         {
           "month": "2026-06",
-          "units": 34
+          "units": 53
         }
       ],
       "features": {
-        "demandLag1m": 34,
-        "demandLag2m": 50,
-        "demandLag3m": 26,
-        "averageDemand3m": 36.6667,
-        "ordersLag1m": 30,
+        "demandLag1m": 53,
+        "demandLag2m": 34,
+        "demandLag3m": 19,
+        "averageDemand3m": 35.3333,
+        "ordersLag1m": 45,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 3.7714,
-        "reviewCountAsOf": 35,
+        "averageRatingAsOf": 4.2727,
+        "reviewCountAsOf": 33,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 44,
-        "lower": 26,
-        "upper": 63
+        "units": 42,
+        "lower": 27,
+        "upper": 58
       }
     },
     {
@@ -323,40 +323,40 @@ export const MONTHLY_DEMAND_ARTIFACT = {
         },
         {
           "month": "2026-02",
-          "units": 12
+          "units": 16
         },
         {
           "month": "2026-03",
-          "units": 12
+          "units": 20
         },
         {
           "month": "2026-04",
-          "units": 32
+          "units": 22
         },
         {
           "month": "2026-05",
-          "units": 28
+          "units": 25
         },
         {
           "month": "2026-06",
-          "units": 40
+          "units": 32
         }
       ],
       "features": {
-        "demandLag1m": 40,
-        "demandLag2m": 28,
-        "demandLag3m": 32,
-        "averageDemand3m": 33.3333,
-        "ordersLag1m": 37,
+        "demandLag1m": 32,
+        "demandLag2m": 25,
+        "demandLag3m": 22,
+        "averageDemand3m": 26.3333,
+        "ordersLag1m": 30,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.4375,
-        "reviewCountAsOf": 32,
+        "averageRatingAsOf": 4.0968,
+        "reviewCountAsOf": 31,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 44,
-        "lower": 26,
-        "upper": 62
+        "units": 36,
+        "lower": 20,
+        "upper": 51
       }
     },
     {
@@ -366,44 +366,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 20
+          "units": 15
         },
         {
           "month": "2026-02",
-          "units": 23
+          "units": 21
         },
         {
           "month": "2026-03",
-          "units": 14
+          "units": 33
         },
         {
           "month": "2026-04",
-          "units": 24
+          "units": 26
         },
         {
           "month": "2026-05",
-          "units": 30
+          "units": 32
         },
         {
           "month": "2026-06",
-          "units": 26
+          "units": 39
         }
       ],
       "features": {
-        "demandLag1m": 26,
-        "demandLag2m": 30,
-        "demandLag3m": 24,
-        "averageDemand3m": 26.6667,
-        "ordersLag1m": 22,
+        "demandLag1m": 39,
+        "demandLag2m": 32,
+        "demandLag3m": 26,
+        "averageDemand3m": 32.3333,
+        "ordersLag1m": 29,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2121,
-        "reviewCountAsOf": 33,
+        "averageRatingAsOf": 4.3333,
+        "reviewCountAsOf": 36,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 36,
-        "lower": 17,
-        "upper": 54
+        "units": 41,
+        "lower": 26,
+        "upper": 56
       }
     },
     {
@@ -413,44 +413,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 13
+          "units": 32
         },
         {
           "month": "2026-02",
-          "units": 20
+          "units": 14
         },
         {
           "month": "2026-03",
-          "units": 55
-        },
-        {
-          "month": "2026-04",
           "units": 51
         },
         {
+          "month": "2026-04",
+          "units": 31
+        },
+        {
           "month": "2026-05",
-          "units": 46
+          "units": 59
         },
         {
           "month": "2026-06",
-          "units": 55
+          "units": 54
         }
       ],
       "features": {
-        "demandLag1m": 55,
-        "demandLag2m": 46,
-        "demandLag3m": 51,
-        "averageDemand3m": 50.6667,
-        "ordersLag1m": 44,
+        "demandLag1m": 54,
+        "demandLag2m": 59,
+        "demandLag3m": 31,
+        "averageDemand3m": 48.0,
+        "ordersLag1m": 41,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2895,
-        "reviewCountAsOf": 38,
+        "averageRatingAsOf": 4.2826,
+        "reviewCountAsOf": 46,
         "monthNumber": 7
       },
       "prediction": {
         "units": 59,
-        "lower": 40,
-        "upper": 77
+        "lower": 43,
+        "upper": 74
       }
     },
     {
@@ -460,23 +460,23 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 26
-        },
-        {
-          "month": "2026-02",
-          "units": 18
-        },
-        {
-          "month": "2026-03",
           "units": 31
         },
         {
-          "month": "2026-04",
+          "month": "2026-02",
+          "units": 20
+        },
+        {
+          "month": "2026-03",
           "units": 46
         },
         {
+          "month": "2026-04",
+          "units": 33
+        },
+        {
           "month": "2026-05",
-          "units": 37
+          "units": 50
         },
         {
           "month": "2026-06",
@@ -485,19 +485,19 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       ],
       "features": {
         "demandLag1m": 58,
-        "demandLag2m": 37,
-        "demandLag3m": 46,
+        "demandLag2m": 50,
+        "demandLag3m": 33,
         "averageDemand3m": 47.0,
-        "ordersLag1m": 50,
+        "ordersLag1m": 46,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.439,
-        "reviewCountAsOf": 41,
+        "averageRatingAsOf": 4.6222,
+        "reviewCountAsOf": 45,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 58,
-        "lower": 40,
-        "upper": 77
+        "units": 57,
+        "lower": 42,
+        "upper": 72
       }
     },
     {
@@ -507,44 +507,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 16
+          "units": 14
         },
         {
           "month": "2026-02",
-          "units": 22
+          "units": 18
         },
         {
           "month": "2026-03",
-          "units": 20
+          "units": 32
         },
         {
           "month": "2026-04",
-          "units": 45
+          "units": 32
         },
         {
           "month": "2026-05",
-          "units": 49
+          "units": 46
         },
         {
           "month": "2026-06",
-          "units": 53
+          "units": 41
         }
       ],
       "features": {
-        "demandLag1m": 53,
-        "demandLag2m": 49,
-        "demandLag3m": 45,
-        "averageDemand3m": 49.0,
-        "ordersLag1m": 42,
+        "demandLag1m": 41,
+        "demandLag2m": 46,
+        "demandLag3m": 32,
+        "averageDemand3m": 39.6667,
+        "ordersLag1m": 37,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2353,
-        "reviewCountAsOf": 34,
+        "averageRatingAsOf": 3.9048,
+        "reviewCountAsOf": 42,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 55,
-        "lower": 37,
-        "upper": 74
+        "units": 50,
+        "lower": 35,
+        "upper": 66
       }
     },
     {
@@ -554,44 +554,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 14
-        },
-        {
-          "month": "2026-02",
           "units": 15
         },
         {
+          "month": "2026-02",
+          "units": 7
+        },
+        {
           "month": "2026-03",
-          "units": 11
+          "units": 10
         },
         {
           "month": "2026-04",
-          "units": 8
+          "units": 22
         },
         {
           "month": "2026-05",
-          "units": 32
+          "units": 23
         },
         {
           "month": "2026-06",
-          "units": 20
+          "units": 26
         }
       ],
       "features": {
-        "demandLag1m": 20,
-        "demandLag2m": 32,
-        "demandLag3m": 8,
-        "averageDemand3m": 20.0,
+        "demandLag1m": 26,
+        "demandLag2m": 23,
+        "demandLag3m": 22,
+        "averageDemand3m": 23.6667,
         "ordersLag1m": 20,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.125,
-        "reviewCountAsOf": 16,
+        "averageRatingAsOf": 4.5,
+        "reviewCountAsOf": 14,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 24,
-        "lower": 6,
-        "upper": 43
+        "units": 27,
+        "lower": 11,
+        "upper": 42
       }
     },
     {
@@ -601,44 +601,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 11
-        },
-        {
-          "month": "2026-02",
           "units": 23
         },
         {
+          "month": "2026-02",
+          "units": 24
+        },
+        {
           "month": "2026-03",
-          "units": 18
+          "units": 35
         },
         {
           "month": "2026-04",
-          "units": 19
+          "units": 23
         },
         {
           "month": "2026-05",
-          "units": 25
+          "units": 39
         },
         {
           "month": "2026-06",
-          "units": 19
+          "units": 41
         }
       ],
       "features": {
-        "demandLag1m": 19,
-        "demandLag2m": 25,
-        "demandLag3m": 19,
-        "averageDemand3m": 21.0,
-        "ordersLag1m": 16,
+        "demandLag1m": 41,
+        "demandLag2m": 39,
+        "demandLag3m": 23,
+        "averageDemand3m": 34.3333,
+        "ordersLag1m": 36,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.1724,
-        "reviewCountAsOf": 29,
+        "averageRatingAsOf": 4.439,
+        "reviewCountAsOf": 41,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 29,
-        "lower": 11,
-        "upper": 47
+        "units": 46,
+        "lower": 30,
+        "upper": 61
       }
     },
     {
@@ -648,44 +648,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 16
+          "units": 22
         },
         {
           "month": "2026-02",
-          "units": 8
+          "units": 17
         },
         {
           "month": "2026-03",
-          "units": 19
+          "units": 27
         },
         {
           "month": "2026-04",
-          "units": 29
+          "units": 43
         },
         {
           "month": "2026-05",
-          "units": 32
+          "units": 38
         },
         {
           "month": "2026-06",
-          "units": 28
+          "units": 42
         }
       ],
       "features": {
-        "demandLag1m": 28,
-        "demandLag2m": 32,
-        "demandLag3m": 29,
-        "averageDemand3m": 29.6667,
-        "ordersLag1m": 23,
+        "demandLag1m": 42,
+        "demandLag2m": 38,
+        "demandLag3m": 43,
+        "averageDemand3m": 41.0,
+        "ordersLag1m": 33,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2667,
-        "reviewCountAsOf": 30,
+        "averageRatingAsOf": 4.2045,
+        "reviewCountAsOf": 44,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 37,
-        "lower": 19,
-        "upper": 55
+        "units": 51,
+        "lower": 36,
+        "upper": 67
       }
     },
     {
@@ -695,44 +695,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 10
+          "units": 22
         },
         {
           "month": "2026-02",
-          "units": 14
+          "units": 18
         },
         {
           "month": "2026-03",
-          "units": 17
+          "units": 38
         },
         {
           "month": "2026-04",
-          "units": 33
+          "units": 19
         },
         {
           "month": "2026-05",
-          "units": 34
+          "units": 63
         },
         {
           "month": "2026-06",
-          "units": 35
+          "units": 34
         }
       ],
       "features": {
-        "demandLag1m": 35,
-        "demandLag2m": 34,
-        "demandLag3m": 33,
-        "averageDemand3m": 34.0,
-        "ordersLag1m": 32,
+        "demandLag1m": 34,
+        "demandLag2m": 63,
+        "demandLag3m": 19,
+        "averageDemand3m": 38.6667,
+        "ordersLag1m": 30,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.5556,
-        "reviewCountAsOf": 36,
+        "averageRatingAsOf": 4.0789,
+        "reviewCountAsOf": 38,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 44,
-        "lower": 26,
-        "upper": 62
+        "units": 50,
+        "lower": 35,
+        "upper": 66
       }
     },
     {
@@ -742,44 +742,44 @@ export const MONTHLY_DEMAND_ARTIFACT = {
       "history": [
         {
           "month": "2026-01",
-          "units": 23
+          "units": 26
         },
         {
           "month": "2026-02",
-          "units": 31
-        },
-        {
-          "month": "2026-03",
           "units": 23
         },
         {
-          "month": "2026-04",
-          "units": 20
+          "month": "2026-03",
+          "units": 29
         },
         {
-          "month": "2026-05",
+          "month": "2026-04",
           "units": 38
         },
         {
+          "month": "2026-05",
+          "units": 34
+        },
+        {
           "month": "2026-06",
-          "units": 32
+          "units": 41
         }
       ],
       "features": {
-        "demandLag1m": 32,
-        "demandLag2m": 38,
-        "demandLag3m": 20,
-        "averageDemand3m": 30.0,
-        "ordersLag1m": 25,
+        "demandLag1m": 41,
+        "demandLag2m": 34,
+        "demandLag3m": 38,
+        "averageDemand3m": 37.6667,
+        "ordersLag1m": 29,
         "averagePriceLag1m": 60.0,
-        "averageRatingAsOf": 4.2778,
-        "reviewCountAsOf": 36,
+        "averageRatingAsOf": 4.3429,
+        "reviewCountAsOf": 35,
         "monthNumber": 7
       },
       "prediction": {
-        "units": 40,
-        "lower": 22,
-        "upper": 58
+        "units": 45,
+        "lower": 30,
+        "upper": 60
       }
     }
   ]

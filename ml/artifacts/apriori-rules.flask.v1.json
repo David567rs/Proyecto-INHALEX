@@ -1,30 +1,41 @@
 {
-  "schemaVersion": "1.1",
+  "schemaVersion": "flask-apriori-rules.v1",
+  "artifactType": "association_rules",
   "model": {
     "name": "Apriori",
-    "version": "2.0.0",
-    "generatedAt": "2026-08-03T11:38:49.227624+00:00",
+    "version": "1.0.0",
+    "randomSeed": 20260717,
     "isSynthetic": true
   },
   "training": {
     "transactions": 1661,
     "periodStart": "2025-01-08T18:27:37-06:00",
     "periodEnd": "2026-06-30T18:07:50-06:00",
-    "minSupport": 0.008,
-    "minConfidence": 0.1,
-    "minLift": 1.05,
+    "minSupport": 0.02,
+    "minConfidence": 0.4,
+    "minLift": 1.1,
     "maxItemsetSize": 5,
     "maxAntecedentSize": 4
   },
   "metrics": {
-    "rules": 231,
-    "multiAntecedentRules": 165,
-    "maxAntecedentSizeFound": 4,
-    "catalogCoverage": 1.0,
+    "rules": 186,
+    "multiAntecedentRules": 155,
+    "catalogCoverage": 0.875,
     "temporalCoverage": 0.918626,
-    "temporalTop1HitRate": 0.461121,
+    "temporalTop1WhenRuleApplies": 0.501969,
+    "temporalTop1EndToEnd": 0.461121,
     "popularBaselineTop1": 0.141049,
     "evaluatedContexts": 553
+  },
+  "queryContract": {
+    "input": "slugs únicos de productos presentes en la bolsa actual",
+    "match": "antecedentSlugs debe ser subconjunto de la bolsa",
+    "exclude": "no recomendar aromas ya presentes",
+    "postValidation": "producto activo, disponible y con stock suficiente en MongoDB",
+    "fallback": "popularFallbacks excluyendo aromas ya presentes",
+    "ranking": "agrupar coincidencias por consequentSlug y conservar mayor score, lift, confidence y support",
+    "topN": 3,
+    "largeBasketPolicy": "en bolsas de cinco o mas aromas se aplican todos los antecedentes de uno a cuatro aromas que sean subconjuntos de la bolsa"
   },
   "rules": [
     {
@@ -67,27 +78,6 @@
     },
     {
       "antecedentSlugs": [
-        "eucalipto",
-        "menta",
-        "romero",
-        "vaporub"
-      ],
-      "antecedentNames": [
-        "Eucalipto",
-        "Menta",
-        "Romero",
-        "Vaporub"
-      ],
-      "consequentSlug": "hierbabuena",
-      "consequentName": "Hierbabuena",
-      "support": 0.047562,
-      "confidence": 0.9875,
-      "lift": 8.818481,
-      "cooccurrenceCount": 79,
-      "score": 8.70825
-    },
-    {
-      "antecedentSlugs": [
         "anis-estrella",
         "cafe",
         "jengibre"
@@ -95,27 +85,6 @@
       "antecedentNames": [
         "Anís Estrella",
         "Café",
-        "Jengibre"
-      ],
-      "consequentSlug": "copal",
-      "consequentName": "Copal",
-      "support": 0.051776,
-      "confidence": 1.0,
-      "lift": 8.517949,
-      "cooccurrenceCount": 86,
-      "score": 8.517949
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella",
-        "cafe",
-        "canela",
-        "jengibre"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
-        "Café",
-        "Canela",
         "Jengibre"
       ],
       "consequentSlug": "copal",
@@ -277,27 +246,6 @@
     {
       "antecedentSlugs": [
         "anis-estrella",
-        "cafe",
-        "canela",
-        "copal"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
-        "Café",
-        "Canela",
-        "Copal"
-      ],
-      "consequentSlug": "jengibre",
-      "consequentName": "Jengibre",
-      "support": 0.051776,
-      "confidence": 1.0,
-      "lift": 7.481982,
-      "cooccurrenceCount": 86,
-      "score": 7.481982
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella",
         "canela",
         "copal"
       ],
@@ -340,27 +288,6 @@
         "jengibre"
       ],
       "antecedentNames": [
-        "Canela",
-        "Copal",
-        "Jengibre"
-      ],
-      "consequentSlug": "cafe",
-      "consequentName": "Café",
-      "support": 0.051776,
-      "confidence": 1.0,
-      "lift": 7.317181,
-      "cooccurrenceCount": 86,
-      "score": 7.317181
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella",
-        "canela",
-        "copal",
-        "jengibre"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
         "Canela",
         "Copal",
         "Jengibre"
@@ -690,27 +617,6 @@
       "antecedentSlugs": [
         "eucalipto",
         "hierbabuena",
-        "menta",
-        "romero"
-      ],
-      "antecedentNames": [
-        "Eucalipto",
-        "Hierbabuena",
-        "Menta",
-        "Romero"
-      ],
-      "consequentSlug": "vaporub",
-      "consequentName": "Vaporub",
-      "support": 0.047562,
-      "confidence": 1.0,
-      "lift": 6.670683,
-      "cooccurrenceCount": 79,
-      "score": 6.670683
-    },
-    {
-      "antecedentSlugs": [
-        "eucalipto",
-        "hierbabuena",
         "romero"
       ],
       "antecedentNames": [
@@ -754,27 +660,6 @@
       "antecedentNames": [
         "Anís Estrella",
         "Lavanda",
-        "Toronjil"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.045756,
-      "confidence": 0.987013,
-      "lift": 6.691545,
-      "cooccurrenceCount": 76,
-      "score": 6.604642
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella",
-        "lavanda",
-        "manzanilla",
-        "toronjil"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
-        "Lavanda",
-        "Manzanilla",
         "Toronjil"
       ],
       "consequentSlug": "rosas-de-castilla",
@@ -1009,27 +894,6 @@
     },
     {
       "antecedentSlugs": [
-        "anis-estrella",
-        "cafe",
-        "copal",
-        "jengibre"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
-        "Café",
-        "Copal",
-        "Jengibre"
-      ],
-      "consequentSlug": "canela",
-      "consequentName": "Canela",
-      "support": 0.051776,
-      "confidence": 1.0,
-      "lift": 6.388462,
-      "cooccurrenceCount": 86,
-      "score": 6.388462
-    },
-    {
-      "antecedentSlugs": [
         "menta",
         "romero",
         "vaporub"
@@ -1057,27 +921,6 @@
         "Hierbabuena",
         "Menta",
         "Romero"
-      ],
-      "consequentSlug": "eucalipto",
-      "consequentName": "Eucalipto",
-      "support": 0.047562,
-      "confidence": 1.0,
-      "lift": 6.339695,
-      "cooccurrenceCount": 79,
-      "score": 6.339695
-    },
-    {
-      "antecedentSlugs": [
-        "hierbabuena",
-        "menta",
-        "romero",
-        "vaporub"
-      ],
-      "antecedentNames": [
-        "Hierbabuena",
-        "Menta",
-        "Romero",
-        "Vaporub"
       ],
       "consequentSlug": "eucalipto",
       "consequentName": "Eucalipto",
@@ -1492,27 +1335,6 @@
     {
       "antecedentSlugs": [
         "cafe",
-        "canela",
-        "copal",
-        "jengibre"
-      ],
-      "antecedentNames": [
-        "Café",
-        "Canela",
-        "Copal",
-        "Jengibre"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.051776,
-      "confidence": 1.0,
-      "lift": 5.807692,
-      "cooccurrenceCount": 86,
-      "score": 5.807692
-    },
-    {
-      "antecedentSlugs": [
-        "cafe",
         "copal"
       ],
       "antecedentNames": [
@@ -1906,27 +1728,6 @@
       "confidence": 1.0,
       "lift": 5.375405,
       "cooccurrenceCount": 77,
-      "score": 5.375405
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella",
-        "lavanda",
-        "rosas-de-castilla",
-        "toronjil"
-      ],
-      "antecedentNames": [
-        "Anís Estrella",
-        "Lavanda",
-        "Rosas de Castilla",
-        "Toronjil"
-      ],
-      "consequentSlug": "manzanilla",
-      "consequentName": "Manzanilla",
-      "support": 0.045756,
-      "confidence": 1.0,
-      "lift": 5.375405,
-      "cooccurrenceCount": 76,
       "score": 5.375405
     },
     {
@@ -3314,21 +3115,6 @@
     },
     {
       "antecedentSlugs": [
-        "vaporub"
-      ],
-      "antecedentNames": [
-        "Vaporub"
-      ],
-      "consequentSlug": "hierbabuena",
-      "consequentName": "Hierbabuena",
-      "support": 0.055388,
-      "confidence": 0.369478,
-      "lift": 3.299477,
-      "cooccurrenceCount": 92,
-      "score": 1.219084
-    },
-    {
-      "antecedentSlugs": [
         "cafe"
       ],
       "antecedentNames": [
@@ -3341,21 +3127,6 @@
       "lift": 2.999385,
       "cooccurrenceCount": 91,
       "score": 1.202397
-    },
-    {
-      "antecedentSlugs": [
-        "romero"
-      ],
-      "antecedentNames": [
-        "Romero"
-      ],
-      "consequentSlug": "hierbabuena",
-      "consequentName": "Hierbabuena",
-      "support": 0.051174,
-      "confidence": 0.364807,
-      "lift": 3.257765,
-      "cooccurrenceCount": 85,
-      "score": 1.188455
     },
     {
       "antecedentSlugs": [
@@ -3419,21 +3190,6 @@
     },
     {
       "antecedentSlugs": [
-        "eucalipto"
-      ],
-      "antecedentNames": [
-        "Eucalipto"
-      ],
-      "consequentSlug": "hierbabuena",
-      "consequentName": "Hierbabuena",
-      "support": 0.053582,
-      "confidence": 0.339695,
-      "lift": 3.03351,
-      "cooccurrenceCount": 89,
-      "score": 1.030467
-    },
-    {
-      "antecedentSlugs": [
         "lavanda"
       ],
       "antecedentNames": [
@@ -3446,36 +3202,6 @@
       "lift": 2.345631,
       "cooccurrenceCount": 120,
       "score": 1.023548
-    },
-    {
-      "antecedentSlugs": [
-        "canela"
-      ],
-      "antecedentNames": [
-        "Canela"
-      ],
-      "consequentSlug": "copal",
-      "consequentName": "Copal",
-      "support": 0.054184,
-      "confidence": 0.346154,
-      "lift": 2.948521,
-      "cooccurrenceCount": 90,
-      "score": 1.020642
-    },
-    {
-      "antecedentSlugs": [
-        "canela"
-      ],
-      "antecedentNames": [
-        "Canela"
-      ],
-      "consequentSlug": "cafe",
-      "consequentName": "Café",
-      "support": 0.058399,
-      "confidence": 0.373077,
-      "lift": 2.729871,
-      "cooccurrenceCount": 97,
-      "score": 1.018452
     },
     {
       "antecedentSlugs": [
@@ -3494,21 +3220,6 @@
     },
     {
       "antecedentSlugs": [
-        "romero"
-      ],
-      "antecedentNames": [
-        "Romero"
-      ],
-      "consequentSlug": "vaporub",
-      "consequentName": "Vaporub",
-      "support": 0.054184,
-      "confidence": 0.386266,
-      "lift": 2.576659,
-      "cooccurrenceCount": 90,
-      "score": 0.995276
-    },
-    {
-      "antecedentSlugs": [
         "rosas-de-castilla"
       ],
       "antecedentNames": [
@@ -3521,21 +3232,6 @@
       "lift": 2.440653,
       "cooccurrenceCount": 99,
       "score": 0.986223
-    },
-    {
-      "antecedentSlugs": [
-        "romero"
-      ],
-      "antecedentNames": [
-        "Romero"
-      ],
-      "consequentSlug": "menta",
-      "consequentName": "Menta",
-      "support": 0.05298,
-      "confidence": 0.377682,
-      "lift": 2.581607,
-      "cooccurrenceCount": 88,
-      "score": 0.975027
     },
     {
       "antecedentSlugs": [
@@ -3569,51 +3265,6 @@
     },
     {
       "antecedentSlugs": [
-        "menta"
-      ],
-      "antecedentNames": [
-        "Menta"
-      ],
-      "consequentSlug": "romero",
-      "consequentName": "Romero",
-      "support": 0.05298,
-      "confidence": 0.36214,
-      "lift": 2.581607,
-      "cooccurrenceCount": 88,
-      "score": 0.934903
-    },
-    {
-      "antecedentSlugs": [
-        "vaporub"
-      ],
-      "antecedentNames": [
-        "Vaporub"
-      ],
-      "consequentSlug": "romero",
-      "consequentName": "Romero",
-      "support": 0.054184,
-      "confidence": 0.361446,
-      "lift": 2.576659,
-      "cooccurrenceCount": 90,
-      "score": 0.931322
-    },
-    {
-      "antecedentSlugs": [
-        "eucalipto"
-      ],
-      "antecedentNames": [
-        "Eucalipto"
-      ],
-      "consequentSlug": "romero",
-      "consequentName": "Romero",
-      "support": 0.056592,
-      "confidence": 0.358779,
-      "lift": 2.557645,
-      "cooccurrenceCount": 94,
-      "score": 0.917628
-    },
-    {
-      "antecedentSlugs": [
         "toronjil"
       ],
       "antecedentNames": [
@@ -3626,381 +3277,6 @@
       "lift": 2.217093,
       "cooccurrenceCount": 106,
       "score": 0.914443
-    },
-    {
-      "antecedentSlugs": [
-        "manzanilla"
-      ],
-      "antecedentNames": [
-        "Manzanilla"
-      ],
-      "consequentSlug": "lavanda",
-      "consequentName": "Lavanda",
-      "support": 0.072246,
-      "confidence": 0.38835,
-      "lift": 2.345631,
-      "cooccurrenceCount": 120,
-      "score": 0.910925
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "copal",
-      "consequentName": "Copal",
-      "support": 0.055388,
-      "confidence": 0.321678,
-      "lift": 2.740039,
-      "cooccurrenceCount": 92,
-      "score": 0.881411
-    },
-    {
-      "antecedentSlugs": [
-        "lavanda"
-      ],
-      "antecedentNames": [
-        "Lavanda"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.059603,
-      "confidence": 0.36,
-      "lift": 2.440653,
-      "cooccurrenceCount": 99,
-      "score": 0.878635
-    },
-    {
-      "antecedentSlugs": [
-        "canela"
-      ],
-      "antecedentNames": [
-        "Canela"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.060807,
-      "confidence": 0.388462,
-      "lift": 2.256065,
-      "cooccurrenceCount": 101,
-      "score": 0.876395
-    },
-    {
-      "antecedentSlugs": [
-        "rosas-de-castilla"
-      ],
-      "antecedentNames": [
-        "Rosas de Castilla"
-      ],
-      "consequentSlug": "toronjil",
-      "consequentName": "Toronjil",
-      "support": 0.053582,
-      "confidence": 0.363265,
-      "lift": 2.347796,
-      "cooccurrenceCount": 89,
-      "score": 0.852873
-    },
-    {
-      "antecedentSlugs": [
-        "toronjil"
-      ],
-      "antecedentNames": [
-        "Toronjil"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.053582,
-      "confidence": 0.346304,
-      "lift": 2.347796,
-      "cooccurrenceCount": 89,
-      "score": 0.81305
-    },
-    {
-      "antecedentSlugs": [
-        "manzanilla"
-      ],
-      "antecedentNames": [
-        "Manzanilla"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.063817,
-      "confidence": 0.343042,
-      "lift": 2.325685,
-      "cooccurrenceCount": 106,
-      "score": 0.797808
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "canela",
-      "consequentName": "Canela",
-      "support": 0.060807,
-      "confidence": 0.353147,
-      "lift": 2.256065,
-      "cooccurrenceCount": 101,
-      "score": 0.796722
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "cafe",
-      "consequentName": "Café",
-      "support": 0.05599,
-      "confidence": 0.325175,
-      "lift": 2.379363,
-      "cooccurrenceCount": 93,
-      "score": 0.773709
-    },
-    {
-      "antecedentSlugs": [
-        "manzanilla"
-      ],
-      "antecedentNames": [
-        "Manzanilla"
-      ],
-      "consequentSlug": "toronjil",
-      "consequentName": "Toronjil",
-      "support": 0.063817,
-      "confidence": 0.343042,
-      "lift": 2.217093,
-      "cooccurrenceCount": 106,
-      "score": 0.760556
-    },
-    {
-      "antecedentSlugs": [
-        "rosas-de-castilla"
-      ],
-      "antecedentNames": [
-        "Rosas de Castilla"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.05298,
-      "confidence": 0.359184,
-      "lift": 2.086028,
-      "cooccurrenceCount": 88,
-      "score": 0.749267
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "jengibre",
-      "consequentName": "Jengibre",
-      "support": 0.054184,
-      "confidence": 0.314685,
-      "lift": 2.35447,
-      "cooccurrenceCount": 90,
-      "score": 0.740917
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "manzanilla",
-      "consequentName": "Manzanilla",
-      "support": 0.061409,
-      "confidence": 0.356643,
-      "lift": 1.917102,
-      "cooccurrenceCount": 102,
-      "score": 0.683722
-    },
-    {
-      "antecedentSlugs": [
-        "mirra-y-azafran"
-      ],
-      "antecedentNames": [
-        "Mirra y Azafrán"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.019868,
-      "confidence": 0.314286,
-      "lift": 2.130729,
-      "cooccurrenceCount": 33,
-      "score": 0.669658
-    },
-    {
-      "antecedentSlugs": [
-        "toronjil"
-      ],
-      "antecedentNames": [
-        "Toronjil"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.052378,
-      "confidence": 0.338521,
-      "lift": 1.966028,
-      "cooccurrenceCount": 87,
-      "score": 0.665543
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "rosas-de-castilla",
-      "consequentName": "Rosas de Castilla",
-      "support": 0.05298,
-      "confidence": 0.307692,
-      "lift": 2.086028,
-      "cooccurrenceCount": 88,
-      "score": 0.641855
-    },
-    {
-      "antecedentSlugs": [
-        "manzanilla"
-      ],
-      "antecedentNames": [
-        "Manzanilla"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.061409,
-      "confidence": 0.330097,
-      "lift": 1.917102,
-      "cooccurrenceCount": 102,
-      "score": 0.63283
-    },
-    {
-      "antecedentSlugs": [
-        "lavanda"
-      ],
-      "antecedentNames": [
-        "Lavanda"
-      ],
-      "consequentSlug": "anis-estrella",
-      "consequentName": "Anís Estrella",
-      "support": 0.053582,
-      "confidence": 0.323636,
-      "lift": 1.87958,
-      "cooccurrenceCount": 89,
-      "score": 0.608301
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "toronjil",
-      "consequentName": "Toronjil",
-      "support": 0.052378,
-      "confidence": 0.304196,
-      "lift": 1.966028,
-      "cooccurrenceCount": 87,
-      "score": 0.598058
-    },
-    {
-      "antecedentSlugs": [
-        "anis-estrella"
-      ],
-      "antecedentNames": [
-        "Anís Estrella"
-      ],
-      "consequentSlug": "lavanda",
-      "consequentName": "Lavanda",
-      "support": 0.053582,
-      "confidence": 0.311189,
-      "lift": 1.87958,
-      "cooccurrenceCount": 89,
-      "score": 0.584904
-    },
-    {
-      "antecedentSlugs": [
-        "rosas-de-castilla"
-      ],
-      "antecedentNames": [
-        "Rosas de Castilla"
-      ],
-      "consequentSlug": "mirra-y-azafran",
-      "consequentName": "Mirra y Azafrán",
-      "support": 0.019868,
-      "confidence": 0.134694,
-      "lift": 2.130729,
-      "cooccurrenceCount": 33,
-      "score": 0.286996
-    },
-    {
-      "antecedentSlugs": [
-        "mirra-y-azafran"
-      ],
-      "antecedentNames": [
-        "Mirra y Azafrán"
-      ],
-      "consequentSlug": "copal",
-      "consequentName": "Copal",
-      "support": 0.011439,
-      "confidence": 0.180952,
-      "lift": 1.541343,
-      "cooccurrenceCount": 19,
-      "score": 0.27891
-    },
-    {
-      "antecedentSlugs": [
-        "bugambilia"
-      ],
-      "antecedentNames": [
-        "Bugambilia"
-      ],
-      "consequentSlug": "romero",
-      "consequentName": "Romero",
-      "support": 0.019266,
-      "confidence": 0.177778,
-      "lift": 1.267334,
-      "cooccurrenceCount": 32,
-      "score": 0.225304
-    },
-    {
-      "antecedentSlugs": [
-        "mirra-y-azafran"
-      ],
-      "antecedentNames": [
-        "Mirra y Azafrán"
-      ],
-      "consequentSlug": "bugambilia",
-      "consequentName": "Bugambilia",
-      "support": 0.009633,
-      "confidence": 0.152381,
-      "lift": 1.406138,
-      "cooccurrenceCount": 16,
-      "score": 0.214269
-    },
-    {
-      "antecedentSlugs": [
-        "romero"
-      ],
-      "antecedentNames": [
-        "Romero"
-      ],
-      "consequentSlug": "bugambilia",
-      "consequentName": "Bugambilia",
-      "support": 0.019266,
-      "confidence": 0.137339,
-      "lift": 1.267334,
-      "cooccurrenceCount": 32,
-      "score": 0.174054
     }
   ],
   "popularFallbacks": [

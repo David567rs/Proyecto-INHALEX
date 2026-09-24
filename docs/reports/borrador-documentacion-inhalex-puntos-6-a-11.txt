@@ -1,0 +1,562 @@
+BORRADOR CORREGIDO PARA DOCUMENTO FINAL — INHALEX
+Puntos 6 al 11
+.0
+
+
+
+
+
+
+
+Nota de uso
+Este texto está redactado para copiarse al documento final. Los textos entre corchetes [ ] indican una figura, diagrama o evidencia que se debe insertar. Las dos soluciones se desarrollaron con datos sintéticos reproducibles del propio proyecto INHALEX; por ello no deben presentarse como resultados clínicos ni como ventas reales históricas.
+
+La nomenclatura de las colecciones se conserva tal como existe en MongoDB: pedidos, productos y reseñas_producto. Cuando se hable de la aplicación web, la integración vigente se realiza mediante NestJS y Next.js. Los artefactos compatibles con Flask se encuentran preparados para una siguiente etapa, pero Flask no debe describirse como un servicio ya desplegado si no se ha publicado todavía.
+
+
+6. Desarrollo conforme a CRISP-DM
+
+Las dos soluciones analíticas de INHALEX se organizaron con la metodología CRISP-DM: comprensión del negocio, comprensión de los datos, preparación de los datos, modelado, evaluación y despliegue. Aunque ambas parten del comportamiento comercial de los inhaladores aromáticos, responden a necesidades distintas.
+
+La primera solución es un sistema de recomendación basado en reglas de asociación Apriori. Su propósito es sugerir aromas complementarios a partir de la combinación de productos que el cliente ya agregó a su bolsa. La segunda solución es una regresión Ridge para estimar la demanda mensual por producto y apoyar el reabastecimiento del inventario.
+
+6.1 Comprensión del negocio
+
+6.1.1 Solución 1 — Sistema de recomendación mediante reglas de asociación Apriori
+
+INHALEX ofrece un catálogo de inhaladores aromáticos organizados por líneas de bienestar. Cuando una persona ya ha agregado uno o varios aromas a su bolsa, puede ser difícil descubrir qué otro aroma resulta complementario sin recorrer manualmente todo el catálogo. Asimismo, el administrador requiere identificar combinaciones de productos que suelen aparecer en una misma compra para apoyar la exhibición del catálogo, la preparación de promociones y la toma de decisiones comerciales.
+
+La necesidad de negocio consiste en aprovechar las canastas de compra para identificar patrones de coocurrencia: productos que aparecen juntos con una frecuencia mayor a la esperada por su popularidad individual. El resultado no sustituye el criterio de compra del cliente ni constituye una recomendación médica; es una sugerencia comercial basada en el comportamiento histórico de las transacciones.
+
+Objetivo analítico
+
+Generar hasta tres recomendaciones de aromas que complementen los productos presentes en la bolsa actual, mediante reglas de asociación de la forma:
+
+    {aroma A, aroma B, ..., aroma N} -> aroma recomendado
+
+El antecedente de una regla puede contener de uno a cuatro aromas y el consecuente contiene un aroma candidato. El sistema puede recibir bolsas con cinco o más productos: en ese caso evalúa todos los subconjuntos de uno a cuatro aromas que estén contenidos en la bolsa. Por lo tanto, la solución no se limita a recomendar un aroma a partir de otro; también aprovecha contextos formados por dos, tres o cuatro productos.
+
+Usuario y decisiones apoyadas
+
+Usuario	Uso del resultado
+Cliente	Visualizar en la bolsa lateral o en la página de bolsa uno o hasta tres aromas complementarios, decidir si desea agregarlos y continuar con su compra.
+Administrador	Consultar reglas, cobertura y ejemplos de combinaciones para apoyar promociones, exhibición y revisión del catálogo.
+Sistema	Excluir aromas que ya estén en la bolsa y validar que el producto recomendado continúe activo y con disponibilidad antes de mostrarlo.
+
+Pregunta analítica
+
+¿Qué aroma activo y disponible tiene mayor evidencia de complementar la combinación de aromas que el cliente ya seleccionó en su bolsa?
+
+
+6.1.2 Solución 2 — Predicción mensual de demanda por producto
+
+La disponibilidad de inventario es un aspecto importante para INHALEX. Revisar los pedidos uno por uno no permite anticipar con facilidad qué inhaladores podrían requerir reabastecimiento durante el siguiente mes. Una predicción mensual permite que el administrador compare el pronóstico con el inventario disponible, el stock mínimo definido para cada producto y el intervalo de incertidumbre del modelo.
+
+La necesidad de negocio consiste en transformar el historial de pedidos, precios, reseñas y características del producto en una estimación cuantitativa de unidades solicitadas por producto durante un mes futuro. Esta estimación sirve como apoyo para priorizar la revisión de inventario; no realiza compras automáticas ni garantiza el volumen exacto de ventas.
+
+Objetivo analítico
+
+Predecir la variable continua Y_unidades_solicitadas_mes: el número de unidades solicitadas de un inhalador específico durante un mes objetivo. La predicción se calcula antes de que inicie ese mes y utiliza únicamente información disponible hasta el cierre del mes anterior.
+
+Usuario y decisiones apoyadas
+
+Usuario	Uso del resultado
+Administrador	Revisar el pronóstico por producto, su intervalo estimado y la sugerencia de reabastecimiento para priorizar productos críticos o con advertencia.
+Responsable de inventario	Contrastar la demanda prevista con stockAvailable y stockMin antes de decidir si se requiere reposición.
+Sistema	Clasificar el estado de inventario como crítico, advertencia, listo o sin seguimiento, de acuerdo con la relación entre inventario y pronóstico.
+
+Pregunta analítica
+
+¿Cuántas unidades de cada producto se espera que sean solicitadas durante el siguiente mes, considerando su demanda de los tres meses anteriores y las variables disponibles antes del corte?
+
+
+6.2 Comprensión de los datos
+
+6.2.1 Solución 1 — Datos para reglas de asociación
+
+La fuente operativa principal de la recomendación es la colección pedidos. Cada documento representa un pedido y contiene un arreglo items[] con los productos adquiridos. Para construir una canasta transaccional se conserva el identificador del pedido y se separan sus productos; posteriormente, los productos se vuelven a agrupar por el mismo pedido. Este procedimiento evita mezclar artículos de compras independientes.
+
+La colección productos se utiliza para validar que el identificador o slug del producto exista en el catálogo y, durante la consulta web, para comprobar que el aroma recomendado esté activo y disponible. La colección productos no agrega eventos a la canasta; aporta la información necesaria para mostrar un resultado válido al usuario.
+
+Colección	Campos relevantes	Uso analítico
+pedidos	_id o reference, status, createdAt, items[].productId, items[].productSlug, items[].quantity	Formar una transacción por pedido y obtener los aromas que se compraron juntos.
+productos	_id, slug, name, status, inStock, stockAvailable	Validar la identidad del aroma y filtrar recomendaciones que ya no estén activas o disponibles.
+
+Para el desarrollo se utilizó el archivo dataset_recomendacion_aromas.csv, que contiene 26,877 registros granulares sintéticos. De ese archivo se toman exclusivamente los eventos de compra para reconstruir el archivo transaccional final dataset_apriori_transacciones.csv. El conjunto final tiene 1,661 canastas y dos columnas: tid e items.
+
+Cada fila de dataset_apriori_transacciones.csv representa una compra completa, no un producto aislado. La columna tid identifica la canasta y items contiene los slugs de los aromas comprados juntos, separados por el carácter “|”. El catálogo utilizado contiene 16 aromas. De las 1,661 canastas, 940 contienen dos o más aromas y, por tanto, aportan información directa para aprender coocurrencias; las canastas de un solo aroma se conservan para medir popularidad y alimentar el mecanismo de respaldo.
+
+[INSERTAR FIGURA 6.1: Captura de la libreta 01_apriori_inhalex.ipynb donde se visualice el DataFrame con tid, ordered_at, items y basket_size.]
+
+
+6.2.2 Solución 2 — Datos para predicción mensual de demanda
+
+La predicción mensual combina tres colecciones de MongoDB. La unidad de análisis es producto-mes: una fila resume el comportamiento de un inhalador durante un mes objetivo. Los pedidos aportan las unidades solicitadas, el precio y la fecha; los productos aportan el identificador y la categoría; y las reseñas aportan la calificación promedio y la cantidad de reseñas disponibles antes de cada corte temporal.
+
+Colección	Campos relevantes	Uso analítico
+pedidos	createdAt, status, items[].productId, items[].requestedQuantity, items[].unitPrice	Calcular demanda mensual, número de pedidos, precio promedio y rezagos temporales.
+productos	_id, slug, name, category	Identificar el inhalador y codificar la categoría como característica del modelo.
+reseñas_producto	productId, rating, createdAt	Calcular rating_promedio_al_corte y cantidad_resenas_al_corte sin utilizar reseñas futuras.
+
+El dataset final se denomina dataset_prediccion_demanda.csv. Contiene 288 observaciones, correspondientes a 16 productos observados durante 18 meses, de enero de 2025 a junio de 2026. Las primeras tres observaciones temporales de cada producto no disponen de tres meses anteriores completos; por ello 240 filas cuentan con el historial mínimo necesario para entrenamiento y evaluación.
+
+La variable objetivo es Y_unidades_solicitadas_mes. Sus variables predictoras incluyen demanda_lag_1m, demanda_lag_2m, demanda_lag_3m, promedio_demanda_3m, pedidos_lag_1m, precio_promedio_lag_1m, rating_promedio_al_corte, cantidad_resenas_al_corte, numero_mes, product_id y categoria.
+
+El archivo dataset_demanda_inferencia.csv contiene 16 filas, una por producto, para julio de 2026. Conserva las variables X pero no contiene Y porque representa el mes que se desea pronosticar.
+
+[INSERTAR FIGURA 6.2: Captura de la libreta 02_demanda_mensual_inhalex.ipynb que muestre dimensiones, tipos de datos y las primeras filas del dataset.]
+
+
+6.3 Preparación de los datos
+
+6.3.1 Solución 1 — Preparación del dataset transaccional
+
+El procesamiento para Apriori se realizó de forma reproducible y conservó la trazabilidad entre el origen MongoDB y el conjunto analítico.
+
+1. Se seleccionan pedidos completados y se excluyen pedidos que no representan una compra confirmada.
+2. Se separa el arreglo items[] de cada pedido para obtener un registro temporal por producto.
+3. Se conserva el slug del producto, se eliminan valores nulos y se validan los slugs contra el catálogo de productos.
+4. Se agrupan nuevamente los productos por identificador de pedido para formar una canasta única.
+5. Dentro de cada canasta se eliminan duplicados, porque Apriori modela presencia o ausencia del aroma, no el número de unidades repetidas.
+6. Se ordenan las transacciones por fecha para permitir una evaluación temporal: el 80 % inicial se usa para entrenamiento y el 20 % posterior para validación.
+7. La columna items se transforma internamente en una matriz binaria. Cada columna representa un aroma; el valor 1 significa que el aroma aparece en la canasta y el valor 0 que no aparece.
+
+No existe una variable Y clásica en esta solución. Apriori descubre itemsets frecuentes y genera reglas de asociación a partir de las coocurrencias observadas. El antecedente funciona como contexto de consulta y el consecuente como producto candidato.
+
+Variable final	Origen	Transformación	Función
+tid	pedidos._id o reference	Conversión a texto y validación de unicidad	Identificar una canasta; no entra como variable del algoritmo.
+items	pedidos.items[].productSlug y productos.slug	Unwind, filtrado, deduplicación y agrupación por pedido	Representar los aromas comprados juntos.
+ordered_at	pedidos.createdAt	Fecha de ordenamiento temporal	Separar entrenamiento y evaluación sin usar información futura.
+matriz binaria	items	Un aroma por columna con valores 0 o 1	Entrada de Apriori.
+
+
+6.3.2 Solución 2 — Preparación del dataset producto-mes
+
+La preparación para la regresión se realizó por pasos para evitar fuga de información temporal.
+
+1. Se convierten fecha_corte y mes_objetivo a tipo fecha.
+2. Se revisan dimensiones, duplicados, tipos de datos y valores nulos. La libreta no genera nulos artificiales.
+3. Las filas sin demanda_lag_1m, demanda_lag_2m o demanda_lag_3m se excluyen del entrenamiento. Esos valores faltan al inicio natural de cada serie porque todavía no existen tres meses históricos; no se inventan.
+4. Si después de ese filtro precio_promedio_lag_1m o rating_promedio_al_corte tienen valores faltantes reales, se imputan con la mediana calculada sólo con el conjunto de entrenamiento. Si no hay nulos, no se realiza imputación.
+5. product_id y categoria se convierten a variables numéricas mediante codificación one-hot; es decir, se crea una columna indicadora para cada categoría o producto posible.
+6. Las variables numéricas se escalan mediante StandardScaler. El escalado es necesario porque Ridge es sensible a la escala de las variables. Las columnas binarias derivadas de one-hot no se escalan.
+7. Los meses más recientes se reservan para prueba final y los tres meses inmediatamente anteriores para validación. No se utiliza una división aleatoria porque el modelo siempre debe predecir hacia el futuro.
+
+La división temporal final fue la siguiente:
+
+Conjunto	Periodo	Uso
+Entrenamiento	Meses iniciales disponibles hasta antes de la validación	Ajustar los parámetros del modelo.
+Validación	Tres meses previos a la prueba	Seleccionar el valor de regularización alpha con menor MAE.
+Prueba final	Abril, mayo y junio de 2026	Evaluar el modelo con meses que no participaron en el ajuste.
+
+[INSERTAR FIGURA 6.3: Matriz de correlación de la libreta de demanda.]
+[INSERTAR FIGURA 6.4: Gráficas de dispersión entre las variables más relacionadas y la demanda mensual.]
+
+
+6.4 Modelado
+
+6.4.1 Solución 1 — Apriori y reglas de asociación
+
+La técnica principal de la primera solución es Apriori. El algoritmo identifica conjuntos frecuentes de aromas y, a partir de ellos, construye reglas X -> Y. Una regla no afirma que un aroma cause la compra de otro; expresa que ambos aparecen juntos con una evidencia estadística suficiente en el conjunto de transacciones.
+
+La libreta conserva dos niveles de filtrado. El primero genera el conjunto analítico completo para exploración y evaluación; el segundo aplica umbrales más estrictos para exportar únicamente las reglas operativas compatibles con Flask. La siguiente configuración corresponde al artefacto operativo exportado:
+
+Parámetro	Valor	Justificación
+Soporte mínimo	0.02	La combinación debe aparecer en al menos 2 % de las canastas para tener evidencia suficiente.
+Confianza mínima	0.40	El consecuente debe aparecer en al menos 40 % de los contextos que contienen el antecedente.
+Lift mínimo	1.10	La asociación debe ser mejor que recomendar el aroma solamente por su popularidad.
+Tamaño máximo del itemset	5	Permite hasta cuatro aromas en el antecedente y uno como consecuente.
+Tamaño máximo del antecedente	4	Permite aprender reglas basadas en una combinación de uno, dos, tres o cuatro aromas.
+Top-N	3	La API puede devolver hasta tres candidatos únicos ordenados por evidencia.
+
+Para la exploración analítica previa, la libreta utiliza soporte mínimo de 0.008, confianza mínima de 0.10 y lift mínimo de 1.05. Después aplica los umbrales de la tabla para conservar las reglas más sólidas del artefacto operativo. Esta distinción permite analizar patrones menos frecuentes sin promoverlos automáticamente a la integración.
+
+Para evaluar una bolsa, el sistema revisa todas las reglas cuyo antecedente sea subconjunto de los aromas presentes. Si varias reglas sugieren el mismo aroma, se conserva la de mayor score y se ordena por score, lift, confianza y soporte. Después se eliminan candidatos ya presentes en la bolsa y se validan estado activo, disponibilidad y stock en MongoDB. Si ninguna regla coincide, el sistema utiliza un respaldo de popularidad, sin recomendar productos ya agregados.
+
+Ejemplo de regla con cuatro antecedentes:
+
+    {Anís Estrella, Lavanda, Manzanilla, Rosas de Castilla} -> Toronjil
+
+Esta regla aparece en 76 de 1,661 canastas (soporte 0.045756), tiene confianza 1.000000 y lift 6.463035. Esto significa que, dentro del dataset sintético, cuando se observó esa combinación de cuatro aromas, Toronjil también estuvo presente; además, la coincidencia fue aproximadamente 6.46 veces mayor que la esperada por la popularidad individual de Toronjil. No debe interpretarse como causalidad ni como recomendación terapéutica.
+
+El artefacto Flask exportado contiene 196 reglas filtradas, de las cuales 165 tienen antecedentes múltiples. El diseño también permite atender una bolsa grande: si la bolsa contiene cinco o más aromas, se evalúan todos los antecedentes de hasta cuatro productos que sean subconjuntos de dicha bolsa. Por ello se conserva la capacidad de usar información de combinaciones complejas sin exigir que la bolsa tenga exactamente el mismo tamaño que un itemset.
+
+[INSERTAR FIGURA 6.5: Gráfica de soporte contra confianza de las reglas Apriori, con tamaño o color correspondiente a lift.]
+[INSERTAR FIGURA 6.6: Captura de la tabla de reglas mejor posicionadas en 01_apriori_inhalex.ipynb.]
+
+
+6.4.2 Solución 2 — Regresión Ridge para demanda mensual
+
+La técnica principal de la segunda solución es la regresión Ridge. Ridge es una regresión lineal regularizada: estima una variable numérica continua y aplica una penalización a los coeficientes para reducir inestabilidad cuando varias variables están relacionadas entre sí, como los rezagos de demanda y el promedio de los tres meses previos.
+
+Se conservó un único tipo de modelo para mantener una libreta clara y reproducible. En lugar de probar algoritmos no comparables, se evaluaron configuraciones de regularización alpha = 1, 5, 10 y 20 mediante validación cronológica. Se seleccionó alpha = 5 porque obtuvo el menor MAE de validación, de 6.670247 unidades.
+
+Las variables predictoras se calculan antes del mes objetivo. Por ejemplo, si mes_objetivo es junio de 2026, demanda_lag_1m corresponde a mayo de 2026, demanda_lag_2m a abril de 2026 y demanda_lag_3m a marzo de 2026. La variable Y corresponde exclusivamente a las unidades solicitadas en junio de 2026.
+
+Variable	Significado	Origen o cálculo
+mes_objetivo	Mes para el que se quiere estimar demanda	Se deriva de la fecha de los pedidos y del calendario de agregación producto-mes.
+demanda_lag_1m	Unidades solicitadas un mes antes	Suma de requestedQuantity por producto durante el mes anterior.
+demanda_lag_2m	Unidades solicitadas dos meses antes	Suma de requestedQuantity por producto dos meses antes.
+demanda_lag_3m	Unidades solicitadas tres meses antes	Suma de requestedQuantity por producto tres meses antes.
+promedio_demanda_3m	Promedio de los tres rezagos	Media aritmética de demanda_lag_1m, demanda_lag_2m y demanda_lag_3m.
+pedidos_lag_1m	Número de pedidos con el producto en el mes previo	Conteo de pedidos válidos que contienen el producto.
+precio_promedio_lag_1m	Precio unitario promedio del mes previo	Media de items[].unitPrice del producto en el mes previo.
+rating_promedio_al_corte	Promedio de calificaciones conocidas antes del corte	Media de reseñas_producto.rating con createdAt anterior al mes objetivo.
+cantidad_resenas_al_corte	Número de reseñas conocidas antes del corte	Conteo acumulado de reseñas anteriores al mes objetivo.
+numero_mes	Número de mes calendario	Valor de 1 a 12 obtenido de mes_objetivo.
+product_id y categoria	Identidad y línea del producto	Se obtienen de productos y se codifican mediante one-hot.
+Y_unidades_solicitadas_mes	Unidades solicitadas durante el mes objetivo	Suma mensual de requestedQuantity; es la variable continua a predecir.
+
+[INSERTAR FIGURA 6.7: Barras de MAE y R2 por cada configuración de alpha.]
+[INSERTAR FIGURA 6.8: Gráfica de valor real contra predicción y gráfica de residuos de la prueba final.]
+
+
+6.5 Evaluación
+
+6.5.1 Solución 1 — Evaluación de reglas de asociación
+
+La evaluación de Apriori se realizó de forma temporal. Las 1,661 transacciones se ordenaron por fecha; el 80 % inicial se utilizó para extraer reglas y el 20 % posterior para evaluar. En cada canasta de evaluación con dos o más aromas se oculta un aroma. Los demás aromas forman el contexto y el sistema intenta recuperar el aroma oculto como primera recomendación.
+
+También se comparó contra una línea base de popularidad: recomendar el aroma más popular que todavía no está en la bolsa. Esta comparación es importante porque una regla sólo agrega valor si supera la recomendación trivial del producto más frecuente.
+
+Métrica	Resultado de la configuración balanceada	Interpretación
+Transacciones de entrenamiento	1,328	Canastas usadas para aprender reglas durante la evaluación temporal.
+Transacciones de validación	333	Canastas posteriores reservadas para evaluación.
+Contextos evaluados	553	Casos generados al ocultar un aroma de canastas futuras.
+Reglas finales	186	Reglas que superaron los umbrales de soporte, confianza y lift.
+Reglas con antecedentes múltiples	165	Reglas que utilizan dos o más aromas como contexto.
+Cobertura temporal	0.918626	Proporción de contextos donde se pudo aplicar alguna regla.
+Top-1 cuando aplica una regla	0.501969	Acierto de la primera recomendación sólo en los contextos cubiertos por una regla.
+Top-1 de extremo a extremo	0.461121	Acierto considerando todos los contextos evaluados.
+Top-1 de línea base popular	0.141049	Acierto de recomendar solamente el aroma popular.
+
+La comparación muestra que el Top-1 de extremo a extremo de Apriori supera a la línea base de popularidad en el dataset sintético. Este resultado valida que las reglas seleccionadas contienen información adicional a la frecuencia individual de los productos. Aun así, el resultado debe revalidarse cuando exista un histórico suficiente de pedidos reales.
+
+
+6.5.2 Solución 2 — Evaluación de predicción de demanda
+
+La evaluación final se realizó sobre abril, mayo y junio de 2026, meses no usados para seleccionar alpha. Se comparó Ridge con una línea base sencilla: usar como predicción el promedio de demanda de los tres meses anteriores.
+
+Métrica	Resultado	Interpretación
+MAE Ridge	7.072362 unidades	En promedio, la predicción se desvía aproximadamente siete unidades por producto-mes.
+RMSE Ridge	9.815500 unidades	Penaliza con mayor peso los errores grandes.
+R2 Ridge	0.340343	El modelo explica una proporción moderada de la variación del conjunto de prueba sintético.
+MAE línea base	10.368058 unidades	Error del promedio simple de los tres meses previos.
+Mejora de MAE	31.787019 %	Reducción del error de Ridge frente a la línea base temporal.
+Alpha seleccionado	5	Valor de regularización elegido con validación cronológica.
+
+El objetivo no es afirmar una predicción perfecta. En un contexto de inventario, un MAE se expresa directamente en unidades y permite interpretar el tamaño del error esperado. El hecho de que Ridge mejore la línea base en 31.79 % indica que la combinación de rezagos, producto, categoría, precio y reseñas aporta valor respecto a usar solamente el promedio histórico.
+
+
+6.6 Despliegue e integración
+
+El sistema separa el desarrollo analítico de la operación web. Los archivos CSV se usan para explorar, preparar y evaluar los modelos; la aplicación no debe depender de leer CSV en cada solicitud. Los resultados aprobados se exportan como artefactos versionados y son consumidos por servicios internos del backend.
+
+En la integración vigente, NestJS expone las soluciones por medio de su módulo intelligence. La aplicación Next.js consume los endpoints REST y presenta la información en la bolsa de compra y en el panel de ventas del administrador.
+
+Solución	Servicio y endpoint	Pantalla de uso	Seguridad
+Apriori	POST /api/recommendations/basket	Bolsa lateral y página de bolsa; panel de reglas en administración	La consulta de bolsa es pública; el resumen administrativo requiere JWT y rol ADMIN.
+Apriori	GET /api/recommendations/admin/summary	Panel administrativo de recomendaciones	JWT y rol ADMIN.
+Demanda	GET /api/sales/demand-forecast	Panel administrativo de ventas y pronóstico mensual	JWT y rol ADMIN.
+
+El servicio de recomendaciones recibe los productIds de la bolsa, elimina duplicados, limita la entrada a 25 productos y puede devolver de una a tres recomendaciones. La interfaz actualiza la consulta con un debounce de 280 milisegundos para no solicitar el endpoint en cada cambio inmediato de la bolsa. Antes de mostrar un candidato, el backend valida que siga activo y que tenga disponibilidad o permita backorder; además nunca recomienda un producto que ya esté presente.
+
+El servicio de demanda combina el pronóstico versionado con los productos activos de MongoDB. Para cada producto calcula targetStock = límite superior del pronóstico + stockMin y recommendedReorder = máximo entre 0 y targetStock menos stockAvailable. Con ello clasifica la situación como crítica, advertencia, lista o sin seguimiento.
+
+Los artefactos compatibles con Flask también se exportaron para una siguiente etapa: apriori-rules.flask.v1.json, monthly-demand-flask-pipeline.v1.joblib y monthly-demand-flask-manifest.v1.json. Su contrato especifica que Flask deberá reconstruir las variables desde MongoDB y nunca dependerá del CSV de desarrollo. En la versión actual del sistema web, Flask todavía no está desplegado; NestJS utiliza artefactos TypeScript generados y versionados. Esta distinción se conserva para no afirmar una tecnología que aún no se encuentra publicada.
+
+[INSERTAR FIGURA 6.9: Captura de la bolsa lateral mostrando una recomendación de INHALEX.]
+[INSERTAR FIGURA 6.10: Captura del panel administrativo de recomendaciones.]
+[INSERTAR FIGURA 6.11: Captura del panel administrativo de predicción mensual de demanda.]
+
+
+7. Requisitos según el tipo de solución
+
+7.1 Requisitos de la Solución 1 — Reglas de asociación Apriori
+
+Elemento	Definición en INHALEX
+Tipo de solución	Sistema de recomendación basado en reglas de asociación.
+Técnica principal	Apriori para itemsets frecuentes y reglas X -> Y.
+Unidad de análisis	Una transacción o canasta: un pedido completado con sus aromas únicos.
+Entrada del modelo	Conjunto de slugs presentes en la bolsa actual.
+Salida	Hasta tres aromas complementarios, ordenados por evidencia; cada resultado incluye el contexto o basedOn y el origen de la recomendación.
+Variable objetivo	No existe variable Y clásica. El algoritmo descubre asociaciones entre productos.
+Antecedentes	De uno a cuatro aromas. Un itemset máximo de cinco contiene hasta cuatro antecedentes y un consecuente.
+Métricas	Soporte, confianza, lift, cobertura temporal y Top-1 temporal.
+Regla de exclusión	No recomendar productos ya presentes, inactivos o sin disponibilidad aceptada.
+Respaldo	Popularidad del catálogo, excluyendo los aromas de la bolsa, cuando no hay una regla aplicable.
+
+El soporte expresa qué proporción de transacciones contiene la combinación completa. La confianza expresa con qué frecuencia aparece el consecuente cuando se observa el antecedente. El lift compara esa probabilidad con la popularidad individual del consecuente: un lift mayor a uno indica una asociación positiva respecto a recomendar por frecuencia simple.
+
+El recomendador trabaja con listas completas. Por ejemplo, una bolsa con Eucalipto, Hierbabuena, Menta y Vaporub puede activar la regla:
+
+    {Eucalipto, Hierbabuena, Menta, Vaporub} -> Romero
+
+Si la bolsa además incluye otros productos, la regla puede seguir activándose porque su antecedente es un subconjunto de la bolsa. Esto demuestra que el modelo no funciona únicamente con relaciones de un producto a otro.
+
+
+7.2 Requisitos de la Solución 2 — Regresión para demanda mensual
+
+Elemento	Definición en INHALEX
+Tipo de solución	Regresión supervisada.
+Técnica principal	Regresión Ridge con regularización seleccionada mediante validación cronológica.
+Unidad de análisis	Una observación producto-mes.
+Entrada del modelo	Variables históricas disponibles antes del mes objetivo: rezagos, promedio de demanda, pedidos, precio, reseñas, mes, producto y categoría.
+Variable objetivo	Y_unidades_solicitadas_mes.
+Salida	Número continuo estimado de unidades solicitadas, intervalo inferior/superior y estado de inventario.
+Historial mínimo	Tres meses de demanda previa por producto.
+Manejo de producto nuevo	No se inventa una predicción Ridge: se reporta historial_insuficiente o se aplica una política comercial independiente.
+Métricas	MAE, RMSE, R2 y comparación con línea base de promedio de tres meses.
+Decisión apoyada	Revisar reabastecimiento antes del inicio del siguiente mes.
+
+El modelo se entrena con un orden temporal. Ninguna fila utiliza información de un mes posterior para predecir un mes anterior. Este requisito protege la validez del experimento, ya que en una operación real no se conoce la demanda futura al momento de tomar la decisión de inventario.
+
+
+8. Integración al sistema INHALEX
+
+8.1 Arquitectura general
+
+La arquitectura integra las soluciones analíticas sin exponer la base de datos directamente al frontend. MongoDB se consulta mediante Mongoose y módulos de NestJS. El backend aplica reglas de negocio, seguridad por JWT y validación de estado/stock; Next.js recibe únicamente la respuesta necesaria para construir las tarjetas de interfaz.
+
+[INSERTAR DIAGRAMA 8.1: Arquitectura general de las soluciones. Se puede crear en draw.io, Canva o Mermaid con el siguiente contenido.]
+
+    MongoDB
+    ├── pedidos
+    ├── productos
+    └── reseñas_producto
+            ↓
+    Proceso de desarrollo y entrenamiento
+    ├── dataset_apriori_transacciones.csv → 01_apriori_inhalex.ipynb → reglas JSON/artefacto
+    └── dataset_prediccion_demanda.csv → 02_demanda_mensual_inhalex.ipynb → modelo/artefacto
+            ↓
+    Backend NestJS — módulo intelligence
+    ├── RecommendationsService → /api/recommendations/basket
+    ├── RecommendationsService → /api/recommendations/admin/summary
+    └── MonthlyDemandService → /api/sales/demand-forecast
+            ↓
+    Frontend Next.js
+    ├── Bolsa lateral y página de bolsa
+    └── Panel administrativo de ventas
+
+Código Mermaid opcional:
+
+    flowchart TD
+      A[(MongoDB: pedidos, productos, reseñas_producto)] --> B[Extracción y preparación reproducible]
+      B --> C1[Dataset transaccional]
+      B --> C2[Dataset producto-mes]
+      C1 --> D1[Apriori]
+      C2 --> D2[Regresión Ridge]
+      D1 --> E[Artefactos versionados]
+      D2 --> E
+      E --> F[NestJS: módulo intelligence]
+      F --> G1[Bolsa Next.js]
+      F --> G2[Panel admin Next.js]
+
+
+8.2 Integración de la recomendación
+
+La bolsa almacena los productos seleccionados por el cliente. Cuando cambia su contenido, el frontend solicita una recomendación al endpoint POST /api/recommendations/basket. El backend compara los IDs de la bolsa con las reglas Apriori disponibles, filtra resultados inválidos y responde hasta tres candidatos. La interfaz muestra la sugerencia como una tarjeta de recomendación y permite agregar el producto a la bolsa.
+
+Flujo de la recomendación:
+
+1. El cliente agrega o elimina un aroma de la bolsa.
+2. El proveedor de bolsa espera 280 milisegundos mediante debounce.
+3. Se envían productIds y un límite de recomendaciones al backend.
+4. RecommendationsService busca reglas cuyo antecedente sea subconjunto de la bolsa.
+5. Se eliminan productos ya presentes y se validan status, inStock, stockAvailable y backorder.
+6. Se ordenan candidatos por score, lift, confianza y soporte.
+7. Si no existe regla compatible, se usa el respaldo de popularidad; si tampoco existe candidato válido, se devuelve un resultado vacío transparente.
+8. La tarjeta de la bolsa presenta el producto sugerido y permite añadirlo.
+
+El administrador puede consultar GET /api/recommendations/admin/summary, donde se exponen métricas de salud del catálogo, reglas destacadas y comportamiento del recomendador para fines de supervisión.
+
+[INSERTAR FIGURA 8.1: Captura de la tarjeta de recomendación en la bolsa.]
+[INSERTAR FIGURA 8.2: Captura de admin-recommendation-insights en el panel de ventas.]
+
+
+8.3 Integración de la predicción mensual de demanda
+
+El módulo MonthlyDemandService consulta el artefacto de pronóstico versionado y lo relaciona con los productos activos disponibles en MongoDB. A partir del límite superior del intervalo, stockMin y stockAvailable genera un valor suggestedReorder o recommendedReorder. El endpoint GET /api/sales/demand-forecast se encuentra protegido mediante JWT y el rol ADMIN, por lo que el resultado no se expone a clientes.
+
+Flujo de la predicción:
+
+1. El administrador abre el apartado de ventas.
+2. Next.js solicita GET /api/sales/demand-forecast con sesión administrativa.
+3. NestJS consulta el artefacto de demanda y el catálogo actual de productos.
+4. Se calcula targetStock = límite superior + stockMin.
+5. Se calcula recommendedReorder = max(0, targetStock - stockAvailable).
+6. Se asigna un estado: critical, warning, ready o untracked.
+7. El panel ordena los productos para que el administrador revise primero los que requieren mayor atención.
+
+El CSV y la libreta no se consumen durante la navegación de la interfaz. Son evidencia del proceso de construcción y evaluación. El artefacto resulta ser el contrato portable que permite aplicar el conocimiento entrenado en la capa de aplicación.
+
+[INSERTAR FIGURA 8.3: Captura del pronóstico de demanda por producto dentro de /admin/ventas.]
+
+
+8.4 Pruebas técnicas existentes
+
+El módulo intelligence cuenta con pruebas automatizadas que apoyan la validación de la integración.
+
+Archivo	Casos cubiertos
+recommendations.service.spec.ts	Aplicación de reglas, exclusión de productos de la bolsa, prioridad de antecedentes múltiples, filtro de stock/activo/backorder, fallback y caso sin candidatos.
+monthly-demand.service.spec.ts	Unión entre artefacto y catálogo, redondeos, estados de inventario, productos sin seguimiento, orden y vigencia del pronóstico.
+intelligence.controllers.spec.ts	Contrato del POST de recomendaciones, validaciones de entrada y metadatos de seguridad JWT/ADMIN de los endpoints.
+ml/src/validate_intelligence_artifacts.py	Validación de datasets y artefactos JSON/TypeScript antes de promoverlos.
+
+[INSERTAR FIGURA 8.4: Captura de terminal con la ejecución exitosa de npm test o de la validación de artefactos.]
+
+
+9. Evidencias de funcionamiento
+
+La evidencia debe obtenerse de las libretas y de la ejecución de la aplicación. En las capturas se recomienda ocultar tokens, URI de MongoDB, correos personales y cualquier dato sensible.
+
+9.1 Evidencias de la solución Apriori
+
+Caso de prueba 1 — Regla con cuatro aromas
+
+Entrada en la bolsa:
+
+    Anís Estrella + Lavanda + Manzanilla + Rosas de Castilla
+
+Regla esperada del artefacto Flask validado:
+
+    {Anís Estrella, Lavanda, Manzanilla, Rosas de Castilla} -> Toronjil
+
+Evidencia cuantitativa:
+
+    soporte = 0.045756
+    confianza = 1.000000
+    lift = 6.463035
+    coocurrencias = 76
+
+Resultado esperado: Toronjil aparece como candidato siempre que siga activo y disponible en el catálogo. El caso demuestra que el antecedente puede contener cuatro aromas y que el sistema no se limita a una relación simple A -> B.
+
+[INSERTAR FIGURA 9.1: Bolsa con los cuatro aromas y tarjeta donde se muestre Toronjil como recomendación.]
+
+Caso de prueba 2 — Bolsa con cinco aromas
+
+Entrada en la bolsa:
+
+    Eucalipto + Hierbabuena + Menta + Vaporub + Lavanda
+
+Regla relevante:
+
+    {Eucalipto, Hierbabuena, Menta, Vaporub} -> Romero
+
+Evidencia cuantitativa de la regla:
+
+    soporte = 0.047562
+    confianza = 1.000000
+    lift = 7.128755
+    coocurrencias = 79
+
+Resultado esperado: aunque la bolsa tenga cinco aromas, el sistema identifica que los primeros cuatro forman un antecedente válido y puede sugerir Romero, si no está presente y cumple las validaciones de catálogo. El quinto producto no invalida la regla; el antecedente sólo debe ser subconjunto de la bolsa.
+
+[INSERTAR FIGURA 9.2: Captura de la bolsa con cinco aromas y la recomendación resultante.]
+
+Caso de prueba 3 — Sin regla aplicable
+
+Entrada: una bolsa que no cubra ningún antecedente del artefacto aprobado.
+
+Resultado esperado: el sistema usa el fallback de popularidad, sin duplicar productos de la bolsa, o muestra que no hay una recomendación disponible si no existe un candidato activo con stock. Este comportamiento evita fabricar una asociación inexistente.
+
+[INSERTAR FIGURA 9.3: Captura de respuesta de fallback o de respuesta vacía transparente.]
+
+
+9.2 Evidencias de la solución de demanda mensual
+
+Caso de prueba 1 — Lavanda
+
+La libreta corregida prepara la inferencia de julio de 2026 a partir de dataset_demanda_inferencia.csv y genera una predicción puntual por producto. El manifiesto monthly-demand-flask-manifest.v1.json documenta el modelo Ridge aprobado y sus métricas, pero no almacena pronósticos fijos por aroma. Por esta razón, los valores puntuales deben obtenerse al ejecutar la celda de inferencia o al consultar la versión del servicio que haya sido promovida al sistema; no deben copiarse valores de un artefacto anterior.
+
+La interfaz administrativa debe mostrar el valor de demanda disponible en la versión desplegada y calcular el reabastecimiento considerando la existencia real de Lavanda registrada en MongoDB. El cálculo depende de stockAvailable y stockMin vigentes al momento de la consulta.
+
+    targetStock = límite_superior_disponible + stockMin
+    recommendedReorder = max(0, targetStock - stockAvailable)
+
+[INSERTAR FIGURA 9.4: Fila o tarjeta de Lavanda en el panel de demanda, donde se vean pronóstico, stock y estado.]
+
+Caso de prueba 2 — Anís Estrella
+
+Se repite el proceso con Anís Estrella para comprobar que la inferencia se genera por producto y que el panel utiliza la misma regla de reabastecimiento. La captura debe incluir el valor producido en la ejecución vigente, la existencia actual y el estado obtenido. El administrador debe interpretar el resultado como apoyo: un intervalo disponible amplio invita a revisar el inventario con mayor cautela, no a realizar una compra automática.
+
+[INSERTAR FIGURA 9.5: Fila o tarjeta de Anís Estrella en el panel de demanda.]
+
+Caso de prueba 3 — Producto sin historial mínimo en la futura integración Flask
+
+Si un producto nuevo no cuenta con demanda de los tres meses previos, el contrato del modelo Ridge indica historial_insuficiente. La solución no genera una estimación ficticia. Este caso debe registrarse como una decisión de negocio pendiente, por ejemplo, usar stockMin o un criterio manual hasta acumular el historial requerido.
+
+[INSERTAR FIGURA 9.6: Captura del manifiesto monthly-demand-flask-manifest.v1.json o de una prueba que demuestre la política historial_insuficiente.]
+
+
+10. Resultados, limitaciones, riesgos y mejoras futuras
+
+10.1 Resultados obtenidos
+
+La solución Apriori generó un conjunto de reglas transaccionales que reconoce antecedentes de uno a cuatro aromas y produce hasta tres sugerencias únicas. En la configuración balanceada evaluada, obtuvo una cobertura temporal de 91.86 %, un Top-1 de extremo a extremo de 46.11 % y superó a la línea base de popularidad de 14.10 %. Además, se obtuvieron 165 reglas operativas con antecedentes múltiples, lo que confirma que el recomendador aprovecha combinaciones de más de un producto.
+
+La solución de demanda produjo un modelo Ridge con alpha 5 en la libreta de modelado. En la prueba temporal final obtuvo MAE de 7.07 unidades, RMSE de 9.82, R2 de 0.3403 y una mejora de 31.79 % en MAE frente al promedio de los tres meses anteriores. El resultado se traduce en una vista administrativa que ayuda a ordenar productos por riesgo de inventario y reabastecimiento sugerido.
+
+La validación de datos sintéticos registró 51 comprobaciones aprobadas, sin errores ni advertencias. Los datasets mantienen generation_run_id = inhalex-synthetic-v1, is_synthetic = true y la semilla 20260717, lo que permite reproducir el proceso de desarrollo.
+
+10.2 Limitaciones
+
+1. Los datos de entrenamiento y las métricas documentadas son sintéticos y reproducibles. Demuestran la viabilidad técnica y el flujo de integración, pero no sustituyen una validación con ventas reales de INHALEX.
+2. Apriori identifica coocurrencias, no causalidad. Que dos aromas aparezcan juntos no significa que uno produzca bienestar médico, que sea adecuado para todas las personas o que garantice una compra.
+3. Las reglas dependen del historial disponible y del catálogo vigente. Un aroma nuevo tendrá poca o ninguna evidencia hasta que se acumulen compras y se reentrene el artefacto.
+4. Ridge requiere al menos tres meses de historial para calcular los rezagos. Un producto nuevo debe manejarse mediante historial_insuficiente o con una política comercial distinta.
+5. El R2 de demanda es moderado. Por ello, el pronóstico debe verse como apoyo a inventario y no como una garantía exacta de ventas.
+6. El pronóstico tiene vigencia limitada al mes objetivo. Si pasan varios meses, se debe regenerar el artefacto antes de usarlo como referencia operativa.
+
+10.3 Riesgos y controles
+
+Riesgo	Control aplicado o recomendado
+Mostrar una recomendación de un producto inactivo o agotado	El backend filtra status, inStock, stockAvailable y reglas de backorder antes de responder.
+Recomendar un aroma ya añadido	Se excluyen los consecuentes que ya están presentes en la bolsa.
+Confundir una sugerencia comercial con indicación médica	La interfaz y la documentación deben describir bienestar aromático; no deben prometer curas, diagnósticos ni sustitución de atención médica.
+Fuga de información temporal en demanda	Los rezagos, precio y reseñas se calculan antes de mes_objetivo; la separación de entrenamiento, validación y prueba es cronológica.
+Decidir inventario automáticamente	El panel presenta una sugerencia; la decisión final corresponde al administrador.
+Exponer datos sensibles	Las evidencias no incluyen contraseñas, URI de MongoDB, JWT, tokens ni datos personales de usuarios.
+
+10.4 Trazabilidad y sincronización de versiones
+
+La libreta final de demanda exporta el artefacto monthly-demand-flask-pipeline.v1.joblib con Ridge alpha 5 y sus métricas de prueba. La versión actualmente cargada por la interfaz NestJS usa un artefacto TypeScript generado previamente, monthly-demand.generated.ts, con configuración alpha 50 y métricas propias de esa exportación. Del mismo modo, la libreta Apriori exporta apriori-rules.flask.v1.json mientras que el backend vigente importa apriori-rules.generated.ts.
+
+Esta diferencia no debe ocultarse: es una tarea de promoción de versiones. Antes de una publicación definitiva se debe seleccionar un único artefacto aprobado por solución, regenerar la representación que consume el backend y conservar en el panel administrativo la versión, fecha de generación, métricas y periodo de entrenamiento. Así se evita que la libreta evaluada y la interfaz web muestren contratos diferentes.
+
+10.5 Mejoras futuras
+
+1. Conectar la extracción operativa a MongoDB para reconstruir las mismas variables que se utilizaron en entrenamiento, manteniendo una única definición de pedido válido, fecha de venta y unidades entregadas.
+2. Programar reentrenamientos periódicos, por ejemplo mensuales, con validación de calidad, comparación de métricas y activación explícita de la nueva versión aprobada.
+3. Registrar de forma anónima impresiones, clics y productos agregados a partir de una recomendación para evaluar el valor real del recomendador sin alterar la privacidad de los usuarios.
+4. Presentar las tres recomendaciones posibles en la interfaz cuando existan, manteniendo una explicación clara de que se basan en compras similares y no en diagnóstico médico.
+5. Incorporar promociones, cancelaciones, unidades realmente surtidas y eventos estacionales sólo después de definir con claridad sus reglas de negocio y evitar fuga temporal.
+6. Conectar el servicio Flask preparado como una capa interna segura, cargando artefactos desde una ruta confiable y sin permitir que el frontend acceda directamente al modelo ni a MongoDB.
+
+
+11. Conclusiones
+
+El proyecto Plataforma digital de comercio electrónico para INHALEX integra dos soluciones de análisis de datos que atienden necesidades comerciales diferentes y complementarias. La recomendación Apriori transforma las compras en canastas transaccionales y permite sugerir aromas a partir de combinaciones de uno a cuatro productos. Su diseño no se limita a una relación simple entre dos aromas: una bolsa con varios productos puede activar múltiples antecedentes y obtener hasta tres candidatos ordenados por evidencia.
+
+La predicción mensual de demanda transforma el historial producto-mes en una estimación cuantitativa de unidades solicitadas. El modelo Ridge se seleccionó mediante validación cronológica y superó una línea base de promedio histórico, por lo que resulta útil como apoyo para anticipar revisión de inventario y reabastecimiento. Sus resultados se presentan al administrador junto con stock disponible, stock mínimo e intervalo de predicción para facilitar una interpretación responsable.
+
+El trabajo también evidencia la importancia de separar el dataset de desarrollo de la operación web. Los CSV y las libretas permiten reproducir la preparación, el entrenamiento y la evaluación; los servicios NestJS y los artefactos versionados permiten integrar los resultados sin depender de archivos CSV durante la navegación. Los artefactos Flask fueron preparados como ruta de despliegue futuro, sin afirmar que ya estén publicados.
+
+La principal limitación es que la validación se realizó con datos sintéticos reproducibles. Por ello, el siguiente paso debe ser recolectar y depurar historial real suficiente, estandarizar las reglas de ventas válidas y reentrenar bajo las mismas condiciones de seguridad y trazabilidad. Aun con esa limitación, INHALEX demuestra un flujo completo y coherente de extracción, transformación, modelado, evaluación e integración de dos soluciones analíticas en una aplicación de comercio electrónico.
+
+
+REFERENCIAS BIBLIOGRÁFICAS SUGERIDAS
+
+Agrawal, R., y Srikant, R. (1994). Fast Algorithms for Mining Association Rules. Proceedings of the 20th International Conference on Very Large Data Bases.
+
+Chapman, P., Clinton, J., Kerber, R., Khabaza, T., Reinartz, T., Shearer, C., y Wirth, R. (2000). CRISP-DM 1.0: Step-by-step data mining guide.
+
+Hoerl, A. E., y Kennard, R. W. (1970). Ridge Regression: Biased Estimation for Nonorthogonal Problems. Technometrics, 12(1), 55-67.
+
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., et al. (2011). Scikit-learn: Machine Learning in Python. Journal of Machine Learning Research, 12, 2825-2830.
+
+MongoDB, Inc. (s. f.). MongoDB Documentation. https://www.mongodb.com/docs/
+
+NestJS. (s. f.). NestJS Documentation. https://docs.nestjs.com/
+
+Next.js. (s. f.). Next.js Documentation. https://nextjs.org/docs

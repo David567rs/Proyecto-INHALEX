@@ -83,7 +83,7 @@ def validate_apriori() -> dict[str, Any]:
     artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
 
     require(list(frame.columns) == ["tid", "items"], "Apriori debe usar tid,items")
-    require(artifact["schemaVersion"] == "1.0", "Schema Apriori no soportado")
+    require(artifact["schemaVersion"] == "1.1", "Schema Apriori no soportado")
     require(frame["tid"].is_unique, "tid debe ser único")
     require(not frame.isna().any().any(), "Apriori no admite valores vacíos")
     require(len(frame) >= 100, "Apriori requiere un histórico suficiente")
@@ -115,11 +115,21 @@ def validate_apriori() -> dict[str, Any]:
     rules = artifact["rules"]
     require(len(rules) == artifact["metrics"]["rules"], "Conteo de reglas inválido")
     require(bool(rules), "Apriori debe producir reglas")
+    multi_antecedent_rules = 0
     for rule in rules:
-        require(len(rule["antecedentSlugs"]) == 1, "Antecedente no singleton")
+        require(bool(rule["antecedentSlugs"]), "Antecedente vacío")
         require(
-            rule["antecedentSlugs"][0] != rule["consequentSlug"],
+            len(rule["antecedentSlugs"])
+            <= artifact["training"]["maxAntecedentSize"],
+            "Antecedente excede el máximo configurado",
+        )
+        require(
+            rule["consequentSlug"] not in rule["antecedentSlugs"],
             "Regla autorreferente",
+        )
+        require(
+            len(set(rule["antecedentSlugs"])) == len(rule["antecedentSlugs"]),
+            "Antecedente duplicado",
         )
         require(
             rule["support"] >= artifact["training"]["minSupport"],
@@ -134,6 +144,17 @@ def validate_apriori() -> dict[str, Any]:
             "Regla bajo lift mínimo",
         )
         require(rule["cooccurrenceCount"] >= 1, "Coocurrencia inválida")
+        if len(rule["antecedentSlugs"]) >= 2:
+            multi_antecedent_rules += 1
+    require(multi_antecedent_rules > 0, "Faltan reglas de múltiples antecedentes")
+    require(
+        artifact["metrics"]["multiAntecedentRules"] == multi_antecedent_rules,
+        "Conteo de reglas múltiples inválido",
+    )
+    require(
+        artifact["metrics"]["maxAntecedentSizeFound"] >= 2,
+        "No se reportó antecedente múltiple",
+    )
     require(
         0 <= artifact["metrics"]["temporalTop1HitRate"] <= 1,
         "Hit rate temporal inválido",
@@ -151,6 +172,7 @@ def validate_apriori() -> dict[str, Any]:
     return {
         "transactions": len(frame),
         "rules": len(rules),
+        "multiAntecedentRules": multi_antecedent_rules,
         "catalogCoverage": artifact["metrics"]["catalogCoverage"],
         "temporalTop1HitRate": artifact["metrics"]["temporalTop1HitRate"],
     }
