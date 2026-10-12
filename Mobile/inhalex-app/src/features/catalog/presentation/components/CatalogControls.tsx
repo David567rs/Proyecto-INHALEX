@@ -6,11 +6,10 @@ import { SoftPressable } from '@/shared/components/Motion';
 
 export { CategoryChips } from './CategoryChips';
 
-export function CatalogSearch({ value, onChange, onSubmit }: { value: string; onChange: (value: string) => void; onSubmit?: () => void }) {
+export function CatalogSearch({ value, onChange, onSubmit }: { value: string; onChange: (value: string) => void; onSubmit: () => void }) {
   const [focused, setFocused] = useState(false);
   return (
     <View style={[styles.search, focused && styles.searchFocused]}>
-      <Ionicons aria-hidden name="search-outline" size={21} color={colors.primary} />
       <TextInput
         accessibilityLabel="Buscar aromas"
         autoCapitalize="none"
@@ -19,7 +18,7 @@ export function CatalogSearch({ value, onChange, onSubmit }: { value: string; on
         onBlur={() => setFocused(false)}
         onFocus={() => setFocused(true)}
         onSubmitEditing={onSubmit}
-        placeholder="Busca tu próximo aroma"
+        placeholder="Buscar productos"
         placeholderTextColor={colors.textMuted}
         returnKeyType="search"
         style={[styles.input, Platform.OS === 'web' && styles.webInput]}
@@ -30,8 +29,18 @@ export function CatalogSearch({ value, onChange, onSubmit }: { value: string; on
           <Ionicons aria-hidden name="close-circle" color={colors.textMuted} size={20} />
         </Pressable>
       ) : null}
+      <SoftPressable accessibilityLabel="Buscar" accessibilityRole="button" onPress={onSubmit} style={styles.submit}>
+        <Ionicons aria-hidden name="search-outline" size={21} color={colors.white} />
+      </SoftPressable>
     </View>
   );
+}
+
+export function CatalogResultsSummary({ shown, total, query }: { shown: number; total: number; query: string }) {
+  return <View accessibilityLiveRegion="polite" style={styles.resultCopy}>
+    <Text style={styles.resultCount}>{shown < total ? `Mostrando ${shown} de ${total} aromas` : `${total} ${total === 1 ? 'aroma' : 'aromas'}`}</Text>
+    {query.trim() ? <Text numberOfLines={2} style={styles.resultQuery}>para “{query.trim()}”</Text> : null}
+  </View>;
 }
 
 export function CategoryLoadNotice({ error, onRetry, refreshing = false }: { error: string | null; onRetry: () => void; refreshing?: boolean }) {
@@ -54,11 +63,15 @@ export function CatalogRefreshNotice({ error, onRetry, refreshing = false }: { e
 }
 
 const styles = StyleSheet.create({
-  search: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 17, borderWidth: 1, flexDirection: 'row', gap: 10, minHeight: 53, paddingLeft: 16, paddingRight: 8 },
+  search: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 17, borderWidth: 1, flexDirection: 'row', gap: 4, minHeight: 56, paddingLeft: 16, paddingRight: 5 },
   searchFocused: { borderColor: colors.primary },
   input: { color: colors.text, flex: 1, fontSize: 14, minHeight: 51, minWidth: 0, paddingVertical: 12 },
   webInput: { outlineStyle: 'solid', outlineWidth: 0 },
   clear: { alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44 },
+  submit: { alignItems: 'center', backgroundColor: colors.primaryDark, borderRadius: 12, justifyContent: 'center', minHeight: 44, minWidth: 44 },
+  resultCopy: { flex: 1, gap: 4 },
+  resultCount: { color: colors.textMuted, fontSize: 12 },
+  resultQuery: { color: colors.primaryDark, fontSize: 14, fontWeight: '600' },
   categoryNotice: { alignItems: 'center', backgroundColor: colors.surfaceSoft, borderRadius: 14, flexDirection: 'row', gap: 12, marginHorizontal: 22, marginTop: 12, paddingHorizontal: 13, paddingVertical: 8 },
   noticeCopy: { flex: 1 },
   noticeTitle: { color: colors.text, fontSize: 12, fontWeight: '600', marginBottom: 3 },

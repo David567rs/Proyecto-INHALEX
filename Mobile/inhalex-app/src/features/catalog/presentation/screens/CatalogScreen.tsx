@@ -6,14 +6,18 @@ import { colors } from '@/core/theme/colors';
 import { FavoriteButton } from '@/features/favorites/presentation/components/FavoriteButton';
 import { Reveal, SoftPressable } from '@/shared/components/Motion';
 import type { CatalogProduct } from '../../domain/entities/CatalogProduct';
-import { CatalogSearch, CategoryChips, CategoryLoadNotice, CatalogRefreshNotice } from '../components/CatalogControls';
+import { CatalogSearch, CategoryChips, CategoryLoadNotice, CatalogRefreshNotice, CatalogResultsSummary } from '../components/CatalogControls';
 import { CatalogState } from '../components/CatalogState';
 import { ProductCard } from '../components/ProductCard';
 import { useCatalogViewModel } from '../viewModels/useCatalogViewModel';
 
 export default function CatalogScreen() {
-  const vm = useCatalogViewModel();
   const focused = useIsFocused();
+  return <CatalogView focused={focused} />;
+}
+
+export function CatalogView({ focused = true }: { focused?: boolean }) {
+  const vm = useCatalogViewModel();
   const { width, fontScale } = useWindowDimensions();
   const columns = width < 360 || fontScale > 1.25 ? 1 : 2;
   const cardWidth = (Math.min(width, 600) - 44 - (columns - 1) * 12) / columns;
@@ -46,7 +50,7 @@ export default function CatalogScreen() {
                   <Ionicons aria-hidden name="home-outline" size={21} color={colors.primary} />
                 </SoftPressable>
               </View>
-              <CatalogSearch value={vm.searchQuery} onChange={vm.setSearchQuery} onSubmit={Keyboard.dismiss} />
+              <CatalogSearch value={vm.searchQuery} onChange={vm.setSearchQuery} onSubmit={() => { Keyboard.dismiss(); void vm.submitSearch(); }} />
             </Reveal>
             <Reveal delay={60} style={styles.filters}>
               <CategoryChips categories={vm.categories} selectedId={vm.selectedCategoryId} loading={vm.categoriesLoading} focused={focused}
@@ -56,7 +60,7 @@ export default function CatalogScreen() {
             {vm.status === 'ready' ? <>
               <CatalogRefreshNotice error={vm.errorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} />
               <View style={[styles.results, styles.inset]}>
-                <Text accessibilityLiveRegion="polite" style={styles.count}>{vm.total} {vm.total === 1 ? 'aroma' : 'aromas'}</Text>
+                <CatalogResultsSummary shown={vm.products.length} total={vm.total} query={vm.searchQuery} />
                 <Pressable
                   accessibilityLabel="Actualizar catálogo"
                   accessibilityRole="button"
@@ -71,7 +75,7 @@ export default function CatalogScreen() {
             </> : null}
           </>
         }
-        ListEmptyComponent={<CatalogState status={vm.status} errorMessage={vm.errorMessage} hasFilters={hasFilters} onRetry={() => void vm.retry()} onReset={vm.resetFilters} />}
+        ListEmptyComponent={<CatalogState status={vm.status} errorMessage={vm.errorMessage} hasFilters={hasFilters} searchQuery={vm.searchQuery} categoryName={vm.selectedCategoryId !== 'all' ? vm.categories.find((category) => category.id === vm.selectedCategoryId)?.name : undefined} onRetry={() => void vm.retry()} onReset={vm.resetFilters} />}
         renderItem={({ item: product, index }) => (
           <Reveal delay={Math.min(index, 5) * 35} style={[styles.cardShell, columns === 1 && styles.singleCard]}>
             <ProductCard
@@ -100,7 +104,6 @@ const styles = StyleSheet.create({
   home: { alignItems: 'center', backgroundColor: colors.surfaceSoft, borderRadius: 24, height: 44, justifyContent: 'center', width: 44 },
   filters: { marginTop: 18 },
   results: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, marginTop: 8 },
-  count: { color: colors.textMuted, fontSize: 12 },
   refresh: { alignItems: 'center', borderRadius: 22, justifyContent: 'center', minHeight: 44, minWidth: 44 },
   pressed: { backgroundColor: colors.surfaceSoft },
   row: { gap: 12, paddingHorizontal: 22 },
