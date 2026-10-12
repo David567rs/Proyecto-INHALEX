@@ -1,9 +1,11 @@
+import Link from "next/link"
 import { Footer } from "@/components/layout/footer"
 import { Header } from "@/components/layout/header"
 import { cn } from "@/lib/utils"
 
 interface PublicPageSkeletonProps {
   variant?: "default" | "linea" | "product"
+  standalone?: boolean
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -12,13 +14,24 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 export function PublicPageSkeleton({
   variant = "default",
+  standalone = false,
 }: PublicPageSkeletonProps) {
   const isLinea = variant === "linea"
   const isProduct = variant === "product"
 
   return (
     <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
-      <Header />
+      {standalone ? (
+        <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/95">
+          <div className="container mx-auto flex h-20 items-center px-4">
+            <Link href="/" className="text-xl font-bold tracking-wide text-primary">
+              INHALEX
+            </Link>
+          </div>
+        </header>
+      ) : (
+        <Header />
+      )}
 
       <main className="flex-1 pt-24 lg:pt-28">
         <section className="container mx-auto px-4 py-6 lg:py-10">
