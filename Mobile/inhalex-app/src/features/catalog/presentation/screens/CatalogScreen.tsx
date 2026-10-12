@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { ActivityIndicator, FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/core/theme/colors';
@@ -12,6 +12,7 @@ import { useCatalogViewModel } from '../viewModels/useCatalogViewModel';
 
 export default function CatalogScreen() {
   const vm = useCatalogViewModel();
+  const focused = useIsFocused();
   const { width, fontScale } = useWindowDimensions();
   const columns = width < 360 || fontScale > 1.25 ? 1 : 2;
   const cardWidth = (Math.min(width, 600) - 44 - (columns - 1) * 12) / columns;
@@ -47,7 +48,8 @@ export default function CatalogScreen() {
               <CatalogSearch value={vm.searchQuery} onChange={vm.setSearchQuery} onSubmit={Keyboard.dismiss} />
             </Reveal>
             <Reveal delay={60} style={styles.filters}>
-              <CategoryChips categories={vm.categories} selectedId={vm.selectedCategoryId} onSelect={vm.selectCategory} />
+              <CategoryChips categories={vm.categories} selectedId={vm.selectedCategoryId} loading={vm.categoriesLoading} focused={focused}
+                onSelect={(categoryId) => { Keyboard.dismiss(); vm.selectCategory(categoryId); }} />
             </Reveal>
             {(vm.status === 'ready' || vm.status === 'empty') && !vm.errorMessage ? <CategoryLoadNotice error={vm.categoriesErrorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} /> : null}
             {vm.status === 'ready' ? <>

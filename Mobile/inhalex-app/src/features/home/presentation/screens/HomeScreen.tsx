@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { Image, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/core/theme/colors';
@@ -16,11 +16,12 @@ import { ExperienceVideo } from '../components/ExperienceVideo';
 
 export default function HomeScreen() {
   const { user } = useAuthSession();
+  const focused = useIsFocused();
   const firstName = user?.firstName?.trim() || user?.name.trim().split(/\s+/)[0] || 'bienvenido';
-  return <HomeView firstName={firstName} />;
+  return <HomeView firstName={firstName} focused={focused} />;
 }
 
-export function HomeView({ firstName }: { firstName: string }) {
+export function HomeView({ firstName, focused = true }: { firstName: string; focused?: boolean }) {
   const vm = useCatalogViewModel();
   const reducedMotion = useReducedMotion();
   const scrollRef = useRef<ScrollView>(null);
@@ -71,7 +72,8 @@ export function HomeView({ firstName }: { firstName: string }) {
             <View style={styles.sectionCopy}><Text style={styles.eyebrow}>NUESTRA COLECCIÓN</Text><Text accessibilityRole="header" style={styles.sectionTitle}>{filtered ? 'Tu selección' : 'Encuentra tu aroma'}</Text></View>
             <Pressable accessibilityRole="button" onPress={() => router.navigate('/(tabs)/catalogo')} style={styles.textLink}><Text style={styles.textLinkLabel}>Ver todos</Text><Ionicons name="arrow-forward" size={16} color={colors.primary} /></Pressable>
           </View>
-          <CategoryChips categories={vm.categories} selectedId={vm.selectedCategoryId} onSelect={vm.selectCategory} />
+          <CategoryChips categories={vm.categories} selectedId={vm.selectedCategoryId} loading={vm.categoriesLoading} focused={focused}
+            onSelect={(categoryId) => { Keyboard.dismiss(); vm.selectCategory(categoryId); }} />
           {(vm.status === 'ready' || vm.status === 'empty') && !vm.errorMessage ? <CategoryLoadNotice error={vm.categoriesErrorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} /> : null}
           {vm.status === 'ready' ? <CatalogRefreshNotice error={vm.errorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} /> : null}
           <CatalogState status={vm.status} errorMessage={vm.errorMessage} hasFilters={filtered} onRetry={() => void vm.retry()} onReset={vm.resetFilters} />
