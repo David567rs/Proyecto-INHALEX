@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
+import { Tabs, usePathname } from 'expo-router';
+import { AccessibilityInfo, Animated, StyleSheet, View } from 'react-native';
 import type { ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/core/theme/colors';
 import { CatalogProvider } from '@/features/catalog/presentation/context/CatalogProvider';
 import { CatalogProductOverlay } from '@/features/catalog/presentation/components/ProductDetails';
+import { useCatalogViewModel } from '@/features/catalog/presentation/viewModels/useCatalogViewModel';
+import { useAuthSession } from '@/features/auth/presentation/context/AuthSessionContext';
+import { FavoritesProvider } from '@/features/favorites/presentation/context/FavoritesProvider';
+import { FavoritesNotice } from '@/features/favorites/presentation/components/FavoritesNotice';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -60,7 +64,20 @@ function TabIcon({ color, focused, size, focusedName, outlineName, reduceMotion 
 }
 
 export default function TabsLayout() {
-  return <CatalogProvider><TabNavigator /><CatalogProductOverlay /></CatalogProvider>;
+  const { user } = useAuthSession();
+  return <FavoritesProvider key={user?.id}><CatalogProvider>
+    <TabNavigator /><CatalogProductOverlay /><FavoritesFeedbackOverlay />
+  </CatalogProvider></FavoritesProvider>;
+}
+
+function FavoritesFeedbackOverlay() {
+  const { selectedProduct } = useCatalogViewModel();
+  const pathname = usePathname();
+  const insets = useSafeAreaInsets();
+  if (selectedProduct || pathname === '/favoritos') return null;
+  return <View style={[styles.favoritesFeedback, { bottom: 72 + Math.max(insets.bottom, 8) }]}>
+    <FavoritesNotice includeLoadError />
+  </View>;
 }
 
 function TabNavigator() {
@@ -163,6 +180,7 @@ function TabNavigator() {
 }
 
 const styles = StyleSheet.create({
+  favoritesFeedback: { alignSelf: 'center', maxWidth: 556, pointerEvents: 'box-none', position: 'absolute', width: '88%' },
   iconContainer: {
     alignItems: 'center',
     borderRadius: 17,

@@ -3,6 +3,7 @@ import { router, useIsFocused } from 'expo-router';
 import { ActivityIndicator, FlatList, Keyboard, Pressable, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/core/theme/colors';
+import { FavoriteButton } from '@/features/favorites/presentation/components/FavoriteButton';
 import { Reveal, SoftPressable } from '@/shared/components/Motion';
 import type { CatalogProduct } from '../../domain/entities/CatalogProduct';
 import { CatalogSearch, CategoryChips, CategoryLoadNotice, CatalogRefreshNotice } from '../components/CatalogControls';
@@ -75,6 +76,7 @@ export default function CatalogScreen() {
           <Reveal delay={Math.min(index, 5) * 35} style={[styles.cardShell, columns === 1 && styles.singleCard]}>
             <ProductCard
               product={product}
+              action={<FavoriteButton product={product} />}
               width={cardWidth}
               categoryLabel={vm.categories.find((category) => category.id === product.category)?.name ?? 'Colección INHALEX'}
               onPress={() => { Keyboard.dismiss(); void vm.openProduct(product); }}

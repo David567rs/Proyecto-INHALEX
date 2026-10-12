@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/core/theme/colors';
+import { FavoriteButton } from '@/features/favorites/presentation/components/FavoriteButton';
+import { FavoritesNotice } from '@/features/favorites/presentation/components/FavoritesNotice';
 import { BottomSheet } from '@/shared/components/BottomSheet';
 import { SoftPressable } from '@/shared/components/Motion';
 import type { CatalogProduct } from '../../domain/entities/CatalogProduct';
@@ -15,11 +17,13 @@ export function CatalogProductOverlay() {
   const vm = useCatalogViewModel();
   const categoryLabel = vm.categories.find((category) => category.id === vm.selectedProduct?.category)?.name ?? 'Colección INHALEX';
   return <ProductDetails product={vm.selectedProduct} categoryLabel={categoryLabel} loading={vm.detailLoading} errorMessage={vm.detailError}
+    favoriteAction={vm.selectedProduct ? <FavoriteButton product={vm.selectedProduct} variant="detail" /> : undefined}
+    favoriteNotice={vm.selectedProduct ? <FavoritesNotice productId={vm.selectedProduct.id} includeLoadError /> : undefined}
     onClose={vm.closeProduct} onRetry={() => void vm.retryDetail()}
     onOpenFavorites={() => router.navigate('/(tabs)/favoritos')} onOpenBag={() => router.navigate('/(tabs)/bolsa')} />;
 }
 
-export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry, onOpenFavorites, onOpenBag }: {
+export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry, onOpenFavorites, onOpenBag, favoriteAction, favoriteNotice }: {
   product: CatalogProduct | null;
   categoryLabel: string;
   loading: boolean;
@@ -28,6 +32,8 @@ export function ProductDetails({ product, categoryLabel, loading, errorMessage, 
   onRetry: () => void;
   onOpenFavorites: () => void;
   onOpenBag: () => void;
+  favoriteAction?: ReactNode;
+  favoriteNotice?: ReactNode;
 }) {
   const [contentHeight, setContentHeight] = useState<number>();
   return (
@@ -38,11 +44,12 @@ export function ProductDetails({ product, categoryLabel, loading, errorMessage, 
         <ProductBottleImage key={product.id} product={product}
           maxHeight={contentHeight === undefined ? undefined : Math.max(1, contentHeight - 5)} />
         <Text style={styles.category}>{categoryLabel}</Text>
-        <Text accessibilityRole="header" style={styles.name}>{product.name}</Text>
+        <View style={styles.nameRow}><Text accessibilityRole="header" style={styles.name}>{product.name}</Text>{favoriteAction}</View>
         <View style={styles.priceRow}>
           <Text style={styles.price}>{formatPrice(product.effectivePrice, product.currency)}</Text>
           <View style={styles.stock}><View style={[styles.stockDot, !product.inStock && { backgroundColor: colors.textMuted }]} /><Text style={styles.stockLabel}>{product.inStock ? 'Disponible' : 'Sin disponibilidad'}</Text></View>
         </View>
+        {favoriteNotice ? <View style={styles.favoriteNotice}>{favoriteNotice}</View> : null}
         {loading ? <ActivityIndicator accessibilityLabel="Actualizando detalles" color={colors.primary} style={styles.loading} /> : null}
         {errorMessage ? <View accessibilityLiveRegion="polite" style={styles.detailNotice}>
           <Text style={styles.noticeText}>No se pudo actualizar el detalle.</Text>
@@ -60,7 +67,9 @@ export function ProductDetails({ product, categoryLabel, loading, errorMessage, 
 
 const styles = StyleSheet.create({
   category: { color: colors.primary, fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 23, textTransform: 'uppercase' },
-  name: { color: colors.text, fontSize: 29, fontWeight: '700', letterSpacing: -0.7, marginTop: 7 },
+  nameRow: { alignItems: 'center', flexDirection: 'row', gap: 12, marginTop: 7 },
+  name: { color: colors.text, flex: 1, fontSize: 29, fontWeight: '700', letterSpacing: -0.7 },
+  favoriteNotice: { marginBottom: 12 },
   priceRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'space-between', marginVertical: 16 },
   price: { color: colors.primaryDark, fontSize: 25, fontWeight: '800' },
   stock: { alignItems: 'center', flexDirection: 'row', gap: 6 },
