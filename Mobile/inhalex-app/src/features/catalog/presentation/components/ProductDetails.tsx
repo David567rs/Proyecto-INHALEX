@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/core/theme/colors';
 import { BottomSheet } from '@/shared/components/BottomSheet';
@@ -6,26 +8,35 @@ import { SoftPressable } from '@/shared/components/Motion';
 import type { CatalogProduct } from '../../domain/entities/CatalogProduct';
 import { formatPrice } from './ProductCard';
 import { ProductBottleImage } from './ProductBottleImage';
+import { ProductDetailActions } from './ProductDetailActions';
 import { useCatalogViewModel } from '../viewModels/useCatalogViewModel';
 
 export function CatalogProductOverlay() {
   const vm = useCatalogViewModel();
   const categoryLabel = vm.categories.find((category) => category.id === vm.selectedProduct?.category)?.name ?? 'Colección INHALEX';
-  return <ProductDetails product={vm.selectedProduct} categoryLabel={categoryLabel} loading={vm.detailLoading} errorMessage={vm.detailError} onClose={vm.closeProduct} onRetry={() => void vm.retryDetail()} />;
+  return <ProductDetails product={vm.selectedProduct} categoryLabel={categoryLabel} loading={vm.detailLoading} errorMessage={vm.detailError}
+    onClose={vm.closeProduct} onRetry={() => void vm.retryDetail()}
+    onOpenFavorites={() => router.navigate('/(tabs)/favoritos')} onOpenBag={() => router.navigate('/(tabs)/bolsa')} />;
 }
 
-export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry }: {
+export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry, onOpenFavorites, onOpenBag }: {
   product: CatalogProduct | null;
   categoryLabel: string;
   loading: boolean;
   errorMessage: string | null;
   onClose: () => void;
   onRetry: () => void;
+  onOpenFavorites: () => void;
+  onOpenBag: () => void;
 }) {
+  const [contentHeight, setContentHeight] = useState<number>();
   return (
-    <BottomSheet visible={Boolean(product)} title="Tu próximo aroma" onClose={onClose}>
+    <BottomSheet visible={Boolean(product)} title="Tu próximo aroma" onClose={onClose}
+      onContentHeightChange={setContentHeight}
+      footer={product ? <ProductDetailActions onOpenFavorites={onOpenFavorites} onOpenBag={onOpenBag} /> : undefined}>
       {product ? <>
-        <ProductBottleImage key={product.id} product={product} />
+        <ProductBottleImage key={product.id} product={product}
+          maxHeight={contentHeight === undefined ? undefined : Math.max(1, contentHeight - 5)} />
         <Text style={styles.category}>{categoryLabel}</Text>
         <Text accessibilityRole="header" style={styles.name}>{product.name}</Text>
         <View style={styles.priceRow}>

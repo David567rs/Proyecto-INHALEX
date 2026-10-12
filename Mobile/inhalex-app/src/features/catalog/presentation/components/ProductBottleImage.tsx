@@ -5,16 +5,18 @@ import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 import type { CatalogProduct } from '../../domain/entities/CatalogProduct';
 import { getAromaProductImage } from '../assets/aromaImages';
 
-export function ProductBottleImage({ product }: { product: CatalogProduct }) {
+export function ProductBottleImage({ product, maxHeight }: { product: CatalogProduct; maxHeight?: number }) {
   const { width, height } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const photo = getAromaProductImage(product);
   const availableWidth = Math.max(1, Math.min(width, 600) - 44);
   // Match the photo's proportions so its own background fills the whole frame.
   // On shorter screens, shrink both dimensions together to keep the bottle visible.
-  const frameHeight = photo
+  const preferredHeight = photo
     ? Math.min(availableWidth / photo.aspectRatio, Math.max(240, height * 0.68))
     : Math.max(240, Math.min(440, height * 0.48));
+  // Leave room for fixed detail actions, including stacked buttons and large text.
+  const frameHeight = Math.max(1, Math.min(preferredHeight, maxHeight ?? preferredHeight));
   const frameWidth = photo ? frameHeight * photo.aspectRatio : availableWidth;
   const volume = product.presentation.match(/\b\d+(?:[.,]\d+)?\s*ml\b/i)?.[0];
 
