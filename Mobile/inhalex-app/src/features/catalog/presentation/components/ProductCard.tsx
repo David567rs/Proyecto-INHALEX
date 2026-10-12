@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Image, StyleSheet, Text, View, type ImageStyle, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/core/theme/colors';
@@ -29,15 +29,17 @@ export function ProductImage({ uri, imagePath, style, imageStyle, resizeMode = '
   );
 }
 
-export function ProductCard({ product, categoryLabel, width, onPress, compact = false }: {
+export function ProductCard({ product, categoryLabel, width, onPress, compact = false, action }: {
   product: CatalogProduct;
   categoryLabel: string;
   width: number;
   onPress: () => void;
   compact?: boolean;
+  action?: ReactNode;
 }) {
   const hasPromotion = product.effectivePrice < product.price;
   return (
+    <View style={{ width }}>
     <SoftPressable accessibilityRole="button" accessibilityLabel={`${product.name}, ${formatPrice(product.effectivePrice, product.currency)}. Ver detalles`} onPress={onPress} style={[styles.card, compact && styles.compactCard, { width }]}>
       <View>
         <ProductImage
@@ -62,10 +64,13 @@ export function ProductCard({ product, categoryLabel, width, onPress, compact = 
         {!product.inStock ? <Text style={styles.unavailable}>Sin disponibilidad</Text> : null}
       </View>
     </SoftPressable>
+    {action ? <View style={styles.action}>{action}</View> : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  action: { position: 'absolute', right: 8, top: 8 },
   card: { backgroundColor: colors.surface, borderColor: '#E3EADF', borderRadius: 23, borderWidth: 1, overflow: 'hidden' },
   imageStage: { alignItems: 'center', backgroundColor: '#EDF3E9', borderRadius: 22, height: 168, justifyContent: 'center', overflow: 'hidden' },
   image: { height: '100%', width: '100%' },

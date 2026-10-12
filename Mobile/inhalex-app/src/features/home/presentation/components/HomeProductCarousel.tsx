@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/core/theme/colors';
 import type { CatalogProduct } from '@/features/catalog/domain/entities/CatalogProduct';
 import { ProductCard } from '@/features/catalog/presentation/components/ProductCard';
+import { FavoriteButton } from '@/features/favorites/presentation/components/FavoriteButton';
 import { useReducedMotion } from '@/shared/hooks/useReducedMotion';
 
 interface HomeProductCarouselProps {
@@ -43,7 +44,7 @@ export function HomeProductCarousel({ products, width, fontScale, categoryLabel,
         onMomentumScrollEnd={(event) => setActivePage(Math.min(pages.length - 1, Math.max(0, Math.round(event.nativeEvent.contentOffset.x / pageInterval))))}
       >
         {pages.map((page, pageIndex) => <View key={pageIndex} style={[styles.page, { width }, perPage === 1 && styles.singlePage]}>
-          {page.map((product) => <ProductCard compact key={product.id} product={product} width={cardWidth} categoryLabel={categoryLabel(product.category)} onPress={() => onOpen(product)} />)}
+          {page.map((product) => <ProductCard compact key={product.id} product={product} width={cardWidth} categoryLabel={categoryLabel(product.category)} onPress={() => onOpen(product)} action={<FavoriteButton product={product} />} />)}
         </View>)}
       </ScrollView>
       {pages.length > 1 ? <View style={styles.navigation}>
