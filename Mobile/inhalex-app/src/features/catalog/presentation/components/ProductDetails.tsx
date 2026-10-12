@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/core/theme/colors';
+import { AddToBagControls } from '@/features/cart/presentation/components/AddToBagControls';
 import { FavoriteButton } from '@/features/favorites/presentation/components/FavoriteButton';
 import { FavoritesNotice } from '@/features/favorites/presentation/components/FavoritesNotice';
 import { BottomSheet } from '@/shared/components/BottomSheet';
@@ -19,11 +20,12 @@ export function CatalogProductOverlay() {
   return <ProductDetails product={vm.selectedProduct} categoryLabel={categoryLabel} loading={vm.detailLoading} errorMessage={vm.detailError}
     favoriteAction={vm.selectedProduct ? <FavoriteButton product={vm.selectedProduct} variant="detail" /> : undefined}
     favoriteNotice={vm.selectedProduct ? <FavoritesNotice productId={vm.selectedProduct.id} includeLoadError /> : undefined}
+    cartAction={vm.selectedProduct ? <AddToBagControls key={vm.selectedProduct.id} product={vm.selectedProduct} /> : undefined}
     onClose={vm.closeProduct} onRetry={() => void vm.retryDetail()}
     onOpenFavorites={() => router.navigate('/(tabs)/favoritos')} onOpenBag={() => router.navigate('/(tabs)/bolsa')} />;
 }
 
-export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry, onOpenFavorites, onOpenBag, favoriteAction, favoriteNotice }: {
+export function ProductDetails({ product, categoryLabel, loading, errorMessage, onClose, onRetry, onOpenFavorites, onOpenBag, favoriteAction, favoriteNotice, cartAction }: {
   product: CatalogProduct | null;
   categoryLabel: string;
   loading: boolean;
@@ -34,12 +36,13 @@ export function ProductDetails({ product, categoryLabel, loading, errorMessage, 
   onOpenBag: () => void;
   favoriteAction?: ReactNode;
   favoriteNotice?: ReactNode;
+  cartAction?: ReactNode;
 }) {
   const [contentHeight, setContentHeight] = useState<number>();
   return (
     <BottomSheet visible={Boolean(product)} title="Tu próximo aroma" onClose={onClose}
       onContentHeightChange={setContentHeight}
-      footer={product ? <ProductDetailActions onOpenFavorites={onOpenFavorites} onOpenBag={onOpenBag} /> : undefined}>
+      footer={product ? <>{cartAction}<ProductDetailActions onOpenFavorites={onOpenFavorites} onOpenBag={onOpenBag} /></> : undefined}>
       {product ? <>
         <ProductBottleImage key={product.id} product={product}
           maxHeight={contentHeight === undefined ? undefined : Math.max(1, contentHeight - 5)} />

@@ -11,6 +11,9 @@ import { useCatalogViewModel } from '@/features/catalog/presentation/viewModels/
 import { useAuthSession } from '@/features/auth/presentation/context/AuthSessionContext';
 import { FavoritesProvider } from '@/features/favorites/presentation/context/FavoritesProvider';
 import { FavoritesNotice } from '@/features/favorites/presentation/components/FavoritesNotice';
+import { CartProvider } from '@/features/cart/presentation/context/CartProvider';
+import { CartNotice } from '@/features/cart/presentation/components/CartNotice';
+import { useCartViewModel } from '@/features/cart/presentation/viewModels/useCartViewModel';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -65,22 +68,24 @@ function TabIcon({ color, focused, size, focusedName, outlineName, reduceMotion 
 
 export default function TabsLayout() {
   const { user } = useAuthSession();
-  return <FavoritesProvider key={user?.id}><CatalogProvider>
-    <TabNavigator /><CatalogProductOverlay /><FavoritesFeedbackOverlay />
-  </CatalogProvider></FavoritesProvider>;
+  return <FavoritesProvider key={user?.id}><CartProvider><CatalogProvider>
+    <TabNavigator /><CatalogProductOverlay /><CommerceFeedbackOverlay />
+  </CatalogProvider></CartProvider></FavoritesProvider>;
 }
 
-function FavoritesFeedbackOverlay() {
+function CommerceFeedbackOverlay() {
   const { selectedProduct } = useCatalogViewModel();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  if (selectedProduct || pathname === '/favoritos') return null;
-  return <View style={[styles.favoritesFeedback, { bottom: 72 + Math.max(insets.bottom, 8) }]}>
-    <FavoritesNotice includeLoadError />
+  if (selectedProduct) return null;
+  return <View style={[styles.commerceFeedback, { bottom: 72 + Math.max(insets.bottom, 8) }]}>
+    {pathname !== '/favoritos' ? <FavoritesNotice includeLoadError /> : null}
+    {pathname !== '/bolsa' ? <CartNotice /> : null}
   </View>;
 }
 
 function TabNavigator() {
+  const { cart } = useCartViewModel();
   const insets = useSafeAreaInsets();
   const bottomProtection = Math.max(insets.bottom, 8);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -165,6 +170,8 @@ function TabNavigator() {
         name="bolsa"
         options={{
           title: 'Bolsa',
+          tabBarBadge: cart.totalItems > 0 ? cart.totalItems : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.primaryDark, color: colors.white, fontSize: 10, fontWeight: '700' },
           tabBarIcon: renderTabIcon('bag', 'bag-outline'),
         }}
       />
@@ -180,7 +187,7 @@ function TabNavigator() {
 }
 
 const styles = StyleSheet.create({
-  favoritesFeedback: { alignSelf: 'center', maxWidth: 556, pointerEvents: 'box-none', position: 'absolute', width: '88%' },
+  commerceFeedback: { alignSelf: 'center', gap: 8, maxWidth: 556, pointerEvents: 'box-none', position: 'absolute', width: '88%' },
   iconContainer: {
     alignItems: 'center',
     borderRadius: 17,
