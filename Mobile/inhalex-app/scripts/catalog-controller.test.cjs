@@ -269,6 +269,10 @@ test('search waits 280ms from the last edit and sends only the final trimmed que
   const { controller, calls } = fixture;
   await ready(fixture);
   controller.setSearchQuery('men');
+  assert.equal(controller.getSnapshot().status, 'loading');
+  assert.equal(controller.getSnapshot().products.length, 0);
+  assert.equal(controller.getSnapshot().featuredProducts.length, 0);
+  assert.equal(controller.getSnapshot().total, 0);
   context.mock.timers.tick(200);
   controller.setSearchQuery('  menta  ');
   context.mock.timers.tick(279);
@@ -283,6 +287,184 @@ test('search waits 280ms from the last edit and sends only the final trimmed que
   calls.products[1].resolve(page([product('menta')]));
   await flush();
   assert.equal(controller.getSnapshot().status, 'ready');
+});
+
+test('submitting flushes the latest trimmed text and repeated submissions share the same request', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('tor');
+  context.mock.timers.tick(100);
+  controller.setSearchQuery('  toronjil  ');
+  const first = controller.getSnapshot().submitSearch();
+  const second = controller.submitSearch();
+  assert.equal(first, second);
+  assert.equal(calls.products.length, 2);
+  assert.equal(calls.products[1].query.search, 'toronjil');
+  assert.equal(calls.categories.length, 1);
+  context.mock.timers.tick(1000);
+  assert.equal(calls.products.length, 2);
+  calls.products[1].resolve(page([product('toronjil')]));
+  await first;
+  assert.equal(controller.getSnapshot().products[0].id, 'toronjil');
+  await controller.submitSearch();
+  assert.equal(calls.products.length, 2);
+});
+
+test('submitting while the debounce request is running does not issue a second request', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('menta');
+  context.mock.timers.tick(280);
+  const submission = controller.submitSearch();
+  assert.equal(calls.products.length, 2);
+  calls.products[1].resolve(page([]));
+  await submission;
+  assert.equal(controller.getSnapshot().status, 'empty');
+  await controller.submitSearch();
+  assert.equal(calls.products.length, 2);
+});
+
+test('whitespace-only edits preserve loaded results and leave an active debounce unchanged', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('   ');
+  await controller.submitSearch();
+  assert.equal(calls.products.length, 1);
+  assert.equal(controller.getSnapshot().products[0].id, 'menta');
+  controller.setSearchQuery('menta');
+  context.mock.timers.tick(200);
+  controller.setSearchQuery('  menta ');
+  context.mock.timers.tick(80);
+  assert.equal(calls.products.length, 2);
+  assert.equal(calls.products[1].query.search, 'menta');
+  calls.products[1].resolve(page([product('menta')]));
+  await flush();
+  controller.setSearchQuery('menta  ');
+  await controller.submitSearch();
+  context.mock.timers.tick(1000);
+  assert.equal(calls.products.length, 2);
+  assert.equal(controller.getSnapshot().searchQuery, 'menta  ');
+  assert.equal(controller.getSnapshot().status, 'ready');
+});
+
+test('clearing a pending search immediately restores the selected category and cancels the timer', async context => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.selectCategory('linea-verde');
+  calls.products[1].resolve(page([product('menta')]));
+  await flush();
+  controller.setSearchQuery('toronjil');
+  context.mock.timers.tick(200);
+  controller.setSearchQuery('');
+  assert.equal(calls.products.length, 3);
+  assert.equal(calls.products[2].query.search, '');
+  assert.equal(calls.products[2].query.categoryId, 'linea-verde');
+  assert.equal(controller.getSnapshot().selectedCategoryId, 'linea-verde');
+  const submission = controller.submitSearch();
+  context.mock.timers.tick(1000);
+  assert.equal(calls.products.length, 3);
+  calls.products[2].resolve(page([product('menta'), product('eucalipto')]));
+  await submission;
+  assert.equal(controller.getSnapshot().products.length, 2);
+});
+
+test('clearing to whitespace ignores an older search failure without losing the unfiltered results', async context => {
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('menta');
+  const searching = controller.submitSearch();
+  controller.setSearchQuery('   ');
+  assert.equal(calls.products[2].query.search, '');
+  calls.products[2].resolve(page([product('toronjil')]));
+  await controller.submitSearch();
+  calls.products[1].reject(new Error('Fallo de la búsqueda anterior'));
+  await searching;
+  assert.equal(controller.getSnapshot().status, 'ready');
+  assert.equal(controller.getSnapshot().products[0].id, 'toronjil');
+  assert.equal(controller.getSnapshot().errorMessage, null);
+});
+
+test('submitting the same failed query retries products without reloading categories', async context => {
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('toronjil');
+  const first = controller.submitSearch();
+  calls.products[1].reject(new Error('Búsqueda sin conexión'));
+  await first;
+  assert.equal(controller.getSnapshot().status, 'error');
+  assert.equal(controller.getSnapshot().products.length, 0);
+  const retry = controller.submitSearch();
+  assert.equal(controller.getSnapshot().status, 'loading');
+  assert.equal(controller.getSnapshot().errorMessage, null);
+  assert.equal(calls.products.length, 3);
+  assert.equal(calls.products[2].query.search, 'toronjil');
+  assert.equal(calls.categories.length, 1);
+  calls.products[2].resolve(page([product('toronjil')]));
+  await retry;
+  assert.equal(controller.getSnapshot().status, 'ready');
+});
+
+test('returning to a submitted term starts fresh instead of reusing its invalidated in-flight request', async context => {
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  controller.setSearchQuery('menta');
+  const earlier = controller.submitSearch();
+  controller.setSearchQuery('toronjil');
+  controller.setSearchQuery('menta');
+  const latest = controller.submitSearch();
+  assert.notEqual(latest, earlier);
+  assert.equal(calls.products.length, 3);
+  calls.products[1].resolve(page([product('menta', { effectivePrice: 60 })]));
+  await earlier;
+  assert.equal(controller.getSnapshot().status, 'loading');
+  assert.equal(controller.getSnapshot().products.length, 0);
+  calls.products[2].resolve(page([product('menta', { effectivePrice: 45 })]));
+  await latest;
+  assert.equal(controller.getSnapshot().products[0].effectivePrice, 45);
+});
+
+test('submitting during an initial load shares it and a stopped controller cannot submit work', async context => {
+  const { controller, calls } = createFixture(context);
+  await controller.submitSearch();
+  assert.equal(calls.products.length, 0);
+  const starting = controller.start();
+  const submission = controller.submitSearch();
+  assert.equal(calls.products.length, 1);
+  controller.stop();
+  await controller.submitSearch();
+  assert.equal(calls.products.length, 1);
+  calls.products[0].resolve(page([product('menta')]));
+  calls.categories[0].resolve(categories);
+  await Promise.all([starting, submission]);
+  assert.equal(controller.getSnapshot().products.length, 0);
+});
+
+test('submitting during refresh shares its products request while categories keep the refresh indicator active', async context => {
+  const fixture = createFixture(context);
+  const { controller, calls } = fixture;
+  await ready(fixture);
+  const refresh = controller.refresh();
+  const submission = controller.submitSearch();
+  assert.equal(calls.products.length, 2);
+  assert.equal(calls.categories.length, 2);
+  calls.products[1].resolve(page([product('menta', { effectivePrice: 45 })]));
+  await submission;
+  assert.equal(controller.getSnapshot().products[0].effectivePrice, 45);
+  assert.equal(controller.getSnapshot().refreshing, true);
+  calls.categories[1].resolve(categories);
+  await refresh;
+  assert.equal(controller.getSnapshot().refreshing, false);
 });
 
 test('typing invalidates an older response before the debounced query starts', async context => {

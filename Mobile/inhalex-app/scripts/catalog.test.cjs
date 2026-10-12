@@ -80,6 +80,93 @@ test('Adapter safely translates literal search, category and slug into public AP
   assert.equal(paths[2], '/products/aroma%2Fmenta%3Fquery');
 });
 
+test('every regular-expression metacharacter is sent as literal search text', async () => {
+  let requestedPath;
+  const adapter = new ProductsApiAdapter({ request: async (path) => { requestedPath = path; return {}; } });
+  for (const character of '.*+?^${}()|[]\\') {
+    const term = `aroma${character}verde`;
+    await adapter.listProducts({ search: term });
+    const encodedSearch = new URL(`https://api.example.test${requestedPath}`).searchParams.get('search');
+    // Simulate only the API's RegExp(search, 'i') contract, not a live database request.
+    const expression = new RegExp(encodedSearch, 'i');
+    assert.equal(expression.test(`El ${term} natural`), true, `literal ${character}`);
+    assert.equal(expression.test('aroma verde'), false, `does not interpret ${character}`);
+    assert.equal(expression.test('aromaverde'), false, `does not omit ${character}`);
+    assert.equal(expression.test('otra selección'), false, `does not broaden ${character}`);
+  }
+});
+
+test('URL-reserved characters cannot introduce extra search parameters', async () => {
+  let requestedPath;
+  const adapter = new ProductsApiAdapter({ request: async (path) => { requestedPath = path; return {}; } });
+  const term = 'Menta &category=otra #1 50% + calma?/verano=Sí';
+  await adapter.listProducts({ search: term, categoryId: 'linea-verde' });
+  const url = new URL(`https://api.example.test${requestedPath}`);
+  assert.equal(url.pathname, '/products');
+  assert.equal(url.hash, '');
+  assert.deepEqual([...url.searchParams.keys()].sort(), ['category', 'limit', 'page', 'search']);
+  assert.equal(url.searchParams.get('category'), 'linea-verde');
+  assert.equal(url.searchParams.getAll('category').length, 1);
+  assert.equal(new RegExp(`^${url.searchParams.get('search')}$`, 'i').test(term), true);
+});
+
+test('blank search text is omitted while an active category is preserved', async () => {
+  const paths = [];
+  const adapter = new ProductsApiAdapter({ request: async (path) => { paths.push(path); return {}; } });
+  for (const search of [undefined, '', '   ', '\t\n\u00a0']) {
+    await adapter.listProducts({ search, categoryId: 'linea-insomnio' });
+  }
+  for (const path of paths) {
+    const query = new URL(`https://api.example.test${path}`).searchParams;
+    assert.equal(query.has('search'), false);
+    assert.equal(query.get('category'), 'linea-insomnio');
+  }
+});
+
+test('search retains accents and internal phrase spacing after trimming the edges', async () => {
+  let requestedPath;
+  const adapter = new ProductsApiAdapter({ request: async (path) => { requestedPath = path; return {}; } });
+  await adapter.listProducts({ search: '  CÍTRICO  limón 🌿  ' });
+  const query = new URL(`https://api.example.test${requestedPath}`).searchParams;
+  assert.equal(query.get('search'), 'CÍTRICO  limón 🌿');
+});
+
+test('adapter terms follow the simulated API contract for partial, uppercase, accented and phrase searches', async () => {
+  const products = [
+    { ...productDto, aromas: ['Limón'] },
+    { ...productDto, _id: 'verde', slug: 'toronjil-verde', category: 'linea-verde', aromas: ['Limón'] },
+  ];
+  // Contract simulation: the service uses a case-insensitive regular expression over
+  // name, description, longDescription and aromas, together with the category filter.
+  // These assertions verify the adapter/repository round trip, not MongoDB integration.
+  const transport = {
+    request: async (path) => {
+      const query = new URL(`https://api.example.test${path}`).searchParams;
+      const expression = query.has('search') ? new RegExp(query.get('search'), 'i') : null;
+      const category = query.get('category');
+      const items = products.filter((product) => {
+        const fields = [product.name, product.description, product.longDescription, ...product.aromas];
+        return (!category || product.category === category)
+          && (!expression || fields.some((field) => expression.test(field)));
+      });
+      return { items, total: items.length, page: 1, limit: 100, totalPages: 1 };
+    },
+  };
+  const repository = new HttpCatalogRepository(new ProductsApiAdapter(transport));
+  for (const search of ['TORON', 'cítricas', 'MELISA', 'LIMÓN', 'notas cítricas']) {
+    const result = await repository.listProducts({ search, categoryId: 'linea-insomnio' });
+    assert.deepEqual(result.products.map((product) => product.id), [productDto._id], search);
+    assert.equal(result.total, 1, search);
+  }
+  for (const search of ['citricas', 'notas  cítricas', 'cítricas notas', 'calma', 'inexistente', '.*']) {
+    const result = await repository.listProducts({ search });
+    assert.deepEqual(result.products, [], search);
+    assert.equal(result.total, 0, search);
+  }
+  assert.equal((await repository.listProducts({ search: 'toron', categoryId: 'all' })).total, 2);
+  assert.equal((await repository.listProducts({ search: 'toron', categoryId: 'linea-roja' })).total, 0);
+});
+
 test('Repository uses injected Adapter and the same mapping for lists and product details', async () => {
   const paths = [];
   const transport = {

@@ -5,7 +5,7 @@ import { Image, Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Tex
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/core/theme/colors';
 import { useAuthSession } from '@/features/auth/presentation/context/AuthSessionContext';
-import { CatalogSearch, CategoryChips, CategoryLoadNotice, CatalogRefreshNotice } from '@/features/catalog/presentation/components/CatalogControls';
+import { CatalogSearch, CategoryChips, CategoryLoadNotice, CatalogRefreshNotice, CatalogResultsSummary } from '@/features/catalog/presentation/components/CatalogControls';
 import { CatalogState } from '@/features/catalog/presentation/components/CatalogState';
 import { useCatalogViewModel } from '@/features/catalog/presentation/viewModels/useCatalogViewModel';
 import { BottomSheet } from '@/shared/components/BottomSheet';
@@ -47,7 +47,7 @@ export function HomeView({ firstName, focused = true }: { firstName: string; foc
             <Pressable accessibilityLabel="Ir a mi cuenta" accessibilityRole="button" onPress={() => router.navigate('/(tabs)/cuenta')} style={({ pressed }) => [styles.account, pressed && styles.pressed]}><Ionicons name="person-outline" size={20} color={colors.primaryDark} /></Pressable>
           </View>
           <View style={styles.welcome}><Text style={styles.welcomeEyebrow}>UN MOMENTO PARA TI</Text><Text accessibilityRole="header" style={styles.welcomeTitle}>Hola, {firstName}<Text style={styles.greetingDot}>.</Text></Text></View>
-          <CatalogSearch value={vm.searchQuery} onChange={vm.setSearchQuery} onSubmit={explore} />
+          <CatalogSearch value={vm.searchQuery} onChange={vm.setSearchQuery} onSubmit={() => { void vm.submitSearch(); explore(); }} />
         </Reveal>
         <Reveal delay={65} style={styles.inset}>
           <View style={styles.hero}>
@@ -76,7 +76,8 @@ export function HomeView({ firstName, focused = true }: { firstName: string; foc
             onSelect={(categoryId) => { Keyboard.dismiss(); vm.selectCategory(categoryId); }} />
           {(vm.status === 'ready' || vm.status === 'empty') && !vm.errorMessage ? <CategoryLoadNotice error={vm.categoriesErrorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} /> : null}
           {vm.status === 'ready' ? <CatalogRefreshNotice error={vm.errorMessage} onRetry={() => void vm.refresh()} refreshing={vm.refreshing} /> : null}
-          <CatalogState status={vm.status} errorMessage={vm.errorMessage} hasFilters={filtered} onRetry={() => void vm.retry()} onReset={vm.resetFilters} />
+          <CatalogState status={vm.status} errorMessage={vm.errorMessage} hasFilters={filtered} searchQuery={vm.searchQuery} categoryName={vm.selectedCategoryId !== 'all' ? categoryLabel(vm.selectedCategoryId) : undefined} onRetry={() => void vm.retry()} onReset={vm.resetFilters} />
+          {vm.status === 'ready' && filtered ? <View style={styles.searchResults}><CatalogResultsSummary shown={vm.featuredProducts.length} total={vm.total} query={vm.searchQuery} /></View> : null}
           {vm.status === 'ready' ? <HomeProductCarousel
             key={`${carouselWidth}:${fontScale}:${vm.featuredProducts.map((product) => product.id).join(',')}`}
             products={vm.featuredProducts}
@@ -138,6 +139,7 @@ const styles = StyleSheet.create({
   featureDivider: { borderLeftColor: colors.border, borderLeftWidth: 1 },
   featureLabel: { color: '#596B5A', fontSize: 10, fontWeight: '500', lineHeight: 15, textAlign: 'center' },
   collection: { marginTop: 31 },
+  searchResults: { marginHorizontal: 22, marginBottom: 16, marginTop: 12 },
   sectionHeading: { alignItems: 'center', flexDirection: 'row', gap: 8, justifyContent: 'space-between', marginBottom: 18 },
   sectionCopy: { flex: 1 },
   eyebrow: { color: colors.primary, fontSize: 9, fontWeight: '700', letterSpacing: 1.5 },

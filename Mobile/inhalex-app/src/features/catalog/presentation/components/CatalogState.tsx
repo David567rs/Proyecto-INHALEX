@@ -11,6 +11,8 @@ interface CatalogStateProps {
   onRetry: () => void;
   onReset: () => void;
   hasFilters?: boolean;
+  searchQuery?: string;
+  categoryName?: string;
 }
 
 const connectionHint = 'Revisa tu conexión y vuelve a intentarlo.';
@@ -23,7 +25,7 @@ function getErrorHint(message: string | null): string {
   return hint;
 }
 
-function CatalogLoading() {
+function CatalogLoading({ searching }: { searching: boolean }) {
   const { width, fontScale } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const singleColumn = width < 360 || fontScale > 1.25;
@@ -44,7 +46,8 @@ function CatalogLoading() {
   }, [opacity, reducedMotion]);
 
   return (
-    <View accessible accessibilityLabel="Cargando aromas" accessibilityState={{ busy: true }} style={styles.loading}>
+    <View accessible accessibilityLabel={searching ? 'Buscando productos' : 'Cargando aromas'} accessibilityState={{ busy: true }} style={styles.loading}>
+      <Text accessible={false} aria-hidden style={styles.loadingLabel}>{searching ? 'Buscando coincidencias…' : 'Preparando tu selección…'}</Text>
       <Animated.View
         accessible={false}
         accessibilityElementsHidden
@@ -68,18 +71,18 @@ function CatalogLoading() {
           </View>
         ))}
       </Animated.View>
-      <Text accessible={false} aria-hidden style={styles.loadingLabel}>Preparando tu selección…</Text>
     </View>
   );
 }
 
-export function CatalogState({ status, errorMessage, onRetry, onReset, hasFilters = false }: CatalogStateProps) {
+export function CatalogState({ status, errorMessage, onRetry, onReset, hasFilters = false, searchQuery = '', categoryName }: CatalogStateProps) {
+  const query = searchQuery.trim();
   if (status === 'ready') return null;
-  if (status === 'loading') return <CatalogLoading />;
+  if (status === 'loading') return <CatalogLoading searching={query.length > 0} />;
 
   const failed = status === 'error';
-  const title = failed ? 'No pudimos cargar los aromas' : hasFilters ? 'Sin coincidencias' : 'La colección estará aquí';
-  const hint = failed ? getErrorHint(errorMessage) : hasFilters ? 'Prueba otro aroma o explora la colección.' : 'Vuelve a consultar en un momento.';
+  const title = failed ? query ? 'No pudimos buscar' : 'No pudimos cargar los aromas' : hasFilters ? 'Sin coincidencias' : 'La colección estará aquí';
+  const hint = failed ? getErrorHint(errorMessage) : hasFilters ? categoryName ? 'Prueba otra palabra o cambia de línea.' : 'Prueba otro nombre o una nota aromática.' : 'Vuelve a consultar en un momento.';
   const action = failed ? 'Reintentar' : hasFilters ? 'Ver todos' : 'Actualizar catálogo';
 
   return (
@@ -95,6 +98,8 @@ export function CatalogState({ status, errorMessage, onRetry, onReset, hasFilter
       </View>
       <View accessibilityLiveRegion="polite" style={styles.stateCopy}>
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
+        {!failed && query ? <Text numberOfLines={3} style={styles.query}>No encontramos productos para “{query}”.</Text> : null}
+        {!failed && categoryName ? <Text style={styles.body}>En {categoryName}.</Text> : null}
         <Text style={styles.body}>{hint}</Text>
       </View>
       <SoftPressable accessibilityRole="button" onPress={failed || !hasFilters ? onRetry : onReset} style={styles.button}>
@@ -117,7 +122,8 @@ const styles = StyleSheet.create({
   skeletonBottom: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
   skeletonPrice: { backgroundColor: '#E5ECE0', borderRadius: 5, height: 17, width: '45%' },
   skeletonArrow: { backgroundColor: colors.surfaceSoft, borderRadius: 18, height: 36, width: 36 },
-  loadingLabel: { color: colors.textMuted, fontSize: 12, marginTop: 18, textAlign: 'center' },
+  loadingLabel: { color: colors.textMuted, fontSize: 12, marginBottom: 18, textAlign: 'center' },
+  query: { color: colors.primaryDark, fontSize: 14, lineHeight: 22, marginTop: 10, textAlign: 'center' },
   state: { alignItems: 'center', backgroundColor: colors.surface, borderColor: '#E3EADF', borderRadius: 26, borderWidth: 1, marginHorizontal: 22, marginTop: 24, paddingHorizontal: 24, paddingVertical: 30 },
   icon: { alignItems: 'center', backgroundColor: colors.surfaceSoft, borderRadius: 32, height: 64, justifyContent: 'center', width: 64 },
   stateCopy: { alignSelf: 'stretch', marginTop: 18 },

@@ -20,6 +20,7 @@ export interface CatalogViewModel {
   detailLoading: boolean;
   detailError: string | null;
   setSearchQuery(query: string): void;
+  submitSearch(): Promise<void>;
   selectCategory(categoryId: string): void;
   resetFilters(): void;
   refresh(): Promise<void>;
@@ -41,6 +42,7 @@ export class CatalogController {
   private startPromise: Promise<void> | null = null;
   private readonly listeners = new Set<() => void>();
   private productsRequest = 0;
+  private productsInFlight: { request: number; queryKey: string; promise: Promise<void> } | null = null;
   private categoriesRequest = 0;
   private detailRequest = 0;
   private refreshRequest = 0;
@@ -104,14 +106,37 @@ export class CatalogController {
     this.clearSearchTimer();
     this.productsRequest += 1;
     this.refreshRequest += 1;
-    this.update({ searchQuery, refreshing: false, errorMessage: null });
+    // Results from the previous text must disappear during the debounce too.
+    this.beginFilterQuery({ searchQuery });
+    if (!searchQuery.trim()) {
+      this.debouncedSearch = '';
+      void this.loadProducts(false);
+      return;
+    }
     this.searchTimer = setTimeout(() => {
       this.searchTimer = null;
       if (!this.active) return;
       this.debouncedSearch = this.state.searchQuery.trim();
-      this.beginFilterQuery();
       void this.loadProducts(false);
     }, 280);
+  };
+
+  submitSearch = (): Promise<void> => {
+    if (!this.active) return Promise.resolve();
+    this.clearSearchTimer();
+    this.debouncedSearch = this.state.searchQuery.trim();
+    const queryKey = this.queryKey();
+    const pending = this.productsInFlight;
+    if (pending?.request === this.productsRequest && pending.queryKey === queryKey) {
+      return pending.promise;
+    }
+    if (this.loadedQuery === queryKey && !this.state.errorMessage
+      && (this.state.status === 'ready' || this.state.status === 'empty')) {
+      return Promise.resolve();
+    }
+    this.refreshRequest += 1;
+    this.beginFilterQuery();
+    return this.loadProducts(false);
   };
 
   selectCategory = (categoryId: string): void => {
@@ -177,6 +202,7 @@ export class CatalogController {
           : this.state.total,
       }, ...this.categoryItems],
       setSearchQuery: this.setSearchQuery,
+      submitSearch: this.submitSearch,
       selectCategory: this.selectCategory,
       resetFilters: this.resetFilters,
       refresh: this.refresh,
@@ -233,12 +259,22 @@ export class CatalogController {
     }
   }
 
-  private async loadProducts(preserveProducts: boolean): Promise<void> {
+  private loadProducts(preserveProducts: boolean): Promise<void> {
     const request = ++this.productsRequest;
     const queryKey = this.queryKey();
     const query: CatalogQuery = {
       search: this.debouncedSearch, categoryId: this.state.selectedCategoryId, page: 1, limit: 100,
     };
+    const promise = this.fetchProducts(request, queryKey, query, preserveProducts).finally(() => {
+      if (this.productsInFlight?.request === request) this.productsInFlight = null;
+    });
+    this.productsInFlight = { request, queryKey, promise };
+    return promise;
+  }
+
+  private async fetchProducts(
+    request: number, queryKey: string, query: CatalogQuery, preserveProducts: boolean,
+  ): Promise<void> {
     try {
       const page = await this.repository.listProducts(query);
       if (!this.active || request !== this.productsRequest) return;
