@@ -10,6 +10,8 @@ export interface HttpRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   token?: string;
+  /** Reuse the same key and body when retrying an uncertain order confirmation. */
+  idempotencyKey?: string;
 }
 
 function messageFromPayload(payload: unknown, fallback: string): string {
@@ -48,6 +50,7 @@ export class HttpClient {
           Accept: 'application/json',
           ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
           ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+          ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}),
         },
         body: hasBody ? JSON.stringify(options.body) : undefined,
         signal: controller.signal,

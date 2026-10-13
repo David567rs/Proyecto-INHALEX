@@ -64,12 +64,14 @@ test('all cart requests use fresh authentication and only the required body fiel
   await fixture.adapter.add(reference, 3);
   await fixture.adapter.updateQuantity(reference, 4);
   await fixture.adapter.remove(reference);
-  assert.equal(fixture.reads, 4);
+  await fixture.adapter.clear();
+  assert.equal(fixture.reads, 5);
   assert.deepEqual(fixture.calls, [
     { endpoint: '/cart', options: { method: 'GET', token: 'fixture-first-token' } },
     { endpoint: '/cart', options: { method: 'POST', body: { productId: reference, quantity: 3 }, token: 'fixture-next-token' } },
     { endpoint: '/cart/menta%2Fverde%3Ffrom%3D%23bolsa', options: { method: 'PATCH', body: { quantity: 4 }, token: 'fixture-next-token' } },
     { endpoint: '/cart/menta%2Fverde%3Ffrom%3D%23bolsa', options: { method: 'DELETE', token: 'fixture-next-token' } },
+    { endpoint: '/cart', options: { method: 'DELETE', token: 'fixture-next-token' } },
   ]);
 });
 
@@ -77,7 +79,7 @@ test('missing session or storage failure never produces an unauthenticated reque
   const fixture = setup();
   for (const token of [null, '', '  ']) {
     fixture.setToken(token);
-    for (const operation of [() => fixture.repository.list(), () => fixture.repository.add(product._id, 1), () => fixture.repository.updateQuantity(product._id, 2), () => fixture.repository.remove(product._id)]) {
+    for (const operation of [() => fixture.repository.list(), () => fixture.repository.add(product._id, 1), () => fixture.repository.updateQuantity(product._id, 2), () => fixture.repository.remove(product._id), () => fixture.repository.clear()]) {
       await assert.rejects(operation(), error => error instanceof ApiError && error.status === 401);
     }
   }
@@ -91,13 +93,13 @@ test('expired lifecycle is checked before and after the asynchronous token read'
   const stale = setup();
   await assert.rejects(stale.repository.list({ isCurrent: () => false }), error => error.status === 401);
   assert.equal(stale.reads, 0);
-  for (const action of ['list', 'add', 'updateQuantity', 'remove']) {
+  for (const action of ['list', 'add', 'updateQuantity', 'remove', 'clear']) {
     const fixture = setup();
     let releaseToken;
     let active = true;
     fixture.session.getAccessToken = () => new Promise(resolve => { releaseToken = resolve; });
     const guard = { isCurrent: () => active };
-    const promise = action === 'list' ? fixture.repository.list(guard)
+    const promise = ['list', 'clear'].includes(action) ? fixture.repository[action](guard)
       : action === 'remove' ? fixture.repository.remove(product._id, guard)
       : fixture.repository[action](product._id, 2, guard);
     active = false;
@@ -164,6 +166,7 @@ test('valid writes return the complete acknowledged cart snapshot', async () => 
   const updated = await fixture.repository.updateQuantity(product._id, 3);
   assert.equal(updated.subtotal, 180);
   assert.deepEqual(await fixture.repository.remove(product._id), empty());
+  assert.deepEqual(await fixture.repository.clear(), empty());
 });
 
 test('a mismatched mutation acknowledgment is an error so the controller can revalidate', async () => {
@@ -173,6 +176,8 @@ test('a mismatched mutation acknowledgment is an error so the controller can rev
   await assert.rejects(setup(async () => snapshot([item(1)])).repository.add(product._id, 2), /confirmar el cambio/);
   await assert.rejects(setup(async () => snapshot()).repository.remove(product._id), /confirmar el cambio/);
   await assert.rejects(setup(async () => null).repository.remove(product._id), /confirmar la información/);
+  await assert.rejects(setup(async () => snapshot()).repository.clear(), /confirmar el cambio/);
+  await assert.rejects(setup(async () => null).repository.clear(), /confirmar la información/);
 });
 
 test('outbound invalid IDs and quantities are rejected before token storage or HTTP access', async () => {
@@ -193,7 +198,7 @@ test('outbound invalid IDs and quantities are rejected before token storage or H
 test('HTTP authentication, connection and missing-product errors propagate unchanged', async () => {
   for (const failure of [new ApiError('Unauthorized', 401), new ApiError('Not found', 404), new ApiError('Connection interrupted')]) {
     const fixture = setup(async () => { throw failure; });
-    for (const operation of [() => fixture.repository.list(), () => fixture.repository.add(product._id, 1), () => fixture.repository.updateQuantity(product._id, 2), () => fixture.repository.remove(product._id)]) {
+    for (const operation of [() => fixture.repository.list(), () => fixture.repository.add(product._id, 1), () => fixture.repository.updateQuantity(product._id, 2), () => fixture.repository.remove(product._id), () => fixture.repository.clear()]) {
       await assert.rejects(operation(), error => error === failure);
     }
   }

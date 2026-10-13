@@ -8,6 +8,8 @@ import type { CatalogProduct } from '@/features/catalog/domain/entities/CatalogP
 import { formatPrice } from '@/features/catalog/presentation/components/ProductCard';
 import { useCatalogViewModel } from '@/features/catalog/presentation/viewModels/useCatalogViewModel';
 import { Reveal, SoftPressable } from '@/shared/components/Motion';
+import { useOrdersViewModel } from '@/features/orders/presentation/viewModels/useOrdersViewModel';
+import { AddressButton } from '@/features/addresses/presentation/components/AddressButton';
 import type { CartItem } from '../../domain/entities/Cart';
 import { CartItemCard } from '../components/CartItemCard';
 import { CartNotice } from '../components/CartNotice';
@@ -17,14 +19,18 @@ import { useCartViewModel } from '../viewModels/useCartViewModel';
 export default function CartScreen() {
   const vm = useCartViewModel();
   const catalog = useCatalogViewModel();
+  const order = useOrdersViewModel();
   const focused = useIsFocused();
   const refresh = vm.refresh;
   useEffect(() => { if (focused) void refresh(); }, [focused, refresh]);
-  return <CartContent vm={vm} onOpenProduct={product => void catalog.openProduct(product)} onExplore={() => router.navigate('/(tabs)/catalogo')} />;
+  return <CartContent vm={vm} onOpenProduct={product => void catalog.openProduct(product)} onExplore={() => router.navigate('/(tabs)/catalogo')}
+    pendingOrder={order.status !== 'idle' || order.recoveryBlocked} checkoutReady={!order.restoring}
+    onCheckout={() => router.push('/bolsa/pedido')} />;
 }
 
-export function CartContent({ vm, onOpenProduct, onExplore }: {
+export function CartContent({ vm, onOpenProduct, onExplore, onCheckout, pendingOrder = false, checkoutReady = true }: {
   vm: CartViewModel; onOpenProduct: (product: CatalogProduct) => void; onExplore: () => void;
+  onCheckout?: () => void; pendingOrder?: boolean; checkoutReady?: boolean;
 }) {
   const hasItems = vm.cart.items.length > 0;
   const working = vm.pendingIds.length > 0 || vm.refreshing;
@@ -56,11 +62,13 @@ export function CartContent({ vm, onOpenProduct, onExplore }: {
             onOpen={() => onOpenProduct(item.product)} onQuantityChange={quantity => void vm.setQuantity(item.productId, quantity)} onRemove={() => void vm.remove(item.productId)} />
         </Reveal>}
       />
-      {hasItems ? <View style={styles.summary}>
-        <View style={styles.totalRow}><View style={styles.summaryCopy}><Text style={styles.totalLabel}>{!vm.canMutate ? 'Último total confirmado' : 'Total de productos'}</Text>
-          <Text style={styles.summaryHint}>{working ? 'Actualizando tu bolsa…' : 'Envío calculado al crear tu pedido.'}</Text></View>
+      {hasItems || pendingOrder ? <View style={styles.summary}>
+        {hasItems ? <View style={styles.totalRow}><View style={styles.summaryCopy}><Text style={styles.totalLabel}>{!vm.canMutate ? 'Último total confirmado' : 'Total de productos'}</Text>
+          <Text style={styles.summaryHint}>{working ? 'Actualizando tu bolsa…' : 'Revisa disponibilidad y dirección en el siguiente paso.'}</Text></View>
           <Text accessibilityLiveRegion="polite" accessibilityLabel={`Total de productos: ${formatPrice(vm.cart.subtotal, vm.cart.currency)}`} style={styles.total}>{formatPrice(vm.cart.subtotal, vm.cart.currency)}</Text>
-        </View>
+        </View> : null}
+        {onCheckout ? <View style={styles.checkout}><AddressButton label={pendingOrder ? 'Ver mi pedido' : 'Continuar con el pedido'} onPress={onCheckout}
+          disabled={!checkoutReady || (!pendingOrder && (!vm.canMutate || working || !!vm.errorMessage))} /></View> : null}
         <SoftPressable accessibilityRole="button" onPress={onExplore} style={styles.exploreLink}><Text style={styles.exploreLabel}>Seguir explorando</Text><Ionicons aria-hidden name="arrow-forward" color={colors.primaryDark} size={17} /></SoftPressable>
       </View> : null}
     </View>
@@ -91,6 +99,7 @@ const styles = StyleSheet.create({
   summary: { backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 1, paddingHorizontal: 22, paddingTop: 19, paddingBottom: 6 },
   totalRow: { alignItems: 'center', flexDirection: 'row', flexWrap: 'wrap', gap: 14, justifyContent: 'space-between' },
   summaryCopy: { flexGrow: 1, flexShrink: 1 }, totalLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  checkout: { marginTop: 15 },
   summaryHint: { color: colors.textMuted, fontSize: 10, marginTop: 6 }, total: { color: colors.primaryDark, fontSize: 28, fontWeight: '800', letterSpacing: -0.7 },
   exploreLink: { alignItems: 'center', alignSelf: 'center', flexDirection: 'row', gap: 9, minHeight: 44, paddingHorizontal: 12, marginTop: 6 },
   exploreLabel: { color: colors.primaryDark, fontSize: 12, fontWeight: '700' },

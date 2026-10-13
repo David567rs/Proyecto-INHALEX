@@ -15,6 +15,7 @@ import { CartProvider } from '@/features/cart/presentation/context/CartProvider'
 import { CartNotice } from '@/features/cart/presentation/components/CartNotice';
 import { useCartViewModel } from '@/features/cart/presentation/viewModels/useCartViewModel';
 import { AddressesProvider } from '@/features/addresses/presentation/context/AddressesProvider';
+import { OrdersProvider } from '@/features/orders/presentation/context/OrdersProvider';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -69,9 +70,9 @@ function TabIcon({ color, focused, size, focusedName, outlineName, reduceMotion 
 
 export default function TabsLayout() {
   const { user } = useAuthSession();
-  return <FavoritesProvider key={user?.id}><CartProvider><AddressesProvider><CatalogProvider>
+  return <FavoritesProvider key={user?.id}><CartProvider><AddressesProvider><OrdersProvider><CatalogProvider>
     <TabNavigator /><CatalogProductOverlay /><CommerceFeedbackOverlay />
-  </CatalogProvider></AddressesProvider></CartProvider></FavoritesProvider>;
+  </CatalogProvider></OrdersProvider></AddressesProvider></CartProvider></FavoritesProvider>;
 }
 
 function CommerceFeedbackOverlay() {
@@ -81,7 +82,7 @@ function CommerceFeedbackOverlay() {
   if (selectedProduct) return null;
   return <View style={[styles.commerceFeedback, { bottom: 72 + Math.max(insets.bottom, 8) }]}>
     {pathname !== '/favoritos' ? <FavoritesNotice includeLoadError /> : null}
-    {pathname !== '/bolsa' ? <CartNotice /> : null}
+    {!pathname.startsWith('/bolsa') ? <CartNotice /> : null}
   </View>;
 }
 
