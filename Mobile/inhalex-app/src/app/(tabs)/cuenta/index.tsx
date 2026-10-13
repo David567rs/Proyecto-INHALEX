@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@/core/theme/colors';
@@ -34,6 +35,17 @@ export default function AccountScreen() {
         <Text style={styles.email}>{user?.email}</Text>
         {user?.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
       </View>
+
+      <Pressable accessibilityRole="button" accessibilityLabel="Direcciones de envío"
+        onPress={() => router.push('/cuenta/direcciones')}
+        style={({ pressed }) => [styles.addressLink, pressed && styles.logoutPressed]}>
+        <Ionicons color={colors.primary} name="location-outline" size={24} />
+        <View style={styles.securityCopy}>
+          <Text style={styles.securityTitle}>Direcciones de envío</Text>
+          <Text style={styles.securityText}>Guarda y elige dónde recibir tus pedidos.</Text>
+        </View>
+        <Ionicons color={colors.primary} name="chevron-forward" size={20} />
+      </Pressable>
 
       <View style={styles.securityRow}>
         <Ionicons color={colors.success} name="lock-closed-outline" size={22} />
@@ -74,6 +86,7 @@ function initials(name: string): string {
 }
 
 const styles = StyleSheet.create({
+  addressLink: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 18, borderWidth: 1, flexDirection: 'row', marginTop: 20, minHeight: 80, padding: 16 },
   profileCard: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: 24, borderWidth: 1, padding: 26 },
   avatar: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: 38, height: 76, justifyContent: 'center', marginBottom: 14, width: 76 },
   avatarLabel: { color: colors.white, fontSize: 26, fontWeight: '800' },

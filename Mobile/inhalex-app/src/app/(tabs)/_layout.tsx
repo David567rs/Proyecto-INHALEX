@@ -14,6 +14,7 @@ import { FavoritesNotice } from '@/features/favorites/presentation/components/Fa
 import { CartProvider } from '@/features/cart/presentation/context/CartProvider';
 import { CartNotice } from '@/features/cart/presentation/components/CartNotice';
 import { useCartViewModel } from '@/features/cart/presentation/viewModels/useCartViewModel';
+import { AddressesProvider } from '@/features/addresses/presentation/context/AddressesProvider';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -68,9 +69,9 @@ function TabIcon({ color, focused, size, focusedName, outlineName, reduceMotion 
 
 export default function TabsLayout() {
   const { user } = useAuthSession();
-  return <FavoritesProvider key={user?.id}><CartProvider><CatalogProvider>
+  return <FavoritesProvider key={user?.id}><CartProvider><AddressesProvider><CatalogProvider>
     <TabNavigator /><CatalogProductOverlay /><CommerceFeedbackOverlay />
-  </CatalogProvider></CartProvider></FavoritesProvider>;
+  </CatalogProvider></AddressesProvider></CartProvider></FavoritesProvider>;
 }
 
 function CommerceFeedbackOverlay() {
