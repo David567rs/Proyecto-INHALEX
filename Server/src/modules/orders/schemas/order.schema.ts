@@ -290,3 +290,4 @@ export class Order {
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
 OrderSchema.index({ 'customer.email': 1, createdAt: -1 });
+OrderSchema.index({ customerUserId: 1, createdAt: -1, _id: -1 });

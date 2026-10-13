@@ -47,6 +47,17 @@ export default function AccountScreen() {
         <Ionicons color={colors.primary} name="chevron-forward" size={20} />
       </Pressable>
 
+      <Pressable accessibilityRole="button" accessibilityLabel="Historial de pedidos"
+        onPress={() => router.push('/cuenta/historial')}
+        style={({ pressed }) => [styles.addressLink, pressed && styles.logoutPressed]}>
+        <Ionicons color={colors.primary} name="receipt-outline" size={24} />
+        <View style={styles.securityCopy}>
+          <Text style={styles.securityTitle}>Historial de pedidos</Text>
+          <Text style={styles.securityText}>Consulta tus pedidos, sus productos y su estado.</Text>
+        </View>
+        <Ionicons color={colors.primary} name="chevron-forward" size={20} />
+      </Pressable>
+
       <View style={styles.securityRow}>
         <Ionicons color={colors.success} name="lock-closed-outline" size={22} />
         <View style={styles.securityCopy}>

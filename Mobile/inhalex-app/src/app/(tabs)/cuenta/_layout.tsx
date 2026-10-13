@@ -7,5 +7,6 @@ export default function AccountLayout() {
   return <Stack screenOptions={{ headerShown: false, animation: reduceMotion === false ? 'slide_from_right' : 'none', contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="index" />
     <Stack.Screen name="direcciones" />
+    <Stack.Screen name="historial" />
   </Stack>;
 }
