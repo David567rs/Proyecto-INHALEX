@@ -26,6 +26,7 @@ interface AuthSessionContextValue extends AuthState {
   register(input: RegisterInput): Promise<AuthUser>;
   logout(): Promise<void>;
   retryRestore(): Promise<void>;
+  applyProfile(profile: AuthUser): void;
 }
 
 const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
@@ -110,6 +111,14 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
     setState({ status: 'unauthenticated', user: null, restoreError: null });
   }, []);
 
+  const applyProfile = useCallback((profile: AuthUser) => {
+    setState(current => {
+      if (current.status !== 'authenticated' || current.user?.id !== profile.id) return current;
+      return { ...current, user: { ...current.user, name: profile.name, firstName: profile.firstName,
+        lastName: profile.lastName, phone: profile.phone } };
+    });
+  }, []);
+
   const value = useMemo<AuthSessionContextValue>(
     () => ({
       ...state,
@@ -118,8 +127,9 @@ export function AuthSessionProvider({ children }: PropsWithChildren) {
       register,
       logout,
       retryRestore,
+      applyProfile,
     }),
-    [login, logout, register, retryRestore, state],
+    [login, logout, register, retryRestore, applyProfile, state],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;

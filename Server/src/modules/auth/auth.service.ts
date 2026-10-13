@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { createHash, createHmac, randomInt } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
 import { UsersService } from '../users/users.service';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -101,15 +102,58 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user =
-      (await this.usersService.markActivity(userId)) ??
-      (await this.usersService.findById(userId));
+    this.assertProfileSubject(userId);
+    const user = await this.usersService.markActiveUserActivity(userId);
 
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('La cuenta no está disponible');
     }
 
-    return this.sanitizeUser(user);
+    return this.publicProfile(user);
+  }
+
+  async updateProfile(userId: string, profile: UpdateProfileDto) {
+    this.assertProfileSubject(userId);
+    const firstName = profile.firstName.trim().replace(/\s+/g, ' ');
+    const lastName = profile.lastName.trim().replace(/\s+/g, ' ');
+    if (`${firstName} ${lastName}`.length > 100) {
+      throw new BadRequestException(
+        'El nombre completo debe tener como máximo 100 caracteres',
+      );
+    }
+
+    const user = await this.usersService.updateOwnProfile(userId, {
+      firstName,
+      lastName,
+      phone: profile.phone.trim(),
+    });
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('La cuenta no está disponible');
+    }
+    return this.publicProfile(user);
+  }
+
+  private assertProfileSubject(userId: unknown): asserts userId is string {
+    if (typeof userId !== 'string' || !/^[a-f\d]{24}$/i.test(userId)) {
+      throw new UnauthorizedException('La sesión no es válida');
+    }
+  }
+
+  private publicProfile(user: UserDocument) {
+    const dates = user.toObject() as { createdAt?: Date; updatedAt?: Date };
+    return {
+      _id: user._id.toString(),
+      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      status: user.status,
+      alexaLinkedAt: user.alexaLinkedAt,
+      createdAt: dates.createdAt,
+      updatedAt: dates.updatedAt,
+    };
   }
 
   async getAlexaLinkedProfile(alexaUserId: string, clientIp?: string) {

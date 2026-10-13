@@ -27,6 +27,12 @@ interface UpdateUserInput {
   status?: UserStatus;
 }
 
+interface UpdateOwnProfileInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -63,6 +69,36 @@ export class UsersService {
 
   async findById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
+  }
+
+  async markActiveUserActivity(userId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(userId), status: UserStatus.ACTIVE },
+        { $set: { lastSeenAt: new Date() } },
+        { returnDocument: 'after' },
+      )
+      .exec();
+  }
+
+  async updateOwnProfile(
+    userId: string,
+    input: UpdateOwnProfileInput,
+  ): Promise<UserDocument | null> {
+    return this.userModel
+      .findOneAndUpdate(
+        { _id: new Types.ObjectId(userId), status: UserStatus.ACTIVE },
+        {
+          $set: {
+            firstName: input.firstName,
+            lastName: input.lastName,
+            name: `${input.firstName} ${input.lastName}`,
+            phone: input.phone,
+          },
+        },
+        { returnDocument: 'after', runValidators: true },
+      )
+      .exec();
   }
 
   async storeAlexaLinkCode(
