@@ -1,4 +1,4 @@
-import type { INestApplication } from '@nestjs/common';
+import { NotFoundException, type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -18,7 +18,7 @@ describe('Customer order history HTTP routes', () => {
     email: 'same@example.test',
     role: UserRole.USER,
   };
-  const history = { list: jest.fn(), detail: jest.fn() };
+  const history = { list: jest.fn(), detail: jest.fn(), tracking: jest.fn() };
   const orders = { listReceiptConfirmationOrders: jest.fn() };
 
   beforeAll(async () => {
@@ -46,32 +46,45 @@ describe('Customer order history HTTP routes', () => {
     jest.clearAllMocks();
     history.list.mockResolvedValue({ orders: [], nextCursor: null });
     history.detail.mockResolvedValue({ id: '000000000000000000000001' });
+    history.tracking.mockResolvedValue({
+      id: '000000000000000000000001',
+      status: 'pending_review',
+      confirmedAt: null,
+      cancelledAt: null,
+      completedAt: null,
+    });
     orders.listReceiptConfirmationOrders.mockResolvedValue([]);
   });
   afterAll(async () => {
     await app.close();
   });
 
-  it.each(['/orders/me', '/orders/me/000000000000000000000001'])(
-    'requires a signed JWT for %s',
-    async (url) => {
-      await request(app.getHttpServer()).get(url).expect(401);
-      await request(app.getHttpServer())
-        .get(url)
-        .set('Authorization', 'Bearer invalid')
-        .expect(401);
-      expect(history.list).not.toHaveBeenCalled();
-      expect(history.detail).not.toHaveBeenCalled();
-    },
-  );
-
-  it('rejects an expired token', async () => {
+  it.each([
+    '/orders/me',
+    '/orders/me/000000000000000000000001',
+    '/orders/me/000000000000000000000001/tracking',
+  ])('requires a signed JWT for %s', async (url) => {
+    await request(app.getHttpServer()).get(url).expect(401);
     await request(app.getHttpServer())
-      .get('/orders/me')
-      .set('Authorization', `Bearer ${jwt.sign(payload, { expiresIn: -10 })}`)
+      .get(url)
+      .set('Authorization', 'Bearer invalid')
       .expect(401);
     expect(history.list).not.toHaveBeenCalled();
+    expect(history.detail).not.toHaveBeenCalled();
+    expect(history.tracking).not.toHaveBeenCalled();
   });
+
+  it.each(['/orders/me', '/orders/me/000000000000000000000001/tracking'])(
+    'rejects an expired token for %s',
+    async (url) => {
+      await request(app.getHttpServer())
+        .get(url)
+        .set('Authorization', `Bearer ${jwt.sign(payload, { expiresIn: -10 })}`)
+        .expect(401);
+      expect(history.list).not.toHaveBeenCalled();
+      expect(history.tracking).not.toHaveBeenCalled();
+    },
+  );
 
   it('takes list ownership from the signed subject and passes the opaque cursor unchanged', async () => {
     await request(app.getHttpServer())
@@ -106,5 +119,40 @@ describe('Customer order history HTTP routes', () => {
       expect.objectContaining(payload),
     );
     expect(history.detail).not.toHaveBeenCalled();
+  });
+
+  it('passes tracking ownership from the signed subject and prevents response caching', async () => {
+    await request(app.getHttpServer())
+      .get(
+        '/orders/me/000000000000000000000001/tracking?customerUserId=account-b',
+      )
+      .set('Authorization', `Bearer ${jwt.sign(payload)}`)
+      .expect('Cache-Control', 'private, no-store')
+      .expect(200, {
+        id: '000000000000000000000001',
+        status: 'pending_review',
+        confirmedAt: null,
+        cancelledAt: null,
+        completedAt: null,
+      });
+    expect(history.tracking).toHaveBeenCalledWith(
+      expect.objectContaining(payload),
+      '000000000000000000000001',
+    );
+    expect(history.detail).not.toHaveBeenCalled();
+  });
+
+  it('returns the service tracking 404 without revealing another account', async () => {
+    history.tracking.mockRejectedValueOnce(
+      new NotFoundException('No encontramos ese pedido en tu cuenta.'),
+    );
+    await request(app.getHttpServer())
+      .get('/orders/me/000000000000000000000001/tracking')
+      .set('Authorization', `Bearer ${jwt.sign(payload)}`)
+      .expect(404, {
+        message: 'No encontramos ese pedido en tu cuenta.',
+        error: 'Not Found',
+        statusCode: 404,
+      });
   });
 });

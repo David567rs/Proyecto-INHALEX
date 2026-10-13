@@ -69,6 +69,16 @@ export class OrdersController {
     return this.historyService.list(request.user, cursor);
   }
 
+  @Get('me/:id/tracking')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'private, no-store')
+  getOrderTracking(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.historyService.tracking(request.user, id);
+  }
+
   @Get('me/:id')
   @UseGuards(JwtAuthGuard)
   @Header('Cache-Control', 'private, no-store')
