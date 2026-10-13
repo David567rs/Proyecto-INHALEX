@@ -33,6 +33,12 @@ export class HttpCartRepository implements CartRepository {
     return cart;
   }
 
+  async clear(operation?: CartOperation): Promise<Cart> {
+    const cart = mapCart(await this.api.clear(operation), this.assetBaseUrl);
+    if (cart.items.length || cart.totalItems !== 0 || cart.subtotal !== 0) throw this.unconfirmed();
+    return cart;
+  }
+
   private validateProductId(productId: string): void {
     if (typeof productId !== 'string' || !productId.trim() || productId !== productId.trim()) {
       throw new Error('No se pudo identificar el producto. Intenta de nuevo.');

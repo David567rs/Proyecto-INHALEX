@@ -4,6 +4,8 @@ import { createEmptyCart, getCartQuantityLimit, MAX_CART_QUANTITY, type Cart } f
 import type { CartRepository } from '../../domain/repositories/CartRepository';
 
 export type CartStatus = 'loading' | 'ready' | 'empty' | 'error';
+export type CheckoutCartItem = Readonly<{ productId: string; quantity: number }>;
+export type CartCleanupResult = 'cleared' | 'changed' | 'failed' | 'inactive';
 
 export interface CartViewModel {
   cart: Cart;
@@ -11,6 +13,7 @@ export interface CartViewModel {
   refreshing: boolean;
   pendingIds: readonly string[];
   canMutate: boolean;
+  checkoutLocked: boolean;
   errorMessage: string | null;
   actionError: { productId: string; message: string } | null;
   feedback: { id: number; message: string } | null;
@@ -19,12 +22,16 @@ export interface CartViewModel {
   add(product: CatalogProduct, quantity?: number): Promise<void>;
   setQuantity(productId: string, quantity: number): Promise<void>;
   remove(productId: string): Promise<void>;
+  beginCheckout(expectedItems: readonly CheckoutCartItem[]): Promise<Cart | null>;
+  resumeCheckout(expectedItems: readonly CheckoutCartItem[]): boolean;
+  clearAfterOrder(expectedItems: readonly CheckoutCartItem[]): Promise<CartCleanupResult>;
+  endCheckout(): void;
   clearActionError(): void;
   clearFeedback(): void;
 }
 
 type CartState = Pick<CartViewModel,
-  'cart' | 'status' | 'refreshing' | 'pendingIds' | 'canMutate' | 'errorMessage' | 'actionError' | 'feedback'
+  'cart' | 'status' | 'refreshing' | 'pendingIds' | 'canMutate' | 'checkoutLocked' | 'errorMessage' | 'actionError' | 'feedback'
 >;
 type CartChange = { kind: 'add'; product: CatalogProduct; quantity: number }
   | { kind: 'quantity'; quantity: number } | { kind: 'remove' };
@@ -41,10 +48,12 @@ export class CartController {
   private feedbackId = 0;
   private startPromise: Promise<void> | null = null;
   private queue: Promise<void> = Promise.resolve();
+  private checkoutItems: CheckoutCartItem[] | null = null;
+  private clearingOrder = false;
   private readonly listeners = new Set<() => void>();
   private state: CartState = {
     cart: createEmptyCart(), status: 'loading', refreshing: false, pendingIds: [],
-    canMutate: false, errorMessage: null, actionError: null, feedback: null,
+    canMutate: false, checkoutLocked: false, errorMessage: null, actionError: null, feedback: null,
   };
   private snapshot: CartViewModel;
 
@@ -64,8 +73,11 @@ export class CartController {
     this.active = true;
     this.generation += 1;
     this.hasLoaded = false;
+    this.checkoutItems = null;
+    this.clearingOrder = false;
     this.update({
       status: 'loading', pendingIds: [], canMutate: false, refreshing: false,
+      checkoutLocked: false,
       errorMessage: null, actionError: null, feedback: null,
     });
     this.startPromise = this.reload(false);
@@ -89,6 +101,93 @@ export class CartController {
   setQuantity = (productId: string, quantity: number): Promise<void> => this.change(productId, { kind: 'quantity', quantity });
 
   remove = (productId: string): Promise<void> => this.change(productId, { kind: 'remove' });
+
+  /** Lock before the asynchronous read so new local additions cannot join this order. */
+  beginCheckout = async (expectedItems: readonly CheckoutCartItem[]): Promise<Cart | null> => {
+    if (!this.active || !this.hasLoaded || !this.state.canMutate || this.state.checkoutLocked || !this.validCheckoutItems(expectedItems)) return null;
+    const generation = this.generation;
+    const captured = expectedItems.map(({ productId, quantity }) => ({ productId, quantity }));
+    this.checkoutItems = captured;
+    this.update({ checkoutLocked: true, actionError: null, feedback: null });
+    let result: Cart | null = null;
+    await this.enqueue(generation, async () => {
+      try {
+        if (!this.ownsCheckout(generation, captured)) return;
+        const cart = await this.repository.list({ isCurrent: () => this.ownsCheckout(generation, captured) });
+        if (!this.ownsCheckout(generation, captured)) return;
+        this.update({ cart, status: this.cartStatus(cart), canMutate: true, errorMessage: null, actionError: null });
+        if (!this.matchesItems(cart.items, captured)) {
+          this.update({ errorMessage: 'Tu bolsa cambió. Revisa los productos antes de crear el pedido.' });
+          return;
+        }
+        result = cart;
+      } catch (error) {
+        if (this.ownsCheckout(generation, captured)) this.update({
+          ...(this.isUnauthorized(error) ? { canMutate: false } : {}),
+          errorMessage: this.displayError(error, 'No pudimos verificar tu bolsa. Actualiza e intenta de nuevo.'),
+        });
+      } finally {
+        if (this.ownsCheckout(generation, captured) && !result) this.endCheckout();
+      }
+    });
+    return result;
+  };
+
+  /** Restore a previously sent order intent without replacing its purchased snapshot. */
+  resumeCheckout = (expectedItems: readonly CheckoutCartItem[]): boolean => {
+    if (!this.active || !this.validCheckoutItems(expectedItems)) return false;
+    if (this.state.checkoutLocked) return !!this.checkoutItems && this.matchesItems(this.checkoutItems, expectedItems);
+    this.checkoutItems = expectedItems.map(({ productId, quantity }) => ({ productId, quantity }));
+    this.update({ checkoutLocked: true, actionError: null, feedback: null });
+    return true;
+  };
+
+  /** Call only after a confirmed order. A changed remote bag is retained for review. */
+  clearAfterOrder = async (expectedItems: readonly CheckoutCartItem[]): Promise<CartCleanupResult> => {
+    if (!this.active || !this.state.checkoutLocked || !this.checkoutItems) return 'inactive';
+    if (this.clearingOrder) return 'failed';
+    if (!this.matchesItems(this.checkoutItems, expectedItems)) return 'changed';
+    const generation = this.generation;
+    const captured = this.checkoutItems;
+    this.clearingOrder = true;
+    let result: CartCleanupResult = 'inactive';
+    await this.enqueue(generation, async () => {
+      const operation = { isCurrent: () => this.isCurrent(generation) };
+      try {
+        // Always reconcile before DELETE, including a retry after a lost DELETE response.
+        // The current API has no conditional clear; a simultaneous write from another
+        // device between this GET and DELETE still requires a backend revision contract.
+        const current = await this.repository.list(operation);
+        if (!this.isCurrent(generation)) return;
+        this.update({ cart: current, status: this.cartStatus(current), canMutate: true, errorMessage: null, actionError: null });
+        if (!current.items.length) {
+          result = 'cleared';
+          return;
+        }
+        if (!this.matchesItems(current.items, captured)) {
+          result = 'changed';
+          return;
+        }
+        const empty = await this.repository.clear(operation);
+        if (!this.isCurrent(generation)) return;
+        this.update({ cart: empty, status: this.cartStatus(empty), canMutate: true, errorMessage: null, actionError: null });
+        result = 'cleared';
+      } catch (error) {
+        if (!this.isCurrent(generation)) return;
+        this.update({ canMutate: false, errorMessage: this.displayError(error, 'Tu pedido ya está creado. No pudimos actualizar la bolsa; vuelve a consultarla.') });
+        result = 'failed';
+      } finally {
+        if (this.isCurrent(generation)) this.clearingOrder = false;
+      }
+    });
+    return result;
+  };
+
+  endCheckout = (): void => {
+    if (!this.active || !this.state.checkoutLocked || this.clearingOrder) return;
+    this.checkoutItems = null;
+    this.update({ checkoutLocked: false });
+  };
 
   clearActionError = (): void => {
     if (this.active && this.state.actionError) this.update({ actionError: null });
@@ -137,7 +236,7 @@ export class CartController {
   }
 
   private change(productId: string, change: CartChange): Promise<void> {
-    if (!this.active || !this.state.canMutate || !productId || this.state.pendingIds.includes(productId)) return Promise.resolve();
+    if (!this.active || !this.state.canMutate || this.state.checkoutLocked || !productId || this.state.pendingIds.includes(productId)) return Promise.resolve();
     const generation = this.generation;
     this.update({
       pendingIds: [...this.state.pendingIds, productId], feedback: null,
@@ -205,6 +304,20 @@ export class CartController {
     return error instanceof ApiError && error.status === 401;
   }
 
+  private validCheckoutItems(items: readonly CheckoutCartItem[]): boolean {
+    return items.length > 0 && new Set(items.map(item => item.productId)).size === items.length
+      && items.every(item => typeof item.productId === 'string' && !!item.productId.trim() && item.productId === item.productId.trim()
+        && Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= MAX_CART_QUANTITY);
+  }
+
+  private ownsCheckout(generation: number, captured: CheckoutCartItem[]): boolean {
+    return this.isCurrent(generation) && this.state.checkoutLocked && this.checkoutItems === captured;
+  }
+
+  private matchesItems(left: readonly CheckoutCartItem[], right: readonly CheckoutCartItem[]): boolean {
+    return left.length === right.length && left.every(item => right.some(other => other.productId === item.productId && other.quantity === item.quantity));
+  }
+
   private displayError(error: unknown, fallback: string): string {
     return this.isUnauthorized(error) ? SESSION_MESSAGE : fallback;
   }
@@ -215,8 +328,10 @@ export class CartController {
 
   private makeSnapshot(): CartViewModel {
     return {
-      ...this.state, refresh: this.refresh, retry: this.retry, add: this.add, setQuantity: this.setQuantity,
+      ...this.state, canMutate: this.state.canMutate && !this.state.checkoutLocked,
+      refresh: this.refresh, retry: this.retry, add: this.add, setQuantity: this.setQuantity,
       remove: this.remove, clearActionError: this.clearActionError, clearFeedback: this.clearFeedback,
+      beginCheckout: this.beginCheckout, resumeCheckout: this.resumeCheckout, clearAfterOrder: this.clearAfterOrder, endCheckout: this.endCheckout,
     };
   }
 

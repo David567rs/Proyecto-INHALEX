@@ -63,7 +63,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 const pending = controller => Array.from(controller.getSnapshot().pendingIds);
 
 function fixture(context) {
-  const calls = { list: [], add: [], updateQuantity: [], remove: [] };
+  const calls = { list: [], add: [], updateQuantity: [], remove: [], clear: [] };
   const order = [];
   const repository = Object.fromEntries(Object.keys(calls).map(method => [method, (...args) => {
     const operation = {
@@ -548,4 +548,206 @@ test('a separate account controller never receives the stopped account cart', as
   await adding;
   assert.equal(newAccount.controller.getSnapshot().cart, current);
   assert.equal(newAccount.controller.getSnapshot().feedback, null);
+});
+
+test('checkout locks immediately, revalidates remote quantities and blocks duplicate checkout and writes', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls } = setup;
+  const expected = [{ productId: 'menta', quantity: 2 }];
+  const checkout = controller.beginCheckout(expected);
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+  assert.equal(controller.getSnapshot().canMutate, false);
+  assert.equal(await controller.beginCheckout(expected), null);
+  await controller.add(product('menta'));
+  await controller.setQuantity('menta', 3);
+  await controller.remove('menta');
+  await flush();
+  assert.equal(calls.add.length + calls.updateQuantity.length + calls.remove.length, 0);
+  const fresh = cart([product('menta'), 2, 45]);
+  calls.list[1].resolve(fresh);
+  assert.equal(await checkout, fresh);
+  assert.equal(controller.getSnapshot().cart.subtotal, 90);
+  assert.equal(controller.getSnapshot().canMutate, false);
+  controller.endCheckout();
+  assert.equal(controller.getSnapshot().checkoutLocked, false);
+  assert.equal(controller.getSnapshot().canMutate, true);
+});
+
+test('checkout waits for already queued changes and requires review when their quantities changed', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls, order } = setup;
+  const adding = controller.add(product('menta'));
+  const checkout = controller.beginCheckout(before.items);
+  await flush();
+  assert.equal(calls.list.length, 1);
+  calls.add[0].resolve(cart([product('menta'), 3]));
+  await adding;
+  await flush();
+  calls.list[1].resolve(cart([product('menta'), 3]));
+  assert.equal(await checkout, null);
+  assert.deepEqual(order, ['list', 'add', 'list']);
+  assert.equal(controller.getSnapshot().checkoutLocked, false);
+  assert.equal(controller.getSnapshot().cart.totalItems, 3);
+  assert.match(controller.getSnapshot().errorMessage, /bolsa cambió/);
+});
+
+test('failed checkout validation releases the lock and never calls DELETE', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls, ApiError } = setup;
+  const checkout = controller.beginCheckout(before.items);
+  await flush();
+  calls.list[1].reject(new ApiError('private session metadata', 401));
+  assert.equal(await checkout, null);
+  assert.equal(controller.getSnapshot().checkoutLocked, false);
+  assert.equal(controller.getSnapshot().canMutate, false);
+  assert.equal(controller.getSnapshot().errorMessage, 'Tu sesión venció. Inicia sesión de nuevo.');
+  assert.equal(calls.clear.length, 0);
+});
+
+test('cancelled checkout validation cannot restore a released lock or overwrite another capture', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls } = setup;
+  const checkout = controller.beginCheckout(before.items);
+  await flush();
+  controller.endCheckout();
+  assert.equal(calls.list[1].options.isCurrent(), false);
+  assert.equal(controller.resumeCheckout([{ productId: 'other', quantity: 1 }]), true);
+  calls.list[1].resolve(cart([product('menta'), 3]));
+  assert.equal(await checkout, null);
+  assert.equal(controller.getSnapshot().cart, before);
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+  assert.equal(controller.resumeCheckout(before.items), false);
+});
+
+test('confirmed cleanup checks purchased items and clears only the matching current bag once', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2], [product('eucalipto'), 1]);
+  await ready(setup, before);
+  const { controller, calls, order } = setup;
+  assert.equal(controller.resumeCheckout(before.items), true);
+  const clearing = controller.clearAfterOrder(before.items);
+  await flush();
+  calls.list[1].resolve(cart([product('eucalipto'), 1], [product('menta'), 2]));
+  await flush();
+  assert.equal(calls.clear.length, 1);
+  assert.equal(await controller.clearAfterOrder(before.items), 'failed');
+  controller.endCheckout();
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+  calls.clear[0].resolve(cart());
+  assert.equal(await clearing, 'cleared');
+  assert.deepEqual(order, ['list', 'list', 'clear']);
+  assert.equal(controller.getSnapshot().status, 'empty');
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+  controller.endCheckout();
+  assert.equal(controller.getSnapshot().canMutate, true);
+});
+
+test('cleanup preserves changed external products, quantities and forged purchased snapshots', async context => {
+  for (const current of [cart([product('menta'), 3]), cart([product('menta'), 2], [product('new'), 1]), cart([product('new'), 1])]) {
+    const setup = fixture(context);
+    const before = cart([product('menta'), 2]);
+    await ready(setup, before);
+    const { controller, calls } = setup;
+    assert.equal(await controller.clearAfterOrder(before.items), 'inactive');
+    assert.equal(controller.resumeCheckout(before.items), true);
+    assert.equal(await controller.clearAfterOrder([{ productId: 'new', quantity: 1 }]), 'changed');
+    assert.equal(calls.list.length, 1);
+    const clearing = controller.clearAfterOrder(before.items);
+    await flush();
+    calls.list[1].resolve(current);
+    assert.equal(await clearing, 'changed');
+    assert.equal(controller.getSnapshot().cart, current);
+    assert.equal(calls.clear.length, 0);
+  }
+});
+
+test('lost DELETE acknowledgement stays locked and retry recognizes already cleared bag without another DELETE', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls } = setup;
+  controller.resumeCheckout(before.items);
+  const first = controller.clearAfterOrder(before.items);
+  await flush();
+  calls.list[1].resolve(before);
+  await flush();
+  calls.clear[0].reject(new Error('timeout after the server cleared'));
+  assert.equal(await first, 'failed');
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+  assert.equal(controller.getSnapshot().canMutate, false);
+  assert.equal(controller.getSnapshot().cart, before);
+  const retry = controller.clearAfterOrder(before.items);
+  await flush();
+  calls.list[2].resolve(cart());
+  assert.equal(await retry, 'cleared');
+  assert.equal(calls.clear.length, 1);
+  controller.endCheckout();
+  assert.equal(controller.getSnapshot().canMutate, true);
+});
+
+test('cleanup read failure makes no DELETE and a retry preserves products added elsewhere', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls } = setup;
+  controller.resumeCheckout(before.items);
+  const first = controller.clearAfterOrder(before.items);
+  await flush();
+  calls.list[1].reject(new Error('offline'));
+  assert.equal(await first, 'failed');
+  const retry = controller.clearAfterOrder(before.items);
+  await flush();
+  const current = cart([product('menta'), 2], [product('new'), 1]);
+  calls.list[2].resolve(current);
+  assert.equal(await retry, 'changed');
+  assert.equal(calls.clear.length, 0);
+  assert.equal(controller.getSnapshot().cart, current);
+});
+
+test('restored intent accepts only valid immutable snapshots and refresh cannot unlock checkout', async context => {
+  const setup = fixture(context);
+  await ready(setup, cart([product('menta'), 2]));
+  const { controller, calls } = setup;
+  for (const items of [[], [{ productId: ' ', quantity: 2 }], [{ productId: ' padded ', quantity: 2 }], [{ productId: 'menta', quantity: 0 }], [{ productId: 'menta', quantity: 26 }], [{ productId: 'menta', quantity: 1 }, { productId: 'menta', quantity: 1 }]]) {
+    assert.equal(controller.resumeCheckout(items), false);
+    assert.equal(await controller.beginCheckout(items), null);
+  }
+  const expected = [{ productId: 'menta', quantity: 2 }];
+  assert.equal(controller.resumeCheckout(expected), true);
+  expected[0].quantity = 3;
+  assert.equal(controller.resumeCheckout(expected), false);
+  const refreshing = controller.refresh();
+  await flush();
+  calls.list[1].resolve(cart([product('new'), 1]));
+  await refreshing;
+  assert.equal(controller.getSnapshot().canMutate, false);
+  assert.equal(controller.getSnapshot().checkoutLocked, true);
+});
+
+test('stop invalidates cleanup authentication guards and ignores late account data', async context => {
+  const setup = fixture(context);
+  const before = cart([product('menta'), 2]);
+  await ready(setup, before);
+  const { controller, calls } = setup;
+  controller.resumeCheckout(before.items);
+  const clearing = controller.clearAfterOrder(before.items);
+  await flush();
+  calls.list[1].resolve(before);
+  await flush();
+  assert.equal(calls.clear[0].options.isCurrent(), true);
+  controller.stop();
+  assert.equal(calls.clear[0].options.isCurrent(), false);
+  const snapshot = controller.getSnapshot();
+  calls.clear[0].resolve(cart());
+  assert.equal(await clearing, 'inactive');
+  assert.equal(controller.getSnapshot(), snapshot);
+  assert.equal(controller.resumeCheckout(before.items), false);
 });

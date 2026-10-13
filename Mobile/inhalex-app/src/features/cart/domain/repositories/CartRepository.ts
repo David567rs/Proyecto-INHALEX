@@ -10,4 +10,5 @@ export interface CartRepository {
   add(productId: string, quantity: number, operation?: CartOperation): Promise<Cart>;
   updateQuantity(productId: string, quantity: number, operation?: CartOperation): Promise<Cart>;
   remove(productId: string, operation?: CartOperation): Promise<Cart>;
+  clear(operation?: CartOperation): Promise<Cart>;
 }

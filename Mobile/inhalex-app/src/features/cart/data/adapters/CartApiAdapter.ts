@@ -13,6 +13,7 @@ export interface CartApi {
   add(productId: string, quantity: number, operation?: CartOperation): Promise<CartDto>;
   updateQuantity(productId: string, quantity: number, operation?: CartOperation): Promise<CartDto>;
   remove(productId: string, operation?: CartOperation): Promise<CartDto>;
+  clear(operation?: CartOperation): Promise<CartDto>;
 }
 
 export class CartApiAdapter implements CartApi {
@@ -35,6 +36,10 @@ export class CartApiAdapter implements CartApi {
 
   remove(productId: string, operation?: CartOperation): Promise<CartDto> {
     return this.request(`/cart/${encodeURIComponent(productId)}`, { method: 'DELETE' }, operation);
+  }
+
+  clear(operation?: CartOperation): Promise<CartDto> {
+    return this.request('/cart', { method: 'DELETE' }, operation);
   }
 
   private async request(
