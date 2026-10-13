@@ -36,6 +36,17 @@ export default function AccountScreen() {
         {user?.phone ? <Text style={styles.phone}>{user.phone}</Text> : null}
       </View>
 
+      <Pressable accessibilityRole="button" accessibilityLabel="Datos personales"
+        onPress={() => router.push('/cuenta/perfil')}
+        style={({ pressed }) => [styles.addressLink, pressed && styles.logoutPressed]}>
+        <Ionicons color={colors.primary} name="person-outline" size={24} />
+        <View style={styles.securityCopy}>
+          <Text style={styles.securityTitle}>Datos personales</Text>
+          <Text style={styles.securityText}>Consulta y actualiza tu nombre y teléfono.</Text>
+        </View>
+        <Ionicons color={colors.primary} name="chevron-forward" size={20} />
+      </Pressable>
+
       <Pressable accessibilityRole="button" accessibilityLabel="Direcciones de envío"
         onPress={() => router.push('/cuenta/direcciones')}
         style={({ pressed }) => [styles.addressLink, pressed && styles.logoutPressed]}>

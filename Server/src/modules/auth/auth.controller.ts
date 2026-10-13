@@ -3,7 +3,9 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   HttpCode,
+  Patch,
   Post,
   Query,
   Req,
@@ -15,6 +17,7 @@ import { AuthService } from './auth.service';
 import { AUTH_COOKIE_NAME } from './auth.constants';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface';
@@ -55,8 +58,19 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'private, no-store')
   me(@Req() request: AuthenticatedRequest) {
     return this.authService.getProfile(request.user.sub);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'private, no-store')
+  updateProfile(
+    @Req() request: AuthenticatedRequest,
+    @Body() profile: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(request.user.sub, profile);
   }
 
   @Get('alexa/profile')
