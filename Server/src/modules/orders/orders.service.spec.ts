@@ -87,6 +87,7 @@ describe('OrdersService', () => {
       { findById: jest.fn(), markActivity: jest.fn() } as any,
       {} as JwtService,
       { recordCompletedOrder: jest.fn() } as any,
+      { create: jest.fn() } as any,
     );
   });
 

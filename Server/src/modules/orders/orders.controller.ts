@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -16,10 +18,14 @@ import { CreateOrderDraftDto } from './dto/create-order-draft.dto';
 import { PreviewOrderDraftDto } from './dto/preview-order-draft.dto';
 import { ReportOrderReceiptDto } from './dto/report-order-receipt.dto';
 import { OrdersService } from './orders.service';
+import { CustomerOrderHistoryService } from './customer-order-history.service';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly historyService: CustomerOrderHistoryService,
+  ) {}
 
   @Post('draft/preview')
   previewDraft(@Body() previewOrderDraftDto: PreviewOrderDraftDto) {
@@ -51,6 +57,26 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   listReceiptConfirmations(@Req() request: AuthenticatedRequest) {
     return this.ordersService.listReceiptConfirmationOrders(request.user);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'private, no-store')
+  listHistory(
+    @Req() request: AuthenticatedRequest,
+    @Query('cursor') cursor?: unknown,
+  ) {
+    return this.historyService.list(request.user, cursor);
+  }
+
+  @Get('me/:id')
+  @UseGuards(JwtAuthGuard)
+  @Header('Cache-Control', 'private, no-store')
+  getHistoryOrder(
+    @Req() request: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.historyService.detail(request.user, id);
   }
 
   @Patch(':id/receipt/confirm')
