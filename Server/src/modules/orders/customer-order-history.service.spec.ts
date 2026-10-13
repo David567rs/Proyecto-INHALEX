@@ -379,12 +379,171 @@ describe('CustomerOrderHistoryService', () => {
     ).toBeNull();
   });
 
+  it.each([
+    {
+      status: OrderStatus.PENDING_REVIEW,
+      dates: {},
+      expected: { confirmedAt: null, cancelledAt: null, completedAt: null },
+    },
+    {
+      status: OrderStatus.CONFIRMED,
+      dates: { confirmedAt: new Date('2026-10-13T13:00:00.000Z') },
+      expected: {
+        confirmedAt: '2026-10-13T13:00:00.000Z',
+        cancelledAt: null,
+        completedAt: null,
+      },
+    },
+    {
+      status: OrderStatus.CANCELLED,
+      dates: { cancelledAt: new Date('2026-10-13T13:00:00.000Z') },
+      expected: {
+        confirmedAt: null,
+        cancelledAt: '2026-10-13T13:00:00.000Z',
+        completedAt: null,
+      },
+    },
+    {
+      status: OrderStatus.CANCELLED,
+      dates: {
+        confirmedAt: new Date('2026-10-13T13:00:00.000Z'),
+        cancelledAt: new Date('2026-10-13T14:00:00.000Z'),
+      },
+      expected: {
+        confirmedAt: '2026-10-13T13:00:00.000Z',
+        cancelledAt: '2026-10-13T14:00:00.000Z',
+        completedAt: null,
+      },
+    },
+    {
+      status: OrderStatus.COMPLETED,
+      dates: {
+        confirmedAt: new Date('2026-10-13T13:00:00.000Z'),
+        completedAt: new Date('2026-10-13T14:00:00.000Z'),
+      },
+      expected: {
+        confirmedAt: '2026-10-13T13:00:00.000Z',
+        cancelledAt: null,
+        completedAt: '2026-10-13T14:00:00.000Z',
+      },
+    },
+    {
+      status: OrderStatus.COMPLETED,
+      dates: {},
+      expected: { confirmedAt: null, cancelledAt: null, completedAt: null },
+    },
+  ])(
+    'returns recorded tracking events for $status without inferring dates',
+    async ({ status, dates, expected }) => {
+      const { service } = setup([record(1, { status, ...dates })]);
+      expect(
+        await service.tracking(customer, '000000000000000000000001'),
+      ).toEqual({
+        id: '000000000000000000000001',
+        reference: 'PED-1',
+        status,
+        currency: 'MXN',
+        totalItems: 2,
+        subtotal: 120,
+        createdAt: '2026-10-13T12:00:00.000Z',
+        ...expected,
+      });
+    },
+  );
+
+  it.each([
+    'bad-id',
+    '000000000000000000000099',
+    '000000000000000000000002',
+    '000000000000000000000003',
+    '000000000000000000000004',
+  ])(
+    'returns the same 404 for invalid, missing, foreign, draft and unowned tracking (%s)',
+    async (id) => {
+      const { service, model } = setup([
+        record(1),
+        record(2, { customerUserId: 'account-b' }),
+        record(3, { status: OrderStatus.DRAFT }),
+        record(4, { customerUserId: undefined }),
+      ]);
+      await expect(service.tracking(customer, id)).rejects.toThrow(
+        new NotFoundException('No encontramos ese pedido en tu cuenta.'),
+      );
+      if (id === 'bad-id') expect(model.findOne).not.toHaveBeenCalled();
+    },
+  );
+
+  it('whitelists tracking projection and output without contact information or internal notes', async () => {
+    const { service, model } = setup([record(10)]);
+    const tracking = await service.tracking(
+      customer,
+      '00000000000000000000000A',
+    );
+    expect(Object.keys(tracking).sort()).toEqual(
+      [
+        'id',
+        'reference',
+        'status',
+        'currency',
+        'totalItems',
+        'subtotal',
+        'createdAt',
+        'confirmedAt',
+        'cancelledAt',
+        'completedAt',
+      ].sort(),
+    );
+    expect(tracking.id).toBe('00000000000000000000000a');
+    expect(model.queries[0].select).toHaveBeenCalledWith({
+      _id: 1,
+      reference: 1,
+      status: 1,
+      currency: 1,
+      totalItems: 1,
+      subtotal: 1,
+      createdAt: 1,
+      confirmedAt: 1,
+      cancelledAt: 1,
+      completedAt: 1,
+    });
+    expect(model.findOne.mock.calls[0][0]).toEqual({
+      _id: new Types.ObjectId('00000000000000000000000a'),
+      customerUserId: customer.sub,
+      status: {
+        $in: [
+          OrderStatus.PENDING_REVIEW,
+          OrderStatus.CONFIRMED,
+          OrderStatus.CANCELLED,
+          OrderStatus.COMPLETED,
+        ],
+      },
+    });
+    expect(JSON.stringify(tracking)).not.toMatch(
+      /private-retry|Internal admin|stockAvailable|customerUser|shippingAddress|items|email|phone/,
+    );
+  });
+
+  it('reads the current persisted state on every tracking request', async () => {
+    const order = record(1);
+    const { service } = setup([order]);
+    expect(
+      (await service.tracking(customer, order._id.toHexString())).status,
+    ).toBe(OrderStatus.PENDING_REVIEW);
+    order.status = OrderStatus.CONFIRMED;
+    expect(
+      (await service.tracking(customer, order._id.toHexString())).status,
+    ).toBe(OrderStatus.CONFIRMED);
+  });
+
   it('fails closed if a valid JWT payload has no subject', async () => {
     const { service, model } = setup([record(1)]);
     const invalid = { ...customer, sub: '' };
     await expect(service.list(invalid)).rejects.toThrow(UnauthorizedException);
     await expect(
       service.detail(invalid, '000000000000000000000001'),
+    ).rejects.toThrow(UnauthorizedException);
+    await expect(
+      service.tracking(invalid, '000000000000000000000001'),
     ).rejects.toThrow(UnauthorizedException);
     expect(model.find).not.toHaveBeenCalled();
     expect(model.findOne).not.toHaveBeenCalled();

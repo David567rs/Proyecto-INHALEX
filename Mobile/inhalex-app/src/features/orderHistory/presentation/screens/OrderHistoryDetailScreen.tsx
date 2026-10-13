@@ -17,10 +17,11 @@ export default function OrderHistoryDetailScreen() {
   const active = vm.status !== 'idle';
   useFocusEffect(useCallback(() => { if (active) void loadDetail(orderId); return closeDetail; }, [loadDetail, closeDetail, orderId, active]));
   return <OrderHistoryDetailView vm={vm} orderId={orderId}
+    onTracking={() => router.push({ pathname: '/cuenta/seguimiento/[id]', params: { id: orderId } })}
     onBack={() => { if (router.canGoBack()) router.back(); else router.replace('/cuenta/historial'); }} />;
 }
 
-export function OrderHistoryDetailView({ vm, orderId, onBack }: { vm: OrderHistoryViewModel; orderId: string; onBack(): void }) {
+export function OrderHistoryDetailView({ vm, orderId, onBack, onTracking }: { vm: OrderHistoryViewModel; orderId: string; onBack(): void; onTracking?(): void }) {
   const current = vm.selectedId === orderId;
   const order = current && vm.detail?.id === orderId && vm.detailStatus === 'ready' ? vm.detail : null;
   const sessionError = !vm.selectedId && vm.detailStatus === 'error' ? vm.detailError : null;
@@ -46,6 +47,7 @@ export function OrderHistoryDetailView({ vm, orderId, onBack }: { vm: OrderHisto
           <Text style={styles.label}>Referencia</Text><Text selectable style={styles.reference}>{order.reference}</Text>
           <Text style={styles.body}>{historyDate(order.createdAt)}</Text><HistoryStatus status={order.status} />
           <Text style={styles.body}>{statusCopy[order.status].description}</Text>
+          {onTracking ? <HistoryButton label="Seguir mi pedido" onPress={onTracking} /> : null}
         </View>
         <View style={styles.card}>
           <Text accessibilityRole="header" style={styles.sectionTitle}>Productos de tu pedido</Text>

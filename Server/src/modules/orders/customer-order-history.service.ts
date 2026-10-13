@@ -27,16 +27,14 @@ const SUMMARY_FIELDS = {
   createdAt: 1,
 } as const;
 
-type HistoryOrder = Pick<
+type SummaryOrder = Pick<
   Order,
-  | 'reference'
-  | 'status'
-  | 'currency'
-  | 'totalItems'
-  | 'subtotal'
-  | 'items'
-  | 'shippingAddress'
+  'reference' | 'status' | 'currency' | 'totalItems' | 'subtotal'
 > & { _id: Types.ObjectId; createdAt: Date };
+
+type HistoryOrder = SummaryOrder & Pick<Order, 'items' | 'shippingAddress'>;
+type TrackingOrder = SummaryOrder &
+  Pick<Order, 'confirmedAt' | 'cancelledAt' | 'completedAt'>;
 
 export interface CustomerOrderSummary {
   id: string;
@@ -51,6 +49,12 @@ export interface CustomerOrderSummary {
 export interface CustomerOrderHistory {
   orders: CustomerOrderSummary[];
   nextCursor: string | null;
+}
+
+export interface CustomerOrderTracking extends CustomerOrderSummary {
+  confirmedAt: string | null;
+  cancelledAt: string | null;
+  completedAt: string | null;
 }
 
 @Injectable()
@@ -158,6 +162,35 @@ export class CustomerOrderHistoryService {
     };
   }
 
+  async tracking(user: JwtPayload, id: string): Promise<CustomerOrderTracking> {
+    const filters = this.ownedFilters(user);
+    if (!/^[a-f\d]{24}$/i.test(id)) {
+      throw new NotFoundException('No encontramos ese pedido en tu cuenta.');
+    }
+
+    const order = await this.orderModel
+      .findOne({ ...filters, _id: new Types.ObjectId(id) })
+      .select({
+        ...SUMMARY_FIELDS,
+        confirmedAt: 1,
+        cancelledAt: 1,
+        completedAt: 1,
+      })
+      .lean<TrackingOrder>()
+      .exec();
+
+    if (!order) {
+      throw new NotFoundException('No encontramos ese pedido en tu cuenta.');
+    }
+
+    return {
+      ...this.summary(order),
+      confirmedAt: order.confirmedAt?.toISOString() ?? null,
+      cancelledAt: order.cancelledAt?.toISOString() ?? null,
+      completedAt: order.completedAt?.toISOString() ?? null,
+    };
+  }
+
   private ownedFilters(user: JwtPayload): Record<string, unknown> {
     // Never fall back to a matching contact email: an order belongs to its account.
     if (!user || typeof user.sub !== 'string' || !user.sub.trim()) {
@@ -166,7 +199,7 @@ export class CustomerOrderHistoryService {
     return { customerUserId: user.sub, status: { $in: HISTORY_STATUSES } };
   }
 
-  private summary(order: HistoryOrder): CustomerOrderSummary {
+  private summary(order: SummaryOrder): CustomerOrderSummary {
     return {
       id: order._id.toHexString(),
       reference: order.reference,
@@ -178,7 +211,7 @@ export class CustomerOrderHistoryService {
     };
   }
 
-  private encodeCursor(order: HistoryOrder): string {
+  private encodeCursor(order: SummaryOrder): string {
     return Buffer.from(
       JSON.stringify({
         v: 1,
@@ -226,7 +259,7 @@ export class CustomerOrderHistoryService {
       }
       const id = new Types.ObjectId(position.id);
       if (
-        this.encodeCursor({ _id: id, createdAt: date } as HistoryOrder) !==
+        this.encodeCursor({ _id: id, createdAt: date } as SummaryOrder) !==
         cursor
       ) {
         throw invalid();

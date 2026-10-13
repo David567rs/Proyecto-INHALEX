@@ -8,5 +8,6 @@ export default function AccountLayout() {
     <Stack.Screen name="index" />
     <Stack.Screen name="direcciones" />
     <Stack.Screen name="historial" />
+    <Stack.Screen name="seguimiento" />
   </Stack>;
 }

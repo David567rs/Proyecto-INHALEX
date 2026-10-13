@@ -37,12 +37,14 @@ export default function OrderScreen() {
   return <OrderContent vm={vm} addresses={addresses}
     onBack={() => { cancelReview(); router.replace('/bolsa'); }}
     onManageAddresses={() => router.navigate('/cuenta/direcciones')}
+    onTracking={id => router.navigate({ pathname: '/cuenta/seguimiento/[id]', params: { id } })}
     onReview={() => void review(bag.cart.items.map(({ productId, quantity }) => ({ productId, quantity })))}
     onDone={() => { vm.reset(); router.replace('/bolsa'); }} />;
 }
 
-export function OrderContent({ vm, addresses, onBack, onManageAddresses, onReview, onDone }: {
+export function OrderContent({ vm, addresses, onBack, onManageAddresses, onReview, onDone, onTracking }: {
   vm: OrdersViewModel; addresses: AddressViewModel; onBack(): void; onManageAddresses(): void; onReview(): void; onDone(): void;
+  onTracking?(id: string): void;
 }) {
   const scroll = useRef<ScrollView>(null);
   const inputs = useRef<Partial<Record<keyof OrderContact, TextInput | null>>>({});
@@ -90,6 +92,7 @@ export function OrderContent({ vm, addresses, onBack, onManageAddresses, onRevie
           {vm.cleanupStatus === 'changed' ? <Text style={styles.body}>Tu bolsa cambió durante el proceso. Conservamos su contenido actualizado; revísalo antes de hacer otro pedido.</Text> : null}
           {vm.cleanupStatus === 'failed' ? <><Text style={styles.body}>El pedido ya está registrado. Falta actualizar tu bolsa.</Text><AddressButton label="Reintentar actualización de bolsa" onPress={() => void vm.retryCleanup()} variant="secondary" /></> : null}
           {vm.cleanupStatus === 'cleared' || vm.cleanupStatus === 'changed' ? <AddressButton label="Volver a mi bolsa" onPress={onDone} /> : null}
+          {onTracking ? <AddressButton label="Seguir mi pedido" onPress={() => onTracking(success.orderId)} variant="secondary" /> : null}
         </View> : null}
 
         {preview ? <OrderSummary preview={preview} /> : null}
