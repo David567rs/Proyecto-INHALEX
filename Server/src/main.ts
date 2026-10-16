@@ -3,6 +3,7 @@ import { createServer } from 'node:net';
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { privateResponseCachePolicy } from './common/http/response-cache-policy';
 
 function resolveCorsOrigin(): boolean | string[] {
   const corsOrigin = process.env.CORS_ORIGIN;
@@ -57,6 +58,8 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule);
+
+  app.use(privateResponseCachePolicy);
 
   app.enableCors({
     origin: resolveCorsOrigin(),

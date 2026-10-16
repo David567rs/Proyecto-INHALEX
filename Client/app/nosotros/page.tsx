@@ -1,7 +1,5 @@
 import { BadgeCheck, HeartPulse, Leaf, ShieldCheck, Sparkles } from "lucide-react"
 import { MarkdownContent } from "@/components/common/markdown-content"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
 import { fetchCompanyContentServer } from "@/lib/company/company-content-server"
 
 const VALUE_ICONS = [Sparkles, ShieldCheck, HeartPulse, BadgeCheck, Leaf]
@@ -11,8 +9,7 @@ export default async function AboutPage() {
   const values = companyContent.about.values
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
         <section className="page-fade-up relative overflow-hidden border-b border-border bg-secondary/30 pt-28 pb-16 lg:pt-36 lg:pb-20">
@@ -98,7 +95,6 @@ export default async function AboutPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

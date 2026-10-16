@@ -18,6 +18,11 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
+
+# Playwright output (generated)
+/test-results/
+/playwright-report/
 
 # vercel
 .vercel

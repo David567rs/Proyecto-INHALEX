@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { WebPushService } from './web-push.service';
 import {
   CustomerNotification,
   CustomerNotificationDocument,
@@ -42,6 +43,7 @@ export class NotificationsService {
   constructor(
     @InjectModel(CustomerNotification.name)
     private readonly notificationModel: Model<CustomerNotificationDocument>,
+    private readonly webPush: WebPushService,
   ) {}
 
   async createForUser(
@@ -62,6 +64,10 @@ export class NotificationsService {
       metadata: input.metadata ?? {},
     });
 
+    if (input.userId) {
+      // The persisted inbox is authoritative; delivery is best effort and contains no personal data.
+      void this.webPush.notifyAccount(input.userId).catch(() => undefined);
+    }
     return this.mapNotification(notification);
   }
 

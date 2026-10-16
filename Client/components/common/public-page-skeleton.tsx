@@ -1,6 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
+import { useHasPublicAppShell } from "@/components/layout/public-app-shell"
 import { cn } from "@/lib/utils"
 
 interface PublicPageSkeletonProps {
@@ -18,10 +20,17 @@ export function PublicPageSkeleton({
 }: PublicPageSkeletonProps) {
   const isLinea = variant === "linea"
   const isProduct = variant === "product"
+  const hasPublicShell = useHasPublicAppShell()
+  const needsStandaloneShell = standalone && !hasPublicShell
 
   return (
-    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
-      {standalone ? (
+    <div
+      className={cn(
+        "flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]",
+        needsStandaloneShell && "min-h-dvh",
+      )}
+    >
+      {needsStandaloneShell && (
         <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/95">
           <div className="container mx-auto flex h-20 items-center px-4">
             <Link href="/" className="text-xl font-bold tracking-wide text-primary">
@@ -29,8 +38,6 @@ export function PublicPageSkeleton({
             </Link>
           </div>
         </header>
-      ) : (
-        <Header />
       )}
 
       <main className="flex-1 pt-24 lg:pt-28">
@@ -147,7 +154,7 @@ export function PublicPageSkeleton({
         </section>
       </main>
 
-      <Footer />
+      {needsStandaloneShell && <Footer />}
     </div>
   )
 }

@@ -1,7 +1,5 @@
 import Link from "next/link"
 import { ArrowRight, HelpCircle, Mail, ShieldCheck } from "lucide-react"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { CONTACT_EMAIL, CONTACT_EMAIL_HREF } from "@/lib/company/contact-info"
@@ -12,8 +10,7 @@ export default async function FaqPage() {
   const faqItems = companyContent.faqs ?? []
 
   return (
-    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
-      <Header />
+    <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
 
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border pt-28 pb-16 lg:pt-36 lg:pb-20">
@@ -154,7 +151,6 @@ export default async function FaqPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

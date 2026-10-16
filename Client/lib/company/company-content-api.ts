@@ -1,8 +1,8 @@
-import { apiRequest } from "@/lib/api/client"
+import { publicApiRequest } from "@/lib/api/client"
 import type { CompanyContent } from "./company-content.types"
 
 export function fetchCompanyContent(): Promise<CompanyContent> {
-  return apiRequest<CompanyContent>("/company-content", {
+  return publicApiRequest<CompanyContent>("/company-content", {
     method: "GET",
   })
 }

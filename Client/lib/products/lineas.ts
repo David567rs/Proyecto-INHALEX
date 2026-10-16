@@ -31,7 +31,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
       "Esta l\u00ednea re\u00fane aromas suaves, florales y herb\u00e1ceos para acompa\u00f1ar rutinas de descanso, lectura y relajaci\u00f3n profunda.",
     ritual:
       "Ideal para el cierre del d\u00eda, despu\u00e9s de una jornada intensa o como parte de tu rutina nocturna.",
-    image: `${LINEAS_IMAGE_BASE}/insomnio.png`,
+    image: `${LINEAS_IMAGE_BASE}/insomnio.webp`,
     highlights: ["Calma nocturna", "Notas florales", "Acompa\u00f1a el descanso"],
     heroGradient: "from-[#edf5ef] via-[#f9fbf9] to-[#eef4f2]",
     heroGlow: "bg-emerald-200/60",
@@ -58,7 +58,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
       "Integra perfiles florales, especiados y bals\u00e1micos para una experiencia arom\u00e1tica personal suave, estable y reconfortante.",
     ritual:
       "Acompa\u00f1a pausas conscientes, momentos de sobrecarga mental y espacios donde necesitas volver a tu eje.",
-    image: `${LINEAS_IMAGE_BASE}/ansiedad-estres.png`,
+    image: `${LINEAS_IMAGE_BASE}/ansiedad-estres.webp`,
     highlights: ["Pausa emocional", "Toques bals\u00e1micos", "Sensaci\u00f3n reconfortante"],
     heroGradient: "from-[#faf0f3] via-[#fffaf8] to-[#eef4ef]",
     heroGlow: "bg-rose-200/60",
@@ -85,7 +85,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
       "Su selecci\u00f3n combina perfiles frescos y especiados para brindar una sensaci\u00f3n respiratoria agradable y reconfortante.",
     ritual:
       "Pensada para d\u00edas fr\u00edos y momentos en los que buscas calidez, frescura y una pausa de bienestar personal.",
-    image: `${LINEAS_IMAGE_BASE}/resfriado.png`,
+    image: `${LINEAS_IMAGE_BASE}/resfriado.webp`,
     highlights: ["Frescura al respirar", "Aromas especiados", "Sensaci\u00f3n reconfortante"],
     heroGradient: "from-[#f7efe4] via-[#fffaf4] to-[#eef4ee]",
     heroGlow: "bg-amber-200/65",
@@ -112,7 +112,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
       "Re\u00fane aromas mentolados y herbales con una sensaci\u00f3n limpia, directa y muy refrescante para el d\u00eda a d\u00eda.",
     ritual:
       "Perfecta para comenzar la ma\u00f1ana, acompa\u00f1ar una respiraci\u00f3n pausada o regalarte un momento de frescura.",
-    image: `${LINEAS_IMAGE_BASE}/verde.png`,
+    image: `${LINEAS_IMAGE_BASE}/verde.webp`,
     highlights: ["Sensaci\u00f3n fresca", "Tonos mentolados", "Energ\u00eda bot\u00e1nica"],
     heroGradient: "from-[#edf6f0] via-[#fbfdfb] to-[#edf7f4]",
     heroGlow: "bg-cyan-200/55",
@@ -139,7 +139,7 @@ export const LINEA_CONFIGS: LineaConfig[] = [
       "Esta l\u00ednea combina perfiles en\u00e9rgicos, tostados y resinosos para acompa\u00f1ar momentos de enfoque, acci\u00f3n y presencia.",
     ritual:
       "Ideal para arrancar proyectos, retomar energ\u00eda a media jornada o activar la mente antes de una tarea importante.",
-    image: `${LINEAS_IMAGE_BASE}/estimulante.png`,
+    image: `${LINEAS_IMAGE_BASE}/estimulante.webp`,
     highlights: ["Enfoque activo", "Notas intensas", "Sensaci\u00f3n energizante"],
     heroGradient: "from-[#f2f2e7] via-[#fbfbf5] to-[#eef4eb]",
     heroGlow: "bg-lime-200/60",

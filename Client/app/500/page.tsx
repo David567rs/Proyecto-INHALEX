@@ -1,12 +1,9 @@
 import Link from "next/link"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 
 export default function Error500Page() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
         <section className="relative overflow-hidden pt-28 pb-16 lg:pt-36 lg:pb-24 bg-secondary/30 border-b border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-6 duration-700">
@@ -69,7 +66,6 @@ export default function Error500Page() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

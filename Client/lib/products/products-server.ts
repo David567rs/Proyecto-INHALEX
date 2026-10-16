@@ -3,7 +3,7 @@ import "server-only"
 import type { Product } from "@/lib/types/product"
 import { mapApiProduct, type ProductApiItem } from "./products-api"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
 
 interface ProductsListResponse {
   items: ProductApiItem[]
@@ -16,6 +16,7 @@ interface ProductsListResponse {
 export async function fetchCatalogProductsServer(): Promise<Product[]> {
   const response = await fetch(`${API_BASE_URL}/products?limit=100&page=1`, {
     cache: "no-store",
+    credentials: "omit",
   })
 
   if (!response.ok) {
@@ -29,6 +30,7 @@ export async function fetchCatalogProductsServer(): Promise<Product[]> {
 export async function fetchProductBySlugServer(slugOrId: string): Promise<Product | null> {
   const response = await fetch(`${API_BASE_URL}/products/${encodeURIComponent(slugOrId)}`, {
     cache: "no-store",
+    credentials: "omit",
   })
 
   if (response.status === 404) {

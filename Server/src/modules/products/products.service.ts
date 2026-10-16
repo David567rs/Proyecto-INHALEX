@@ -15,6 +15,7 @@ import { CreateProductCategoryDto } from './dto/create-product-category.dto';
 import { ImportProductsCsvRowDto } from './dto/import-products-csv.dto';
 import { ListInventoryMovementsQueryDto } from './dto/list-inventory-movements-query.dto';
 import { ListProductsQueryDto } from './dto/list-products-query.dto';
+import { PublicProductDto } from './dto/public-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateProductCategoryDto } from './dto/update-product-category.dto';
 import { InventoryMovementType } from './enums/inventory-movement-type.enum';
@@ -30,9 +31,10 @@ import {
 import { ProductStatus } from './enums/product-status.enum';
 import { DEFAULT_PRODUCTS } from './data/default-products';
 import { PRODUCT_CATEGORY_LABELS } from './constants/category-labels.constant';
+import { toPublicProduct } from './mappers/public-product.mapper';
 
-export interface PaginatedProductsResponse {
-  items: ProductDocument[];
+export interface PaginatedProductsResponse<TProduct = ProductDocument> {
+  items: TProduct[];
   total: number;
   page: number;
   limit: number;
@@ -156,8 +158,7 @@ export class ProductsService {
       aromas: this.normalizeStringArray(createProductDto.aromas),
       promoActive: createProductDto.promoActive ?? false,
       promoLabel: createProductDto.promoLabel?.trim() || undefined,
-      promoDescription:
-        createProductDto.promoDescription?.trim() || undefined,
+      promoDescription: createProductDto.promoDescription?.trim() || undefined,
       promoEndsAt: createProductDto.promoEndsAt
         ? new Date(createProductDto.promoEndsAt)
         : undefined,
@@ -187,8 +188,10 @@ export class ProductsService {
 
   async listPublic(
     query: ListProductsQueryDto,
-  ): Promise<PaginatedProductsResponse> {
-    return this.list(query, true);
+  ): Promise<PaginatedProductsResponse<PublicProductDto>> {
+    const result = await this.list(query, true);
+
+    return { ...result, items: result.items.map(toPublicProduct) };
   }
 
   async listAdmin(
@@ -750,14 +753,14 @@ export class ProductsService {
     }));
   }
 
-  async findOnePublic(idOrSlug: string): Promise<ProductDocument> {
+  async findOnePublic(idOrSlug: string): Promise<PublicProductDto> {
     const product = await this.findOneByIdOrSlug(idOrSlug, true);
 
     if (!product) {
       throw new NotFoundException('Product not found');
     }
 
-    return product;
+    return toPublicProduct(product);
   }
 
   async findOneAdmin(idOrSlug: string): Promise<ProductDocument> {
@@ -1466,10 +1469,7 @@ export class ProductsService {
       return;
     }
 
-    if (
-      !Number.isFinite(config.promoPrice) ||
-      (config.promoPrice ?? 0) <= 0
-    ) {
+    if (!Number.isFinite(config.promoPrice) || (config.promoPrice ?? 0) <= 0) {
       throw new BadRequestException(
         'Define un precio promocional mayor a cero.',
       );

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   Query,
@@ -19,6 +20,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get('products/:productId')
+  @Header('Cache-Control', 'public, max-age=0, must-revalidate')
   listProductReviews(
     @Param('productId') productId: string,
     @Query() query: ListProductReviewsQueryDto,

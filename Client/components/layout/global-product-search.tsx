@@ -16,6 +16,7 @@ import {
   HeartPulse,
   Leaf,
   Loader2,
+  Mic,
   MoonStar,
   Search,
   SearchX,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react"
 import { useCatalog } from "@/components/products/catalog-provider"
 import { Input } from "@/components/ui/input"
+import { VoiceProductSearch } from "@/components/search/voice-product-search"
 import { resolveProductCollectionImage } from "@/lib/products/product-images"
 import {
   normalizeProductSearchText,
@@ -102,10 +104,12 @@ export function GlobalProductSearch({
   } = useCatalog()
   const [query, setQuery] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
   const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listboxId = `product-search-${useId().replace(/:/g, "")}`
+  const inputId = `${listboxId}-input`
   const isMobile = variant === "mobile"
 
   const results = useMemo(
@@ -173,6 +177,7 @@ export function GlobalProductSearch({
 
   const setSearchOpen = (nextValue: boolean) => {
     setIsOpen(nextValue)
+    if (!nextValue) setIsVoiceOpen(false)
     onOpenChange?.(nextValue)
   }
 
@@ -215,6 +220,7 @@ export function GlobalProductSearch({
   useEffect(() => {
     setQuery("")
     setIsOpen(false)
+    setIsVoiceOpen(false)
     onOpenChange?.(false)
   }, [pathname, onOpenChange])
 
@@ -324,15 +330,22 @@ export function GlobalProductSearch({
       : ""
 
   return (
-    <div ref={rootRef} className="group/search relative w-full">
+    <div
+      ref={rootRef}
+      className="group/search relative w-full"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") setSearchOpen(false)
+      }}
+    >
       <div className="pointer-events-none absolute -inset-1 rounded-[1.15rem] bg-[linear-gradient(105deg,rgba(16,112,58,0.28),rgba(137,195,76,0.2),rgba(103,195,166,0.22))] opacity-0 blur-md transition-opacity duration-500 group-focus-within/search:opacity-100" />
-      <label className="group relative block">
-        <span className="sr-only">Buscar aromas INHALEX</span>
+      <div className="group relative block">
+        <label htmlFor={inputId} className="sr-only">Buscar aromas INHALEX</label>
         <span className="pointer-events-none absolute left-1.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[0.7rem] bg-[linear-gradient(145deg,#0f703a,#2f9a56)] text-white shadow-[0_8px_18px_-10px_rgba(15,112,58,0.9)] transition-all duration-300 group-focus-within:scale-105 group-focus-within:shadow-[0_10px_22px_-10px_rgba(15,112,58,0.95)]">
           <Search className="h-3.5 w-3.5" />
         </span>
         <Input
           ref={inputRef}
+          id={inputId}
           type="search"
           role="combobox"
           autoComplete="off"
@@ -349,6 +362,7 @@ export function GlobalProductSearch({
           placeholder="Buscar un aroma..."
           value={query}
           onChange={(event) => {
+            setIsVoiceOpen(false)
             setQuery(event.target.value)
             setSearchOpen(true)
           }}
@@ -359,7 +373,7 @@ export function GlobalProductSearch({
           onKeyDown={handleKeyDown}
           className={cn(
             "h-11 w-full rounded-[1rem] border-emerald-100/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(244,250,246,0.88))] pl-12 transition-all duration-300 placeholder:text-muted-foreground/85 focus:border-primary/55 focus:bg-white focus:shadow-[0_14px_32px_-22px_rgba(16,112,58,0.5)] motion-reduce:transition-none [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none",
-            query ? "pr-11" : isMobile ? "pr-10" : "pr-[4.8rem]",
+            query ? "pr-20" : isMobile ? "pr-12" : "pr-[7rem]",
             isMobile && "bg-white/82",
           )}
         />
@@ -367,8 +381,9 @@ export function GlobalProductSearch({
           <button
             type="button"
             aria-label="Limpiar búsqueda"
-            className="absolute right-2.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="absolute right-11 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             onClick={() => {
+              setIsVoiceOpen(false)
               setQuery("")
               setSearchOpen(true)
             }}
@@ -376,14 +391,25 @@ export function GlobalProductSearch({
             <X className="h-3.5 w-3.5" />
           </button>
         ) : !isMobile ? (
-          <span className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-emerald-100/90 bg-white/80 px-2 py-1 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground shadow-sm xl:inline-flex">
+          <span className="pointer-events-none absolute right-12 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-lg border border-emerald-100/90 bg-white/80 px-2 py-1 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground shadow-sm xl:inline-flex">
             Ctrl
             <span className="text-primary">K</span>
           </span>
-        ) : (
-          <Sparkles className="pointer-events-none absolute right-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary/60 motion-safe:animate-pulse" />
-        )}
-      </label>
+        ) : null}
+        <button
+          type="button"
+          aria-label="Abrir búsqueda por voz"
+          aria-expanded={isOpen && isVoiceOpen}
+          className="absolute right-1 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          onClick={() => {
+            setSearchOpen(true)
+            setIsVoiceOpen((open) => !open)
+            void ensureLoaded()
+          }}
+        >
+          <Mic className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
 
       <span className="sr-only" aria-live="polite">
         {announcement}
@@ -429,6 +455,19 @@ export function GlobalProductSearch({
               </span>
             </div>
           </div>
+
+          {isVoiceOpen ? (
+            <VoiceProductSearch
+              onClose={() => {
+                setIsVoiceOpen(false)
+                inputRef.current?.focus()
+              }}
+              onQuery={(voiceQuery) => {
+                setQuery(voiceQuery)
+                inputRef.current?.focus()
+              }}
+            />
+          ) : null}
 
           <div
             id={listboxId}

@@ -956,7 +956,7 @@ export interface AdminCollectionBackup {
 export type AdminBackupItem = AdminDatabaseBackup | AdminCollectionBackup
 export type AdminBackupImportMode = "replace" | "append"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
 
 export function listAdminBackupCollections(
   token: string,

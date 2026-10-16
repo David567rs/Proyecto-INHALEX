@@ -16,7 +16,7 @@ export function PromoVideo() {
             muted
             playsInline
             preload="metadata"
-            poster="/images/modo-de-uso.png"
+            poster="/images/modo-de-uso.webp"
             aria-label="Video del modo de aplicacion de INHALEX"
           >
             <source src="/videos/Aplicar.mp4" type="video/mp4" />
