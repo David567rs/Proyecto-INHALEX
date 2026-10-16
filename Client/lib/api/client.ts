@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3200/api").replace(/\/+$/, "")
 const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/api\/?$/
 const SHOULD_WAIT_FOR_LOCAL_API = LOCAL_API_PATTERN.test(API_BASE_URL)
 

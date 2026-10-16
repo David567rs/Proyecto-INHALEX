@@ -58,6 +58,53 @@ test("private requests retain credentials, bearer and no-store with Headers inpu
   }), { ok: true })
 })
 
+test("API requests normalize environment spaces, CRLF and trailing slashes before fetch", async () => {
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL
+  const variants = [
+    " https://api.inhalex.test/api ",
+    "https://api.inhalex.test/api\r\n",
+    "https://api.inhalex.test/api/",
+    " \r\nhttps://api.inhalex.test/api///\r\n ",
+  ]
+  try {
+    for (const [index, configuredUrl] of variants.entries()) {
+      process.env.NEXT_PUBLIC_API_URL = configuredUrl
+      const isolatedClient = await import(`../lib/api/client.ts?normalized-api=${index}`)
+      const requestedUrls = []
+      fetch = async (url) => {
+        requestedUrls.push(url)
+        return Response.json({ items: [] })
+      }
+      await isolatedClient.publicApiRequest("/products?limit=100&page=1")
+      assert.deepEqual(requestedUrls, ["https://api.inhalex.test/api/products?limit=100&page=1"])
+    }
+  } finally {
+    if (originalApiUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL
+    else process.env.NEXT_PUBLIC_API_URL = originalApiUrl
+  }
+})
+
+test("an absent or whitespace-only API environment retains the localhost3200 fallback", async () => {
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL
+  const originalWindow = globalThis.window
+  delete globalThis.window
+  try {
+    for (const [index, configuredUrl] of [undefined, " \r\n "].entries()) {
+      if (configuredUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL
+      else process.env.NEXT_PUBLIC_API_URL = configuredUrl
+      const isolatedClient = await import(`../lib/api/client.ts?fallback-api=${index}`)
+      const requestedUrls = []
+      fetch = async (url) => { requestedUrls.push(url); return Response.json({ ok: true }) }
+      await isolatedClient.apiRequest("/health")
+      assert.deepEqual(requestedUrls, ["http://localhost:3200/api/health"])
+    }
+  } finally {
+    globalThis.window = originalWindow
+    if (originalApiUrl === undefined) delete process.env.NEXT_PUBLIC_API_URL
+    else process.env.NEXT_PUBLIC_API_URL = originalApiUrl
+  }
+})
+
 test("public requests omit cookies and strip authorization even for untyped callers", async () => {
   fetch = async (_url, init) => {
     assert.equal(init.credentials, "omit")

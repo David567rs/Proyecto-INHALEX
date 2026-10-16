@@ -3,7 +3,7 @@ import "server-only"
 import { DEFAULT_COMPANY_CONTENT } from "./default-company-content"
 import type { CompanyContent } from "./company-content.types"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3200/api").replace(/\/+$/, "")
 
 export async function fetchCompanyContentServer(): Promise<CompanyContent> {
   try {
