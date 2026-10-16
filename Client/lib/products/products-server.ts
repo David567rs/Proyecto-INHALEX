@@ -3,7 +3,7 @@ import "server-only"
 import type { Product } from "@/lib/types/product"
 import { mapApiProduct, type ProductApiItem } from "./products-api"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3200/api").replace(/\/+$/, "")
 
 interface ProductsListResponse {
   items: ProductApiItem[]
