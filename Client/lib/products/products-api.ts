@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api/client"
+import { publicApiRequest } from "@/lib/api/client"
 import type { ProductCategoryOption } from "./categories"
 import type { Product } from "@/lib/types/product"
 
@@ -23,8 +23,6 @@ export interface ProductApiItem {
   origin: string
   inStock: boolean
   stockAvailable?: number
-  stockReserved?: number
-  stockMin?: number
   allowBackorder?: boolean
   rating?: number
   reviews?: number
@@ -67,8 +65,6 @@ export function mapApiProduct(product: ProductApiItem): Product {
     origin: product.origin,
     inStock: product.inStock,
     stockAvailable: product.stockAvailable,
-    stockReserved: product.stockReserved,
-    stockMin: product.stockMin,
     allowBackorder: product.allowBackorder,
     rating: product.rating,
     reviews: product.reviews,
@@ -77,15 +73,15 @@ export function mapApiProduct(product: ProductApiItem): Product {
 }
 
 export async function fetchCatalogProducts(): Promise<Product[]> {
-  const response = await apiRequest<ProductsListResponse>("/products?limit=100&page=1")
+  const response = await publicApiRequest<ProductsListResponse>("/products?limit=100&page=1")
   return response.items.map(mapApiProduct)
 }
 
 export function fetchCatalogCategories(): Promise<ProductCategoryOption[]> {
-  return apiRequest<ProductCategoryApiItem[]>("/products/categories")
+  return publicApiRequest<ProductCategoryApiItem[]>("/products/categories")
 }
 
 export async function fetchProductBySlug(slugOrId: string): Promise<Product> {
-  const response = await apiRequest<ProductApiItem>(`/products/${encodeURIComponent(slugOrId)}`)
+  const response = await publicApiRequest<ProductApiItem>(`/products/${encodeURIComponent(slugOrId)}`)
   return mapApiProduct(response)
 }

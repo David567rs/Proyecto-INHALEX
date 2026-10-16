@@ -1,13 +1,33 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3200/api"
 const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/api\/?$/
 const SHOULD_WAIT_FOR_LOCAL_API = LOCAL_API_PATTERN.test(API_BASE_URL)
 
 let localApiReady = !SHOULD_WAIT_FOR_LOCAL_API
 let localApiReadyPromise: Promise<void> | null = null
 
-type ApiRequestOptions = Omit<RequestInit, "body"> & {
+export type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown
   token?: string
+}
+
+export type PublicApiRequestOptions = Omit<
+  ApiRequestOptions,
+  "body" | "token" | "credentials" | "method"
+> & {
+  method?: "GET" | "HEAD"
+}
+
+/** HTTP failures keep their status; transport failures have no HTTP status. */
+export class ApiError extends Error {
+  readonly status: number | null
+  readonly isNetworkError: boolean
+
+  constructor(message: string, status: number | null = null) {
+    super(message)
+    this.name = "ApiError"
+    this.status = status
+    this.isNetworkError = status === null
+  }
 }
 
 interface ApiErrorResponse {
@@ -39,7 +59,7 @@ function getErrorMessage(payload: unknown, fallback: string): string {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    window.setTimeout(resolve, ms)
+    globalThis.setTimeout(resolve, ms)
   })
 }
 
@@ -58,7 +78,7 @@ function resetLocalApiReadiness(): void {
 
 async function pingLocalApi(): Promise<boolean> {
   const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), 900)
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), 900)
 
   try {
     const response = await fetch(API_BASE_URL, {
@@ -71,12 +91,12 @@ async function pingLocalApi(): Promise<boolean> {
   } catch {
     return false
   } finally {
-    window.clearTimeout(timeoutId)
+    globalThis.clearTimeout(timeoutId)
   }
 }
 
 async function ensureLocalApiReady(): Promise<void> {
-  if (!SHOULD_WAIT_FOR_LOCAL_API || localApiReady) {
+  if (typeof window === "undefined" || !SHOULD_WAIT_FOR_LOCAL_API || localApiReady || (typeof navigator !== "undefined" && !navigator.onLine)) {
     return
   }
 
@@ -91,7 +111,7 @@ async function ensureLocalApiReady(): Promise<void> {
         await delay(200 + attempt * 200)
       }
 
-      throw new Error(
+      throw new ApiError(
         "El backend local aun se esta iniciando. Espera un momento e intenta de nuevo.",
       )
     })().catch((error) => {
@@ -110,7 +130,9 @@ async function fetchWithLocalRecovery(
   try {
     return await fetch(input, init)
   } catch (error) {
-    if (!SHOULD_WAIT_FOR_LOCAL_API || !isNetworkError(error)) {
+    // A failed mutation may already have reached the server. Never replay it.
+    const canRetry = ["GET", "HEAD"].includes((init.method ?? "GET").toUpperCase())
+    if (!canRetry || init.credentials === "omit" || !SHOULD_WAIT_FOR_LOCAL_API || !isNetworkError(error)) {
       throw error
     }
 
@@ -127,44 +149,83 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const { body, token, headers, credentials, ...rest } = options
   const requestUrl = `${API_BASE_URL}${path}`
+  const requestHeaders = new Headers(headers)
+  if (body !== undefined && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json")
+  }
+  if (token && !requestHeaders.has("Authorization")) {
+    requestHeaders.set("Authorization", `Bearer ${token}`)
+  }
   const requestInit: RequestInit = {
     ...rest,
-    headers: {
-      ...(body ? { "Content-Type": "application/json" } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(headers ?? {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: requestHeaders,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
     cache: "no-store",
     credentials: credentials ?? "include",
   }
 
-  await ensureLocalApiReady()
-
   let response: Response
 
   try {
+    // Anonymous reads must reach the worker even when the local API is offline.
+    if (requestInit.credentials !== "omit") await ensureLocalApiReady()
     response = await fetchWithLocalRecovery(requestUrl, requestInit)
   } catch (error) {
-    if (SHOULD_WAIT_FOR_LOCAL_API && isNetworkError(error)) {
-      throw new Error("No se pudo conectar con el backend local. Verifica que este encendido.")
+    if (isNetworkError(error)) {
+      throw new ApiError(
+        SHOULD_WAIT_FOR_LOCAL_API
+          ? "No se pudo conectar con el backend local. Verifica que este encendido."
+          : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo.",
+      )
     }
 
     throw error
   }
 
-  if (response.status === 204) {
+  if (response.status === 204 || requestInit.method?.toUpperCase() === "HEAD") {
     return undefined as T
   }
 
   const contentType = response.headers.get("content-type") ?? ""
-  const payload = contentType.includes("application/json")
-    ? await response.json()
-    : await response.text()
+  let payload: unknown
+  try {
+    payload = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text()
+  } catch (error) {
+    if (!response.ok) {
+      throw new ApiError("La solicitud falló", response.status)
+    }
+    throw error
+  }
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(payload, "La solicitud fallo"))
+    throw new ApiError(getErrorMessage(payload, "La solicitud falló"), response.status)
   }
 
   return payload as T
+}
+
+/** Anonymous read requests suitable for explicitly allowed public PWA caches. */
+export function publicApiRequest<T>(
+  path: string,
+  options: PublicApiRequestOptions = {},
+): Promise<T> {
+  const method = (options.method ?? "GET").toUpperCase()
+  if (method !== "GET" && method !== "HEAD") {
+    throw new Error("Las solicitudes públicas solo permiten lectura.")
+  }
+
+  const headers = new Headers(options.headers)
+  headers.delete("Authorization")
+  headers.delete("Cookie")
+
+  return apiRequest<T>(path, {
+    ...options,
+    method,
+    body: undefined,
+    token: undefined,
+    headers,
+    credentials: "omit",
+  })
 }

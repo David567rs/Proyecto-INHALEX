@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#165c35"><meta name="robots" content="noindex">
+  <title>Tu catálogo guardado · INHALEX</title>
+  <link rel="icon" href="/pwa/icon-192.png"><link rel="stylesheet" href="/pwa/offline.css">
+  <script src="/pwa/offline.js" defer></script>
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="INHALEX, inicio"><img src="/pwa/icon-192.png" alt="" width="44" height="44"><span>INHALEX<small>EL RESPIRO QUE ALIVIA</small></span></a><a class="return" href="/">Volver a la web <span aria-hidden="true">↗</span></a></header>
+  <main>
+    <section class="intro"><span class="eyebrow">CONTIGO, INCLUSO SIN CONEXIÓN</span><h1>Un momento para<br><em>encontrar tu aroma.</em></h1><p id="connection-status" role="status">Estás consultando la información guardada en este dispositivo.</p><p class="muted" id="private-notice" hidden>Tu cuenta, bolsa y pedidos necesitan conexión. Aquí puedes explorar la información pública que guardaste.</p></section>
+    <nav class="tabs" aria-label="Información guardada">
+      <button data-view="catalog" aria-pressed="true">Aromas</button><button data-view="about" aria-pressed="false">Nosotros</button><button data-view="faq" aria-pressed="false">Preguntas frecuentes</button><button data-view="privacyPolicy" aria-pressed="false">Privacidad</button><button data-view="termsAndConditions" aria-pressed="false">Términos</button><button data-view="contact" aria-pressed="false">Contacto</button>
+    </nav>
+    <section id="catalog-view" aria-label="Catálogo guardado">
+      <div class="search-row"><label for="search">Busca tu aroma<input id="search" type="search" placeholder="Lavanda, menta, cítricos…" autocomplete="off"></label><label for="category">Línea<select id="category"><option value="">Todas las líneas</option></select></label></div>
+      <p id="catalog-date" class="muted" role="status"></p><p class="notice">Los precios y la disponibilidad pueden cambiar. Reconecta para confirmarlos antes de realizar un pedido.</p>
+      <div id="products" class="grid"></div><div id="empty" class="empty" hidden><h2>Aún no hay aromas guardados</h2><p>Cuando tengas conexión, abre “Instalar INHALEX” y selecciona “Guardar catálogo y ayuda”. También se guardan las consultas públicas compatibles que realizas al navegar.</p><a href="/instalar">Preparar mi catálogo</a></div>
+    </section>
+    <section id="content-view" class="content" hidden><p id="content-date" class="muted"></p><h2 id="content-title"></h2><div id="content-body"></div></section>
+    <dialog id="product-dialog"><button id="close-dialog" class="close" aria-label="Cerrar detalle">×</button><div id="product-detail"></div></dialog>
+    <noscript><p>Activa JavaScript para consultar tu catálogo guardado. Puedes volver al sitio cuando tengas conexión.</p></noscript>
+  </main>
+  <footer><strong>INHALEX</strong><p>Tu catálogo público, a tu ritmo.</p><a href="/instalar">Administrar información guardada</a><span>Las cuentas y los pedidos requieren conexión.</span></footer>
+</body>
+</html>

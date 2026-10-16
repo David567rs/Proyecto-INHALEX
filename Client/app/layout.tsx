@@ -8,6 +8,8 @@ import { CartProvider } from "@/components/cart/cart-provider";
 import { FavoritesProvider } from "@/components/favorites/favorites-provider";
 import { CatalogProvider } from "@/components/products/catalog-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { PublicAppShell } from "@/components/layout/public-app-shell";
+import { PwaProvider } from "@/components/pwa/pwa-provider";
 import "./globals.css";
 
 const inter = Inter({
@@ -23,6 +25,10 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
+  applicationName: "INHALEX",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "INHALEX" },
+  icons: { icon: "/pwa/icon-192.png", apple: "/pwa/apple-touch-icon.png" },
   title: "INHALEX | El Respiro Que Alivia",
   description:
     "Explora el catálogo de inhaladores aromáticos INHALEX, organizado por líneas y perfiles para acompañar pausas y rutinas cotidianas.",
@@ -47,7 +53,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#16a34a",
+  themeColor: "#165c35",
 };
 
 export default function RootLayout({
@@ -67,7 +73,9 @@ export default function RootLayout({
             <FavoritesProvider>
               <CartProvider>
                 <CatalogProvider>
-                  {children}
+                  <PwaProvider>
+                    <PublicAppShell>{children}</PublicAppShell>
+                  </PwaProvider>
                   <Toaster />
                   <Analytics />
                 </CatalogProvider>

@@ -1,7 +1,5 @@
 import Link from "next/link"
 import { ArrowRight, Clock3, Mail, MapPin, MessageCircleMore, Phone } from "lucide-react"
-import { Footer } from "@/components/layout/footer"
-import { Header } from "@/components/layout/header"
 import { Button } from "@/components/ui/button"
 import {
   CONTACT_ADDRESS,
@@ -30,8 +28,7 @@ const supportTopics = [
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
-      <Header />
+    <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(247,250,247,0.98),rgba(255,255,255,1))]">
 
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border pt-28 pb-16 lg:pt-36 lg:pb-20">
@@ -248,7 +245,6 @@ export default function ContactPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

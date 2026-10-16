@@ -13,6 +13,7 @@ export const SOCIAL_LINKS = [
 ] as const
 
 export const HELP_LINKS = [
+  { name: "Instalar INHALEX", href: "/instalar" },
   { name: "Politica de privacidad", href: "/politicas" },
   { name: "Terminos y Condiciones", href: "/terminos" },
   { name: "Preguntas Frecuentes", href: "/faq" },

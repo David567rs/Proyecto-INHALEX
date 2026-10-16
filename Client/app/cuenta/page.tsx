@@ -1,7 +1,5 @@
 "use client"
 
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { ProtectedPage } from "@/components/auth/protected-page"
 import { useAuth } from "@/components/auth/auth-provider"
 import { AccountFavorites } from "@/components/favorites/account-favorites"
@@ -11,14 +9,14 @@ import { AccountReports } from "@/components/account/account-reports"
 import { AccountReviews } from "@/components/account/account-reviews"
 import { AccountAlexaAccess } from "@/components/account/account-alexa-access"
 import { AccountOrderReceipts } from "@/components/account/account-order-receipts"
+import { PushPreferences } from "@/components/notifications/push-preferences"
 
 export default function CuentaPage() {
   const { user } = useAuth()
   const roleLabel = user?.role === "admin" ? "Administrador" : "Usuario"
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="flex flex-1 flex-col">
       <main className="flex-1 pt-24 lg:pt-28">
         <ProtectedPage>
           <section className="container mx-auto px-4 py-10">
@@ -45,6 +43,7 @@ export default function CuentaPage() {
               </div>
 
               <AccountNotices />
+              <PushPreferences />
               <AccountOrderReceipts />
               <AccountReviews />
               <AccountReports />
@@ -54,7 +53,6 @@ export default function CuentaPage() {
           </section>
         </ProtectedPage>
       </main>
-      <Footer />
     </div>
   )
 }

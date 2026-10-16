@@ -17,8 +17,6 @@ import {
   Sparkles,
   X,
 } from "lucide-react"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { CatalogProductCard } from "@/components/products/catalog-product-card"
 import { useCatalog } from "@/components/products/catalog-provider"
 import { useCart } from "@/components/cart/cart-provider"
@@ -246,8 +244,7 @@ export function ProductsCatalogPage({
   )
 
   return (
-    <div className="min-h-screen bg-[#fbfcfa]">
-      <Header />
+    <div className="flex-1 bg-[#fbfcfa]">
 
       <main className="overflow-hidden pt-24 lg:pt-28">
         <section className="relative border-b border-emerald-100/70 px-4 pb-14 pt-10 lg:pb-20 lg:pt-16">
@@ -662,7 +659,6 @@ export function ProductsCatalogPage({
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

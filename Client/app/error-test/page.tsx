@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 
 export default function ErrorTestPage() {
@@ -13,8 +11,7 @@ export default function ErrorTestPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="flex flex-1 flex-col">
 
       <main className="flex-1">
         <section className="pt-28 pb-16 lg:pt-36 lg:pb-24 bg-secondary/30 border-b border-border">
@@ -34,7 +31,6 @@ export default function ErrorTestPage() {
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

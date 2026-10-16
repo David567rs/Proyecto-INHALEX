@@ -1,8 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { Hero } from "@/components/sections/hero"
 import { ProductsSection } from "@/components/sections/products-section"
 import { BenefitsSection } from "@/components/sections/benefits-section"
@@ -27,8 +25,7 @@ export default function HomePage() {
   const availableCount = products.filter((product) => product.inStock).length
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <div className="flex flex-1 flex-col">
       
       <main className="flex-1">
         <Hero />
@@ -49,7 +46,6 @@ export default function HomePage() {
         />
       </main>
 
-      <Footer />
     </div>
   )
 }

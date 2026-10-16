@@ -3,8 +3,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { Check } from "lucide-react"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { ProductDetailPurchase } from "@/components/products/product-detail-purchase"
 import { ProductRatingSummary } from "@/components/products/product-rating-summary"
@@ -98,9 +96,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const imagePosition = resolveProductImagePosition(product)
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-1 flex-col">
       <ProductDetailScrollReset routeKey={slug} />
-      <Header />
 
       <main className="flex-1 pt-24 lg:pt-28">
         <section className="container mx-auto px-4 py-8 lg:py-12">
@@ -258,7 +255,6 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         </section>
       </main>
 
-      <Footer />
     </div>
   )
 }

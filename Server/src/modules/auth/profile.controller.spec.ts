@@ -164,6 +164,54 @@ describe('Authenticated profile HTTP routes', () => {
     expect(users.markActiveUserActivity).toHaveBeenCalledWith(accountId);
   });
 
+  it('authenticates the browser cookie without exposing private profile fields', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/auth/me?userId=000000000000000000000099')
+      .set(
+        'Cookie',
+        `inhalex_access_token=${encodeURIComponent(jwt.sign(payload))}`,
+      )
+      .expect('Cache-Control', 'private, no-store')
+      .expect(200, profile);
+
+    expect(users.markActiveUserActivity).toHaveBeenCalledWith(accountId);
+    for (const field of [
+      'passwordHash',
+      'alexaLinkCodeHash',
+      'alexaLinkCodeExpiresAt',
+      'alexaUserIdHash',
+      'shippingAddresses',
+      'favoriteProductIds',
+      'cartItems',
+      'lastLoginAt',
+      'lastSeenAt',
+    ]) {
+      expect(response.body).not.toHaveProperty(field);
+    }
+  });
+
+  it('expires the browser session cookie on logout without returning the token', async () => {
+    const token = jwt.sign(payload);
+    const response = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .set('Cookie', `inhalex_access_token=${encodeURIComponent(token)}`)
+      .expect(204);
+
+    const cookies = response.headers['set-cookie'] as string[] | undefined;
+    expect(cookies).toHaveLength(1);
+    const cookie = cookies?.[0] ?? '';
+    expect(cookie).toMatch(/^inhalex_access_token=;/);
+    expect(cookie).toMatch(/;\s*Path=\/(?:;|$)/i);
+    expect(cookie).toMatch(/;\s*HttpOnly(?:;|$)/i);
+    expect(cookie).not.toMatch(/;\s*Max-Age=[1-9]\d*/i);
+    expect(cookie).not.toContain(token);
+    const expires = /;\s*Expires=([^;]+)/i.exec(cookie)?.[1];
+    expect(expires).toBeDefined();
+    expect(Date.parse(expires!)).toBeLessThan(Date.now());
+    expect(response.text).toBe('');
+    expect(users.markActiveUserActivity).not.toHaveBeenCalled();
+  });
+
   it('updates only the signed account with normalized editable fields', async () => {
     await request(app.getHttpServer())
       .patch('/auth/me?userId=000000000000000000000099')

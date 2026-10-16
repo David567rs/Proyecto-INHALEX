@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api/client"
+import { apiRequest, publicApiRequest } from "@/lib/api/client"
 
 export type ProductReviewStatus = "published" | "hidden"
 
@@ -93,7 +93,7 @@ export async function listProductReviews(
     page: String(page),
     limit: String(limit),
   })
-  const response = await apiRequest<ProductReviewsPage | ProductReview[]>(
+  const response = await publicApiRequest<ProductReviewsPage | ProductReview[]>(
     `/reviews/products/${productId}?${query.toString()}`,
     {
       method: "GET",

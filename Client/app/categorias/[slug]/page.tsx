@@ -3,8 +3,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowRight, ChevronLeft, Leaf, Sparkles, Star, Wind } from "lucide-react"
-import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
 import { ProductDetailScrollReset } from "@/components/navigation/product-detail-scroll-reset"
 import { Button } from "@/components/ui/button"
 import { getLineaConfig, getLineaHref, LINEA_CONFIGS } from "@/lib/products/lineas"
@@ -104,9 +102,8 @@ export default async function LineaPage({ params }: LineaPageProps) {
   const otherLineas = LINEA_CONFIGS.filter((item) => item.id !== linea.id)
 
   return (
-    <div className="min-h-screen flex flex-col bg-[linear-gradient(180deg,rgba(248,250,248,0.98),rgba(255,255,255,1)_24%,rgba(249,251,249,0.96))]">
+    <div className="flex flex-1 flex-col bg-[linear-gradient(180deg,rgba(248,250,248,0.98),rgba(255,255,255,1)_24%,rgba(249,251,249,0.96))]">
       <ProductDetailScrollReset routeKey={slug} />
-      <Header />
 
       <main className="flex-1 pt-24 lg:pt-28">
         <section className="relative overflow-hidden pb-14 pt-6 lg:pb-24">
@@ -639,7 +636,6 @@ export default async function LineaPage({ params }: LineaPageProps) {
         )}
       </main>
 
-      <Footer />
     </div>
   )
 }
