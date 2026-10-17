@@ -118,6 +118,9 @@ test("one home visit saves the original public pages, CSS and fonts without usin
   await page.goto("/")
   await page.reload()
   await expect(page.getByRole("heading", { level: 1 })).toContainText("El Respiro")
+  // Existing installations may retain the previous manifest's launch URL.
+  await page.goto("/?source=pwa")
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("El Respiro")
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Alivia")
   await expect(page.locator("#catalogo article")).toHaveCount(2)
   expect(await homeAppearance(page)).toEqual(original)
@@ -172,6 +175,8 @@ test("manifest, icon sizes, one shared shell and the download controls are valid
   const manifest = await response.json()
   expect(manifest.id).toBe("/")
   expect(manifest.scope).toBe("/")
+  expect(manifest.start_url).toBe("/")
+  expect(manifest.shortcuts.find(shortcut => shortcut.name === "Catálogo guardado")?.url).toBe("/productos")
   expect(manifest.display).toBe("standalone")
   expect(manifest.icons.some(icon => icon.sizes === "512x512" && icon.purpose === "maskable")).toBe(true)
   const sw = await request.get("/sw.js")

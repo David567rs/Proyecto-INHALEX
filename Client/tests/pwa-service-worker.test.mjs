@@ -342,3 +342,32 @@ test("product searches reuse only the base saved document without persisting sea
   assert.equal(keysBefore.some(key => new URL(key).search), false)
   assert.equal(originalHtml.includes("private-search"), false)
 })
+
+test("previously installed PWA launch URLs reuse the original home without saving query keys", async () => {
+  const sw = harness()
+  let requests = 0
+  sw.setNetwork(async req => { requests++; return publicFixtureResponse(req) })
+  await sw.call("preparePublicContent", true)
+  const pages = await sw.caches.open("inhalex-pwa-pages-test")
+  const keysBefore = (await pages.keys()).map(key => key.url)
+  const originalHtml = await (await pages.match(`${origin}/`)).text()
+  const requestsBefore = requests
+  const response = await sw.call("savedPage", new URL("/?source=pwa", origin))
+
+  assert.notEqual(response, null)
+  assert.equal(await response.text(), originalHtml)
+  assert.equal(sw.call("eligibleDocument", documentRequest("/?source=pwa"), documentResponse()), false, "legacy launch query is a read-only alias, never a cacheable document")
+  for (const url of [
+    `${origin}/?source=other`,
+    `${origin}/?source=pwa&token=secret`,
+    `${origin}/?source=pwa&source=pwa`,
+    `${origin}/?token=secret`,
+    `${origin}/contacto?source=pwa`,
+    `${origin}/productos?source=pwa`,
+    "https://external.test/?source=pwa",
+  ]) assert.equal(await sw.call("savedPage", new URL(url)), null, url)
+
+  assert.equal(requests, requestsBefore)
+  assert.deepEqual((await pages.keys()).map(key => key.url), keysBefore)
+  assert.equal(keysBefore.some(key => new URL(key).search), false)
+})

@@ -143,6 +143,10 @@ async function preparePublicContent(automatic = false) {
 }
 
 async function savedPage(url) {
+  // Existing installations can retain the previous manifest's launch URL.
+  if (url.origin === self.location.origin && url.pathname === "/" && url.search === "?source=pwa") {
+    url = new URL("/", self.location.origin)
+  }
   // The product query is applied in the browser, never written into a saved document or key.
   if (url.origin === self.location.origin && url.pathname === "/productos"
     && [...url.searchParams.keys()].every(key => key === "buscar")) url = new URL("/productos", self.location.origin)
