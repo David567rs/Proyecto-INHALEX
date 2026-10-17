@@ -81,12 +81,12 @@ export function Footer() {
                 href={CONTACT_EMAIL_HREF}
                 className="group flex items-start gap-3 rounded-[1.2rem] border border-emerald-100/80 bg-white/84 px-4 py-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_16px_32px_-24px_rgba(15,84,43,0.18)]"
               >
-                <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+                <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-2 text-primary">
                   <Mail className="h-4 w-4" />
                 </span>
-                <span>
+                <span className="min-w-0">
                   <span className="block text-sm font-semibold text-foreground">Correo</span>
-                  <span className="mt-1 block text-sm text-muted-foreground group-hover:text-foreground/80">
+                  <span className="mt-1 block text-sm text-muted-foreground [overflow-wrap:anywhere] group-hover:text-foreground/80">
                     {CONTACT_EMAIL}
                   </span>
                 </span>

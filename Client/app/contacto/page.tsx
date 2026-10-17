@@ -56,7 +56,7 @@ export default function ContactPage() {
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-foreground/72">
                     Correo principal
                   </p>
-                  <p className="mt-3 text-lg font-semibold text-foreground">{CONTACT_EMAIL}</p>
+                  <p className="mt-3 text-lg font-semibold text-foreground [overflow-wrap:anywhere]">{CONTACT_EMAIL}</p>
                 </div>
                 <div className="page-fade-up page-fade-up-delay-2 public-soft-surface rounded-[1.8rem] p-5">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-foreground/72">
@@ -97,18 +97,18 @@ export default function ContactPage() {
                   href={CONTACT_EMAIL_HREF}
                   className="group flex items-start gap-4 rounded-[1.4rem] border border-emerald-100/80 bg-white/88 px-5 py-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_20px_36px_-28px_rgba(15,84,43,0.18)]"
                 >
-                  <span className="rounded-full bg-primary/10 p-3 text-primary">
+                  <span className="shrink-0 rounded-full bg-primary/10 p-3 text-primary">
                     <Mail className="h-5 w-5" />
                   </span>
-                  <span>
+                  <span className="min-w-0">
                     <span className="block text-base font-semibold text-foreground">Escribenos por correo</span>
                     <span className="mt-1 block text-sm leading-7 text-muted-foreground">
                       Ideal para consultas mas detalladas, informacion institucional o seguimiento
                       de dudas concretas.
                     </span>
-                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-primary">
-                      {CONTACT_EMAIL}
-                      <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    <span className="mt-3 inline-flex max-w-full items-center gap-2 text-sm font-medium text-primary">
+                      <span className="min-w-0 [overflow-wrap:anywhere]">{CONTACT_EMAIL}</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5" />
                     </span>
                   </span>
                 </a>
