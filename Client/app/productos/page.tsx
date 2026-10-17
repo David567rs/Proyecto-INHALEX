@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
+import { Suspense } from "react"
 import { ProductsCatalogPage } from "@/components/products/products-catalog-page"
+import { ProductsCatalogRoute } from "@/components/products/products-catalog-route"
 
 export const metadata: Metadata = {
   title: "Catálogo de inhaladores | INHALEX",
@@ -7,19 +9,10 @@ export const metadata: Metadata = {
     "Explora el catálogo completo de inhaladores aromáticos INHALEX por línea, aroma, disponibilidad y precio.",
 }
 
-interface ProductosPageProps {
-  searchParams: Promise<{
-    buscar?: string | string[]
-  }>
-}
-
-export default async function ProductosPage({
-  searchParams,
-}: ProductosPageProps) {
-  const params = await searchParams
-  const searchValue = Array.isArray(params.buscar)
-    ? params.buscar[0]
-    : params.buscar
-
-  return <ProductsCatalogPage initialSearchQuery={searchValue ?? ""} />
+export default function ProductosPage() {
+  return (
+    <Suspense fallback={<ProductsCatalogPage />}>
+      <ProductsCatalogRoute />
+    </Suspense>
+  )
 }

@@ -1,9 +1,13 @@
-/* global BUILD_VERSION, API_BASE_URL, PRECACHE_URLS */
+/* global BUILD_VERSION, API_BASE_URL, PRECACHE_URLS, PUBLIC_PAGE_PATHS */
 const PREFIX = "inhalex-pwa-"
 const SHELL = `${PREFIX}shell-${BUILD_VERSION}`
 const DATA = `${PREFIX}public-v1`
 const IMAGES = `${PREFIX}images-v1`
 const PREFERENCES = `${PREFIX}preferences-v1`
+const PAGES = `${PREFIX}pages-${BUILD_VERSION}`
+const ASSETS = `${PREFIX}assets-${BUILD_VERSION}`
+const PAGES_READY = new URL("/__pwa/pages-ready", self.location.origin).href
+const AUTO_SAVE_KEY = new URL("/__pwa/auto-save", self.location.origin).href
 const SNAPSHOT_KEY = new URL("/__pwa/download", self.location.origin).href
 const PUSH_KEY = new URL("/__pwa/push-enabled", self.location.origin).href
 const API = new URL(API_BASE_URL)
@@ -13,6 +17,162 @@ let consentWrite = Promise.resolve()
 let pushDisabledInMemory = false
 let publicGeneration = 0
 let publicWrites = Promise.resolve()
+let preparation = null
+
+function publicPage(url) {
+  return url.origin === self.location.origin && !url.search && PUBLIC_PAGE_PATHS.includes(url.pathname)
+}
+
+function publicAsset(value, base = self.location.origin) {
+  try {
+    const url = new URL(value.replace(/&amp;/g, "&"), base)
+    if (url.origin !== self.location.origin || url.username || url.password || url.hash) return null
+    if (url.pathname.startsWith("/_next/static/") && /\.(js|css|woff2?)$/.test(url.pathname)
+      && [...url.searchParams.keys()].every(key => key === "dpl")) return url.href
+    if (!url.search && /^\/(images|products|aromas|L%C3%ADneas|pwa)\/.+\.(png|webp|jpe?g|svg|ico)$/.test(url.pathname)) return url.href
+  } catch { /* An external or malformed URL is never an offline dependency. */ }
+  return null
+}
+
+function documentAssets(html) {
+  const result = new Set()
+  for (const match of html.matchAll(/\b(?:src|href|poster)=["']([^"']+)["']/g)) {
+    const url = publicAsset(match[1])
+    if (url) result.add(url)
+  }
+  return [...result]
+}
+
+function eligibleDocument(request, response) {
+  return request.method === "GET" && request.credentials === "omit" && publicPage(new URL(request.url))
+    && !request.headers.has("authorization") && !request.headers.has("cookie") && !request.headers.has("rsc")
+    && response.status === 200 && !response.redirected && response.type !== "opaque"
+    && /text\/html/i.test(response.headers.get("content-type") || "")
+    && response.headers.get("x-inhalex-public-page") === "1"
+    && response.headers.get("x-inhalex-pwa-version") === BUILD_VERSION
+    && !response.headers.has("set-cookie")
+    && !/private|no-store/i.test(response.headers.get("cache-control") || "")
+    && !/(?:authorization|cookie|\*)/i.test(response.headers.get("vary") || "")
+}
+
+async function savePublicPages(generation) {
+  const documents = []
+  const resources = new Map()
+  let bytes = 0
+  // Fetch only anonymous documents, never the user's current HTML or the RSC router payload.
+  for (const route of PUBLIC_PAGE_PATHS) {
+    if (generation !== publicGeneration) throw new Error("Cancelled")
+    const request = new Request(new URL(route, self.location.origin), {
+      credentials: "omit", cache: "no-store", headers: { Accept: "text/html" }, signal: AbortSignal.timeout(60000),
+    })
+    const response = await fetch(request)
+    if (!eligibleDocument(request, response)) throw new Error("Public page is not safe to save")
+    const html = await response.text()
+    if (new TextEncoder().encode(html).byteLength > MAX_DATA_BYTES) throw new Error("Page is too large")
+    documents.push({ request, html, headers: response.headers })
+    for (const url of documentAssets(html)) resources.set(url, null)
+  }
+  // Follow CSS font dependencies so an unseen page keeps its original typography offline.
+  // Download in small batches. Videos and third-party assets are deliberately excluded.
+  while ([...resources.values()].some(value => value === null)) {
+    if (resources.size > 120 || generation !== publicGeneration) throw new Error("Preparation limit reached")
+    const pending = [...resources.entries()].filter(([, value]) => value === null).slice(0, 6)
+    await Promise.all(pending.map(async ([url]) => {
+      const request = new Request(url, { credentials: "omit", cache: "reload", signal: AbortSignal.timeout(20000) })
+      const response = await fetch(request)
+      if (response.status !== 200 || response.redirected || response.type === "opaque"
+        || response.headers.has("set-cookie") || /private|no-store/i.test(response.headers.get("cache-control") || "")) throw new Error("Missing public asset")
+      const body = await response.arrayBuffer()
+      bytes += body.byteLength
+      if (body.byteLength > MAX_DATA_BYTES || bytes > 20 * 1024 * 1024) throw new Error("Asset storage limit reached")
+      const headers = new Headers(response.headers)
+      headers.delete("content-encoding"); headers.delete("content-length")
+      resources.set(url, new Response(body, { headers }))
+      if (new URL(url).pathname.endsWith(".css")) {
+        for (const match of new TextDecoder().decode(body).matchAll(/url\(\s*["']?([^\s"')]+)["']?\s*\)/g)) {
+          const dependency = publicAsset(match[1], url)
+          if (dependency && !resources.has(dependency)) resources.set(dependency, null)
+        }
+      }
+    }))
+  }
+  const savedAt = new Date().toISOString()
+  // Publish pages only after all of their scripts, CSS and fonts have been obtained.
+  const written = await writePublic(generation, async () => {
+    const assets = await caches.open(ASSETS)
+    for (const [url, response] of resources) await assets.put(new Request(url, { credentials: "omit" }), response)
+    const pages = await caches.open(PAGES)
+    for (const { request, html, headers: originalHeaders } of documents) {
+      const headers = new Headers(originalHeaders)
+      headers.delete("content-encoding"); headers.delete("content-length")
+      headers.set("x-inhalex-saved-at", savedAt)
+      await pages.put(request, new Response(html, { headers }))
+    }
+    return true
+  })
+  if (!written) throw new Error("Preparation cancelled")
+  return { savedAt, pages: documents.length, assets: resources.size, bytes }
+}
+
+async function preparePublicContent(automatic = false) {
+  if (preparation) return preparation
+  const generation = publicGeneration
+  const operation = (async () => {
+    if (automatic) {
+      const preference = await (await caches.open(PREFERENCES)).match(AUTO_SAVE_KEY)
+      if ((await preference?.json())?.disabled) return null
+      const ready = await (await caches.open(PAGES)).match(PAGES_READY)
+      const last = await ready?.json()
+      if (last && Date.now() - Date.parse(last.savedAt) < 5 * 60 * 1000) return null
+    } else {
+      await writePublic(generation, () => caches.open(PREFERENCES).then(cache => cache.delete(AUTO_SAVE_KEY)))
+    }
+    if (generation !== publicGeneration) throw new Error("Preparation cancelled")
+    const results = await Promise.allSettled([savePublicContent(generation), savePublicPages(generation)])
+    for (const result of results) if (result.status === "rejected") throw result.reason
+    const value = results[0].value
+    const written = await writePublic(generation, async () => {
+      await (await caches.open(PAGES)).put(PAGES_READY, Response.json(results[1].value))
+      return true
+    })
+    if (!written) throw new Error("Preparation cancelled")
+    return value
+  })()
+  preparation = operation
+  try { return await operation } finally { if (preparation === operation) preparation = null }
+}
+
+async function savedPage(url) {
+  // The product query is applied in the browser, never written into a saved document or key.
+  if (url.origin === self.location.origin && url.pathname === "/productos"
+    && [...url.searchParams.keys()].every(key => key === "buscar")) url = new URL("/productos", self.location.origin)
+  if (!publicPage(url)) return null
+  const cache = await caches.open(PAGES)
+  const response = await cache.match(url.href)
+  const date = Date.parse(response?.headers.get("x-inhalex-saved-at") || "")
+  if (!response || !Number.isFinite(date) || Date.now() - date > 7 * DAY) return null
+  return response
+}
+
+async function navigationResponse(event, url) {
+  const cached = await savedPage(url).catch(() => null)
+  const network = fetch(event.request)
+  let timer
+  event.waitUntil(network.catch(() => undefined))
+  try {
+    const response = cached ? await Promise.race([network, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Slow network")), 4500)
+    })]) : await network
+    if (response.status >= 500 && cached) throw new Error("Public page unavailable")
+    return response
+  } catch {
+    if (cached) {
+      await sendState(event.clientId, "PWA_PUBLIC_STALE", cached.headers.get("x-inhalex-saved-at"))
+      return cached
+    }
+    return (await (await caches.open(SHELL)).match("/offline.html")) || Response.error()
+  } finally { clearTimeout(timer) }
+}
 
 function writePublic(generation, operation) {
   const write = publicWrites.catch(() => undefined).then(() => generation === publicGeneration ? operation() : false)
@@ -48,12 +208,18 @@ async function trimCache(cache, max) {
   await Promise.all(keys.slice(0, Math.max(0, keys.length - max)).map(key => cache.delete(key)))
 }
 
+async function publicStorageEnabled() {
+  const preference = await (await caches.open(PREFERENCES)).match(AUTO_SAVE_KEY)
+  return (await preference?.json())?.disabled !== true
+}
+
 async function storePublic(request, response, generation = publicGeneration) {
   if (!eligiblePublicRequest(request) || response.status !== 200 || response.type === "opaque" || response.redirected) return false
   const control = response.headers.get("cache-control") || ""
   if (!/\bpublic\b/i.test(control) || /\b(no-store|private)\b/i.test(control)
     || !/application\/json/i.test(response.headers.get("content-type") || "")
     || response.headers.has("set-cookie") || /(?:authorization|cookie|\*)/i.test(response.headers.get("vary") || "")) return false
+  if (!(await publicStorageEnabled())) return false
   const body = await response.clone().arrayBuffer()
   if (body.byteLength > MAX_DATA_BYTES) return false
   const headers = new Headers(response.headers)
@@ -90,6 +256,7 @@ async function storeImage(request, response, generation) {
   if (response.status !== 200 || response.redirected || !/^image\//.test(response.headers.get("content-type") || "")
     || /no-store|private/i.test(response.headers.get("cache-control") || "")
     || Number(response.headers.get("content-length")) > 512 * 1024) return false
+  if (!(await publicStorageEnabled())) return false
   const body = await response.clone().arrayBuffer()
   if (body.byteLength > 512 * 1024) return false
   const headers = new Headers(response.headers)
@@ -159,10 +326,9 @@ async function snapshot() {
   return result
 }
 
-async function savePublicContent() {
-  const generation = publicGeneration
+async function savePublicContent(generation = publicGeneration) {
   async function save(path) {
-    const request = new Request(`${API_BASE_URL}${path}`, { credentials: "omit", cache: "no-store" })
+    const request = new Request(`${API_BASE_URL}${path}`, { credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(60000) })
     const response = await fetch(request)
     if (!(await storePublic(request, response, generation))) throw new Error("No se pudo guardar la información pública. Revisa la conexión y la versión del servidor.")
     return response.json()
@@ -206,7 +372,7 @@ self.addEventListener("install", event => {
 })
 self.addEventListener("activate", event => {
   event.waitUntil((async () => {
-    await Promise.all((await caches.keys()).filter(name => name.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PREFERENCES].includes(name)).map(name => caches.delete(name)))
+    await Promise.all((await caches.keys()).filter(name => name.startsWith(PREFIX) && ![SHELL, DATA, IMAGES, PREFERENCES, PAGES, ASSETS].includes(name)).map(name => caches.delete(name)))
     await self.clients.claim()
   })())
 })
@@ -218,6 +384,13 @@ self.addEventListener("fetch", event => {
     event.respondWith(snapshot().then(value => Response.json(value, { headers: { "Cache-Control": "no-store" } })))
     return
   }
+  if (url.origin === self.location.origin && url.pathname === "/__pwa/page-status") {
+    const route = url.searchParams.get("path") || "/"
+    event.respondWith(savedPage(new URL(route, self.location.origin)).then(response => Response.json({
+      savedAt: response?.headers.get("x-inhalex-saved-at") || null,
+    }, { headers: { "Cache-Control": "no-store" } })))
+    return
+  }
   if (eligiblePublicRequest(request)) { event.respondWith(publicNetworkFirst(event)); return }
   if (url.origin !== self.location.origin) return
   if (PRECACHE_URLS.includes(url.pathname) && !url.search) {
@@ -225,13 +398,16 @@ self.addEventListener("fetch", event => {
     return
   }
   if (request.mode === "navigate") {
-    // No HTML, RSC, admin, account, session or order response is persisted.
-    event.respondWith(fetch(request).catch(async () => (await (await caches.open(SHELL)).match("/offline.html")) || Response.error()))
+    // Navigation responses are never persisted. Only separately fetched anonymous public copies are used.
+    event.respondWith(navigationResponse(event, url))
     return
   }
-  if (request.destination === "image" && !url.search && /^\/(products|aromas|images)\//.test(url.pathname)) {
+  if (publicAsset(url.href)) {
     const generation = publicGeneration
     event.respondWith((async () => {
+      const asset = await (await caches.open(ASSETS)).match(request)
+      if (asset) return asset
+      if (request.destination !== "image") return fetch(request)
       const cache = await caches.open(IMAGES)
       const cached = await cache.match(request)
       const age = cached && Date.parse(cached.headers.get("x-inhalex-saved-at") || "")
@@ -256,13 +432,16 @@ self.addEventListener("message", event => {
     event.waitUntil(consentWrite)
     return
   }
-  if (event.data?.type === "SAVE_PUBLIC_CONTENT") {
-    event.waitUntil(savePublicContent().then(data => event.ports[0]?.postMessage({ ok: true, count: data.products.length, savedAt: data.savedAt }))
+  if (["SAVE_PUBLIC_CONTENT", "PREPARE_PUBLIC_CONTENT"].includes(event.data?.type)) {
+    event.waitUntil(preparePublicContent(event.data.type === "PREPARE_PUBLIC_CONTENT").then(data => event.ports[0]?.postMessage({ ok: true, count: data?.products.length, savedAt: data?.savedAt }))
       .catch(() => event.ports[0]?.postMessage({ ok: false, error: "No pudimos completar la descarga. Revisa la conexión e intenta de nuevo." })))
   }
   if (event.data?.type === "CLEAR_PUBLIC_CONTENT") {
     publicGeneration += 1
-    event.waitUntil(writePublic(publicGeneration, () => Promise.all([caches.delete(DATA), caches.delete(IMAGES)]))
+    event.waitUntil(writePublic(publicGeneration, async () => {
+      await (await caches.open(PREFERENCES)).put(AUTO_SAVE_KEY, Response.json({ disabled: true }))
+      await Promise.all([caches.delete(DATA), caches.delete(IMAGES), caches.delete(PAGES), caches.delete(ASSETS)])
+    })
       .then(() => event.ports[0]?.postMessage({ ok: true })))
   }
 })

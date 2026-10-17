@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Download, Check, WifiOff, Smartphone, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePwa } from "./pwa-provider"
@@ -29,10 +30,10 @@ export function InstallSettings() {
     </section>
     <section className="rounded-[2rem] border border-border bg-card p-7 shadow-sm">
       <WifiOff className="mb-5 h-7 w-7 text-primary" /><h2 className="text-xl font-semibold">Tus aromas, sin conexión</h2>
-      <p className="mt-3 text-sm leading-7 text-muted-foreground">Guarda el catálogo, las preguntas frecuentes, las políticas y los términos para consultarlos después. Verás la fecha de la copia; los pedidos y tu cuenta necesitan conexión.</p>
+      <p className="mt-3 text-sm leading-7 text-muted-foreground">Al entrar al inicio con internet, INHALEX prepara automáticamente las vistas públicas, el catálogo y la ayuda con su diseño original. Este botón permite actualizar la copia. Los pedidos y tu cuenta necesitan conexión.</p>
       <Button className="mt-5 rounded-full" disabled={!ready || offline || busy} onClick={() => void run("SAVE_PUBLIC_CONTENT")}>{busy ? "Un momento…" : "Guardar catálogo y ayuda"}</Button>
       <p className="mt-4 text-xs leading-6 text-muted-foreground">La copia se guarda solo en este navegador. El dispositivo puede liberar este espacio. Se incluyen las imágenes ligeras disponibles; los videos no se descargan.</p>
-      <a className="mt-3 inline-block text-sm font-semibold text-primary underline underline-offset-4" href="/offline.html">Ver mi catálogo guardado</a>
+      <Link className="mt-3 inline-block text-sm font-semibold text-primary underline underline-offset-4" href="/productos">Ver mi catálogo guardado</Link>
       <div className="mt-5 border-t border-border pt-4">{confirmClear ? <div><p className="text-sm">¿Eliminar la información pública guardada en este navegador?</p><div className="mt-3 flex gap-3"><Button variant="outline" size="sm" disabled={busy} onClick={() => void run("CLEAR_PUBLIC_CONTENT")}>Eliminar copia</Button><Button variant="ghost" size="sm" disabled={busy} onClick={() => setConfirmClear(false)}>Cancelar</Button></div></div> : <button className="flex items-center gap-2 text-xs text-muted-foreground" disabled={!ready || busy} onClick={() => setConfirmClear(true)}><Trash2 className="h-3 w-3" />Eliminar información guardada</button>}</div>
     </section>
     <p className="text-sm leading-6 lg:col-span-2" role="status" aria-live="polite">{message || error || (!ready ? "Preparando el modo sin conexión…" : "La base de INHALEX está lista para funcionar sin conexión.")}</p>

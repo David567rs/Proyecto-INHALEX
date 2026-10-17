@@ -2,6 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import { Download, RefreshCw, WifiOff } from "lucide-react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
+import { PUBLIC_PAGE_PATHS } from "@/pwa/public-pages.mjs"
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>
@@ -36,6 +39,7 @@ function subscribeDisplay(callback: () => void) {
 }
 
 export function PwaProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null)
   const [ready, setReady] = useState(false)
   const [prompt, setPrompt] = useState<InstallPrompt | null>(null)
@@ -105,6 +109,42 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!ready || offline || pathname !== "/") return
+    // Prepare after the initial render; the worker deduplicates tabs and throttles refreshes.
+    const timer = window.setTimeout(() => {
+      navigator.serviceWorker.controller?.postMessage({ type: "PREPARE_PUBLIC_CONTENT" })
+    }, 800)
+    return () => window.clearTimeout(timer)
+  }, [ready, offline, pathname])
+
+  useEffect(() => {
+    if (!ready || !offline || !pathname || !PUBLIC_PAGE_PATHS.includes(pathname)) return
+    let disposed = false
+    void fetch(`/__pwa/page-status?path=${encodeURIComponent(pathname)}`, { credentials: "omit", cache: "no-store" })
+      .then(response => response.json()).then(value => {
+        if (!disposed && typeof value.savedAt === "string") setStale(value.savedAt)
+      }).catch(() => undefined)
+    return () => { disposed = true }
+  }, [ready, offline, pathname])
+
+  useEffect(() => {
+    const navigateOffline = (event: MouseEvent) => {
+      if (navigator.onLine || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null
+      if (!(link instanceof HTMLAnchorElement) || link.hasAttribute("download") || (link.target && link.target !== "_self")) return
+      const url = new URL(link.href)
+      if (url.origin !== window.location.origin || url.search || !PUBLIC_PAGE_PATHS.includes(url.pathname)) return
+      if (url.pathname === window.location.pathname && url.hash) return
+      // App Router requests RSC, not a document. Use the original saved document only offline.
+      event.preventDefault()
+      event.stopPropagation()
+      window.location.assign(url.href)
+    }
+    document.addEventListener("click", navigateOffline, true)
+    return () => document.removeEventListener("click", navigateOffline, true)
+  }, [])
+
   const install = useCallback(async () => {
     if (!prompt) return
     try { await prompt.prompt(); await prompt.userChoice } finally { setPrompt(null) }
@@ -114,7 +154,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     const worker = navigator.serviceWorker?.controller || registration?.active
     if (!worker) { reject(new Error("Espera a que termine de prepararse INHALEX y vuelve a intentarlo.")); return }
     const channel = new MessageChannel()
-    const timeout = window.setTimeout(() => { channel.port1.close(); reject(new Error("La descarga está tardando demasiado. Intenta de nuevo cuando tengas una conexión estable.")) }, 60000)
+    const timeout = window.setTimeout(() => { channel.port1.close(); reject(new Error("La descarga está tardando demasiado. Intenta de nuevo cuando tengas una conexión estable.")) }, 120000)
     channel.port1.onmessage = event => {
       clearTimeout(timeout); channel.port1.close()
       if (event.data?.ok) resolve(event.data)
@@ -133,7 +173,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
       </> : <>
         <p className="flex items-center gap-2 font-semibold"><WifiOff className="h-4 w-4" />{offline ? "Estás sin conexión" : "Estás viendo información guardada"}</p>
         <p className="mt-1 text-xs leading-5">Confirma precios y disponibilidad al reconectar.{stale ? ` Copia del ${new Date(stale).toLocaleString("es-MX")}.` : ""}</p>
-        <div className="mt-3 flex flex-wrap gap-3"><a className="font-semibold underline underline-offset-4" href="/offline.html">Abrir catálogo guardado</a>{!offline && <button className="flex items-center gap-1" onClick={() => window.location.reload()}><RefreshCw className="h-3 w-3" />Reconectar</button>}</div>
+        <div className="mt-3 flex flex-wrap gap-3"><Link className="font-semibold underline underline-offset-4" href="/productos">Abrir catálogo guardado</Link>{!offline && <button className="flex items-center gap-1" onClick={() => window.location.reload()}><RefreshCw className="h-3 w-3" />Reconectar</button>}</div>
       </>}
     </aside>}
   </PwaContext.Provider>

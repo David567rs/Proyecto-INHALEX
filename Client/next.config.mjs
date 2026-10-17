@@ -1,3 +1,17 @@
+import { readFileSync } from "node:fs"
+import { PUBLIC_PAGE_PATHS } from "./pwa/public-pages.mjs"
+
+let pwaVersion = null
+try {
+  const build = JSON.parse(readFileSync(new URL("./public/pwa-build.json", import.meta.url), "utf8"))
+  if (typeof build.version !== "string" || !/^[a-f0-9]{16}$/.test(build.version)) {
+    throw new Error("public/pwa-build.json must contain a valid PWA build version")
+  }
+  pwaVersion = build.version
+} catch (error) {
+  if (error.code !== "ENOENT") throw error
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -5,6 +19,13 @@ const nextConfig = {
   },
   async headers() {
     return [
+      ...PUBLIC_PAGE_PATHS.map(source => ({
+        source,
+        headers: [
+          { key: "X-INHALEX-Public-Page", value: "1" },
+          ...(pwaVersion ? [{ key: "X-INHALEX-PWA-Version", value: pwaVersion }] : []),
+        ],
+      })),
       {
         source: "/sw.js",
         headers: [
