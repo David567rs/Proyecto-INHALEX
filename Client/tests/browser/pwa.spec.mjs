@@ -57,7 +57,65 @@ async function homeAppearance(page) {
   })
 }
 
-test("one home visit saves the original public pages, CSS and fonts without using the download button", async ({ page, context, browser }) => {
+async function settleOriginalLayout(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready
+    await Promise.all(document.getAnimations().filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished.catch(() => {})))
+  })
+}
+
+async function contactEmailLayout(page, label) {
+  const email = "danielcruzhernandezinhalex@gmail.com"
+  for (const scope of ["main", "footer"]) {
+    const link = page.locator(`${scope} a[href^="mailto:"]`)
+    await expect(link).toHaveAttribute("href", `mailto:${email}`)
+    await expect(link).toContainText(email)
+  }
+  await settleOriginalLayout(page)
+  const layout = await page.evaluate(address => {
+    const emails = []
+    for (const scope of ["main", "footer"]) {
+      const walker = document.createTreeWalker(document.querySelector(scope), NodeFilter.SHOW_TEXT)
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        if (node.textContent.trim() !== address) continue
+        const element = node.parentElement
+        const card = element.closest('a[href^="mailto:"]') || element.closest(".public-soft-surface")
+        const bounds = card.getBoundingClientRect()
+        const textBounds = element.getBoundingClientRect()
+        const range = document.createRange()
+        range.selectNodeContents(node)
+        const lines = [...range.getClientRects()].filter(rect => rect.width > 0 && rect.height > 0)
+        const inside = (rect, box) => rect.left >= box.left - 1 && rect.right <= box.right + 1 && rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1
+        const css = getComputedStyle(element)
+        emails.push({
+          scope, text: node.textContent.trim(), lineCount: lines.length,
+          textInsideCard: lines.length > 0 && lines.every(rect => inside(rect, bounds)),
+          textInsideOwnBox: lines.length > 0 && lines.every(rect => inside(rect, textBounds)),
+          cardInsideViewport: bounds.left >= -1 && bounds.right <= window.innerWidth + 1,
+          fontFamily: css.fontFamily, fontSize: css.fontSize, fontWeight: css.fontWeight,
+          color: css.color, textOverflow: css.textOverflow,
+          cardBorderRadius: getComputedStyle(card).borderRadius,
+          cardWidth: card.offsetWidth,
+        })
+      }
+    }
+    return { viewport: window.innerWidth, documentWidth: document.documentElement.scrollWidth, emails }
+  }, email)
+  await test.info().attach(`contact-email-layout-${label}`, { body: JSON.stringify(layout, null, 2), contentType: "application/json" })
+  expect(layout.documentWidth, `${label}: the document must not scroll horizontally`).toBeLessThanOrEqual(layout.viewport)
+  expect(layout.emails.filter(item => item.scope === "main")).toHaveLength(2)
+  expect(layout.emails.filter(item => item.scope === "footer")).toHaveLength(1)
+  for (const item of layout.emails) {
+    expect(item.text).toBe(email)
+    expect(item.textInsideCard, `${label}: complete ${item.scope} email stays in its card`).toBe(true)
+    expect(item.textInsideOwnBox, `${label}: ${item.scope} email is not clipped`).toBe(true)
+    expect(item.cardInsideViewport, `${label}: ${item.scope} email card fits the viewport`).toBe(true)
+    expect(item.textOverflow).not.toBe("ellipsis")
+  }
+  return layout
+}
+
+test("one home visit saves the original public pages, CSS and fonts without using the download button", async ({ page, context }) => {
   test.setTimeout(120000)
   const errors = []
   const documentVisits = []
@@ -134,40 +192,36 @@ test("one home visit saves the original public pages, CSS and fonts without usin
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
   await page.locator('footer a[href="/contacto"]').click()
   await expect(page.getByRole("heading", { level: 1, name: "Una entrada clara para hablar con INHALEX." })).toBeVisible()
-  const measureOverflow = target => target.evaluate(() => ({
-    viewport: window.innerWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-    elements: [...document.querySelectorAll("body *")].filter(element => element.getBoundingClientRect().right > window.innerWidth + 1).slice(0, 16).map(element => ({ tag: element.tagName, text: element.textContent?.trim().slice(0, 90), right: element.getBoundingClientRect().right, width: element.getBoundingClientRect().width, classes: element.className })),
-  }))
-  const initialMobileContact = await measureOverflow(page)
-  const settle = target => target.evaluate(async () => {
-    await document.fonts.ready
-    await Promise.all(document.getAnimations().filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished.catch(() => {})))
-  })
-  await settle(page)
-  const settledMobileContact = await measureOverflow(page)
-  const baselineContext = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block", baseURL: "http://localhost:43001" })
-  try {
-    const baselinePage = await baselineContext.newPage()
-    await baselinePage.goto("/contacto")
-    await expect(baselinePage.getByRole("heading", { level: 1, name: "Una entrada clara para hablar con INHALEX." })).toBeVisible()
-    await settle(baselinePage)
-    const onlineMobileContact = await measureOverflow(baselinePage)
-    await test.info().attach("contact-mobile-layout-baseline", {
-      body: JSON.stringify({ initialMobileContact, settledMobileContact, onlineMobileContact }, null, 2),
-      contentType: "application/json",
-    })
-    // The original contact email/cards already overflow on small screens. Keep
-    // that independent layout issue visible without redesigning it in a PWA fix.
-    expect(settledMobileContact).toEqual(onlineMobileContact)
-    if (onlineMobileContact.scrollWidth > onlineMobileContact.viewport) test.info().annotations.push({
-      type: "existing-layout",
-      description: `Original contact page: ${onlineMobileContact.scrollWidth}px content in a ${onlineMobileContact.viewport}px viewport, identical online/offline.`,
-    })
-    await baselinePage.screenshot({ path: "test-results/contact-original-online-mobile.png", fullPage: true, animations: "disabled" })
-  } finally { await baselineContext.close() }
+  await contactEmailLayout(page, "home-offline-390")
   await page.screenshot({ path: "test-results/contact-original-offline-mobile.png", fullPage: true, animations: "disabled" })
   expect(errors).toEqual([])
+})
+
+test("contact and footer email stay complete and inside their cards at every responsive width online and offline", async ({ page, context }) => {
+  test.setTimeout(120000)
+  await page.goto("/")
+  await waitForAutomaticCopy(page)
+  await page.goto("/contacto")
+  await expect(page.getByRole("heading", { level: 1, name: "Una entrada clara para hablar con INHALEX." })).toBeVisible()
+  const widths = [320, 360, 390, 768, 1024, 1440]
+  const online = new Map()
+  for (const width of widths) {
+    await test.step(`Online ${width}px: full email, mailto and no horizontal scroll`, async () => {
+      await page.setViewportSize({ width, height: 1000 })
+      online.set(width, await contactEmailLayout(page, `online-${width}`))
+      if ([320, 390, 1440].includes(width)) await page.screenshot({ path: `test-results/contact-email-online-${width}.png`, fullPage: true, animations: "disabled" })
+    })
+  }
+  await context.setOffline(true)
+  await page.reload()
+  await expect(page.getByRole("heading", { level: 1, name: "Una entrada clara para hablar con INHALEX." })).toBeVisible()
+  for (const width of widths) {
+    await test.step(`Offline ${width}px: same complete email and original card styles`, async () => {
+      await page.setViewportSize({ width, height: 1000 })
+      expect(await contactEmailLayout(page, `offline-${width}`)).toEqual(online.get(width))
+      if ([320, 390, 1440].includes(width)) await page.screenshot({ path: `test-results/contact-email-offline-${width}.png`, fullPage: true, animations: "disabled" })
+    })
+  }
 })
 
 test("manifest, icon sizes, one shared shell and the download controls are valid", async ({ page, request }) => {
