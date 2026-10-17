@@ -1,24 +1,20 @@
 import "server-only"
 
-import { DEFAULT_COMPANY_CONTENT } from "./default-company-content"
 import type { CompanyContent } from "./company-content.types"
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3200/api").replace(/\/+$/, "")
 
 export async function fetchCompanyContentServer(): Promise<CompanyContent> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/company-content`, {
-      cache: "no-store",
-      credentials: "omit",
-    })
+  const response = await fetch(`${API_BASE_URL}/company-content`, {
+    next: { revalidate: 300 },
+    credentials: "omit",
+  })
 
-    if (!response.ok) {
-      return DEFAULT_COMPANY_CONTENT
-    }
-
-    const payload = (await response.json()) as CompanyContent
-    return payload
-  } catch {
-    return DEFAULT_COMPANY_CONTENT
+  if (!response.ok) {
+    // Keep the last successful ISR page instead of publishing placeholder legal
+    // content as a new public/offline copy when the API is unavailable.
+    throw new Error("No se pudo actualizar la información pública de INHALEX")
   }
+
+  return (await response.json()) as CompanyContent
 }
