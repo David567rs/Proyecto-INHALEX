@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "INHALEX",
     description: "Explora nuestros aromas y consulta tu catálogo guardado sin conexión.",
     lang: "es-MX",
-    start_url: "/?source=pwa",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#f7faf7",
@@ -20,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       { name: "Explorar aromas", url: "/productos", icons: [{ src: "/pwa/icon-192.png", sizes: "192x192" }] },
-      { name: "Catálogo guardado", url: "/offline.html" },
+      { name: "Catálogo guardado", url: "/productos" },
       { name: "Contacto", url: "/contacto" },
     ],
   }
