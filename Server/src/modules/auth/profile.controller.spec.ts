@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthSecurityService } from './auth-security.service';
+import { EmailVerificationService } from './email-verification/email-verification.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 const accountId = '000000000000000000000001';
@@ -77,6 +78,7 @@ describe('Authenticated profile HTTP routes', () => {
         JwtStrategy,
         { provide: UsersService, useValue: users },
         { provide: AuthSecurityService, useValue: {} },
+        { provide: EmailVerificationService, useValue: {} },
         {
           provide: ConfigService,
           useValue: { get: () => 'profile-test-only-secret' },

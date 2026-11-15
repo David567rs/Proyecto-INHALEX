@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import type { EmailVerificationService } from './email-verification/email-verification.service';
 import { UserRole } from '../users/enums/user-role.enum';
 import { UserStatus } from '../users/enums/user-status.enum';
 
@@ -59,6 +60,7 @@ describe('AuthService - Alexa link code', () => {
       jwtService,
       authSecurityService,
       configService,
+      {} as EmailVerificationService,
     );
   });
 

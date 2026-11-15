@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { createHash, createHmac, randomInt } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { VerifiedRegisterDto } from './dto/registration-verification.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
 import { UsersService } from '../users/users.service';
@@ -18,6 +19,7 @@ import { UserDocument } from '../users/schemas/user.schema';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { UserStatus } from '../users/enums/user-status.enum';
 import { AuthSecurityService } from './auth-security.service';
+import { EmailVerificationService } from './email-verification/email-verification.service';
 
 const ALEXA_LINK_CODE_LENGTH = 5;
 const ALEXA_LINK_CODE_TTL_MS = 10 * 60 * 1000;
@@ -31,9 +33,30 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly authSecurityService: AuthSecurityService,
     private readonly configService: ConfigService,
+    private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  requestRegistrationCode(email: string, clientIp: string) {
+    return this.emailVerificationService.issue(email, clientIp);
+  }
+
+  async registerVerified(input: VerifiedRegisterDto) {
+    const verifiedAt = await this.emailVerificationService.consume(
+      input.email,
+      input.challengeId,
+      input.code,
+    );
+    return this.createAccount(input, verifiedAt);
+  }
+
+  register(registerDto: RegisterDto) {
+    return this.createAccount(registerDto);
+  }
+
+  private async createAccount(
+    registerDto: RegisterDto,
+    emailVerifiedAt?: Date,
+  ) {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
 
     if (existingUser) {
@@ -47,16 +70,29 @@ export class AuthService {
     const now = new Date();
 
     const passwordHash = await bcrypt.hash(registerDto.password, 12);
-    const user = await this.usersService.create({
-      name: fullName,
-      firstName,
-      lastName,
-      email: registerDto.email,
-      phone,
-      passwordHash,
-      lastLoginAt: now,
-      lastSeenAt: now,
-    });
+    const user = await this.usersService
+      .create({
+        name: fullName,
+        firstName,
+        lastName,
+        email: registerDto.email,
+        phone,
+        passwordHash,
+        ...(emailVerifiedAt ? { emailVerifiedAt } : {}),
+        lastLoginAt: now,
+        lastSeenAt: now,
+      })
+      .catch((error: unknown) => {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 11000
+        ) {
+          throw new ConflictException('El correo electrónico ya está en uso');
+        }
+        throw error;
+      });
 
     const accessToken = await this.generateAccessToken(user);
     return {
