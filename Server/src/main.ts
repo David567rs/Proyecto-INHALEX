@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { createServer } from 'node:net';
 import { NestFactory } from '@nestjs/core';
 import { Logger, ValidationPipe } from '@nestjs/common';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { privateResponseCachePolicy } from './common/http/response-cache-policy';
 
@@ -57,7 +58,10 @@ async function bootstrap() {
     process.exit(1);
   }
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  if (process.env.RENDER === 'true') {
+    app.set('trust proxy', 1);
+  }
 
   app.use(privateResponseCachePolicy);
 
