@@ -16,7 +16,7 @@ export function ProtectedPage({
 }: ProtectedPageProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { isAuthenticated, isLoading, user, sessionStatus, refreshProfile } = useAuth()
+  const { isAuthenticated, isLoading, isConnecting, user, sessionStatus, refreshProfile } = useAuth()
   const [isRetrying, setIsRetrying] = useState(false)
 
   useEffect(() => {
@@ -37,8 +37,8 @@ export function ProtectedPage({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
-        Cargando sesion...
+      <div role="status" aria-live="polite" className="flex items-center justify-center px-4 py-24 text-center text-sm text-muted-foreground">
+        {isConnecting ? "Conectando con INHALEX… La primera conexión puede tardar hasta 90 segundos." : "Cargando sesión…"}
       </div>
     )
   }

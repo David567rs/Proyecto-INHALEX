@@ -1,4 +1,7 @@
+import { createApiAvailability } from "@/lib/api/api-availability"
+
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3200/api").replace(/\/+$/, "")
+export const apiAvailability = createApiAvailability(API_BASE_URL)
 const LOCAL_API_PATTERN = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/api\/?$/
 const SHOULD_WAIT_FOR_LOCAL_API = LOCAL_API_PATTERN.test(API_BASE_URL)
 
@@ -8,6 +11,7 @@ let localApiReadyPromise: Promise<void> | null = null
 export type ApiRequestOptions = Omit<RequestInit, "body"> & {
   body?: unknown
   token?: string
+  timeoutMs?: number
 }
 
 export type PublicApiRequestOptions = Omit<
@@ -143,7 +147,36 @@ async function fetchWithLocalRecovery(
   }
 }
 
-export async function apiRequest<T>(
+export async function waitForApiAvailability(): Promise<void> {
+  try {
+    await apiAvailability.wait()
+  } catch (error) {
+    throw new ApiError(error instanceof Error ? error.message : "No pudimos conectar con el servidor.")
+  }
+}
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  const { timeoutMs, ...requestOptions } = options
+  if (timeoutMs === undefined) return performApiRequest<T>(path, requestOptions)
+  const controller = new AbortController()
+  const timer = globalThis.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await performApiRequest<T>(path, {
+      ...requestOptions,
+      signal: requestOptions.signal ? AbortSignal.any([requestOptions.signal, controller.signal]) : controller.signal,
+    })
+  } catch (error) {
+    if (controller.signal.aborted) {
+      apiAvailability.invalidate()
+      throw new ApiError("No pudimos confirmar la solicitud porque el servidor tardó en responder. Vuelve a intentarlo.")
+    }
+    throw error
+  } finally {
+    globalThis.clearTimeout(timer)
+  }
+}
+
+async function performApiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> {
@@ -171,6 +204,7 @@ export async function apiRequest<T>(
     if (requestInit.credentials !== "omit") await ensureLocalApiReady()
     response = await fetchWithLocalRecovery(requestUrl, requestInit)
   } catch (error) {
+    apiAvailability.invalidate()
     if (isNetworkError(error)) {
       throw new ApiError(
         SHOULD_WAIT_FOR_LOCAL_API
@@ -193,6 +227,7 @@ export async function apiRequest<T>(
       ? await response.json()
       : await response.text()
   } catch (error) {
+    apiAvailability.invalidate()
     if (!response.ok) {
       throw new ApiError("La solicitud falló", response.status)
     }
@@ -200,9 +235,14 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
+    if (response.status >= 500) apiAvailability.invalidate()
     throw new ApiError(getErrorMessage(payload, "La solicitud falló"), response.status)
   }
 
+  if (requestInit.credentials !== "omit") {
+    if (contentType.includes("application/json")) apiAvailability.markReady()
+    else apiAvailability.invalidate()
+  }
   return payload as T
 }
 

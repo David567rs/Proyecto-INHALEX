@@ -14,7 +14,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  const { login, isAuthenticated, isLoading: isAuthLoading, isConnecting, sessionStatus, refreshProfile } = useAuth()
 
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -155,6 +155,23 @@ export default function LoginPage() {
                 </div>
               )}
 
+              {(isConnecting || isAuthLoading) && (
+                <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+                  {isConnecting
+                    ? "Conectando con INHALEX… La primera conexión puede tardar hasta 90 segundos."
+                    : "Comprobando tu sesión…"}
+                </p>
+              )}
+
+              {!isAuthLoading && sessionStatus === "unavailable" && !errorMessage && (
+                <div role="status" className="text-sm text-muted-foreground">
+                  <p>No pudimos comprobar tu sesión. Puedes reintentar o iniciar sesión con tus datos.</p>
+                  <button type="button" onClick={() => void refreshProfile()} className="mt-2 underline text-primary">
+                    Reintentar conexión
+                  </button>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 disabled={isLoading || isAuthLoading}
@@ -164,8 +181,11 @@ export default function LoginPage() {
                   "hover:shadow-xl hover:shadow-primary/30"
                 )}
               >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                {isLoading || isAuthLoading ? (
+                  <>
+                    <span aria-hidden="true" className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    <span className="ml-2">{isConnecting ? "Conectando…" : "Comprobando…"}</span>
+                  </>
                 ) : (
                   <>
                     Iniciar sesion

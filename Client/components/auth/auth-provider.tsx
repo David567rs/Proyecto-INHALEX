@@ -8,9 +8,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { ApiError } from "@/lib/api/client"
+import { ApiError, apiAvailability, waitForApiAvailability } from "@/lib/api/client"
 import { loginRequest, meRequest, registerRequest } from "@/lib/auth/auth-api"
 import {
   clearAccessToken,
@@ -34,6 +35,7 @@ interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean
+  isConnecting: boolean
   sessionStatus: SessionStatus
   login: (payload: LoginInput) => Promise<AuthUser>
   register: (payload: RegisterInput) => Promise<AuthUser>
@@ -46,6 +48,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [sessionStatus, setSessionStatus] = useState<SessionStatus>("checking")
+  const isConnecting = useSyncExternalStore(apiAvailability.subscribe, apiAvailability.isWaiting, () => false)
   const sessionVersion = useRef(0)
   const profileVersion = useRef(0)
   const authenticationVersion = useRef<number | null>(null)
@@ -67,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      await waitForApiAvailability()
+      if (!isCurrent() || getPendingLogout()) return
       const profile = await meRequest(token)
       if (!isCurrent() || getPendingLogout()) return
       setUser(profile)
@@ -125,10 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [loadProfile, refreshProfile])
 
-  const authenticate = useCallback(async (request: () => Promise<AuthResponse>) => {
+  const authenticate = useCallback(async (request: (timeoutMs: number) => Promise<AuthResponse>) => {
     // An expired session can be replaced without an explicit logout click.
     void disablePushForCurrentBrowser(getAccessToken()).catch(() => undefined)
     const version = ++sessionVersion.current
+    const deadline = Date.now() + 90_000
     authenticationVersion.current = version
     profileVersion.current += 1
     setUser(null)
@@ -137,16 +143,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (sessionVersion.current !== version) {
         throw new Error("La solicitud de sesión fue cancelada. Intenta de nuevo.")
       }
+      if (Date.now() >= deadline) {
+        throw new ApiError("El servidor está tardando en responder. Tus datos siguen aquí; vuelve a intentarlo.")
+      }
     }
+    const remainingRequestTime = () => Math.max(1, Math.min(15_000, deadline - Date.now()))
 
     try {
+      // Public readiness must not hold the cross-tab cookie mutation lock.
+      await waitForApiAvailability()
+      ensureCurrent()
       return await serializeAuthMutation(async () => {
         ensureCurrent()
-        if (!(await clearPendingServerSession())) {
+        if (!(await clearPendingServerSession(remainingRequestTime()))) {
           throw new ApiError("Reconecta para terminar de cerrar la sesión anterior e intenta de nuevo.")
         }
         ensureCurrent()
-        const response = await request()
+        const response = await request(remainingRequestTime())
         ensureCurrent()
         if (getPendingLogout()) {
           throw new Error("La sesión se cerró desde otra pestaña. Intenta de nuevo.")
@@ -156,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(response.user)
         setSessionStatus("authenticated")
         return response.user
-      })
+      }, deadline)
     } catch (error) {
       if (sessionVersion.current === version) {
         profileVersion.current += 1
@@ -172,12 +185,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(
-    (payload: LoginInput) => authenticate(() => loginRequest(payload)),
+    (payload: LoginInput) => authenticate((timeoutMs) => loginRequest(payload, timeoutMs)),
     [authenticate],
   )
 
   const register = useCallback(
-    (payload: RegisterInput) => authenticate(() => registerRequest(payload)),
+    (payload: RegisterInput) => authenticate((timeoutMs) => registerRequest(payload, timeoutMs)),
     [authenticate],
   )
 
@@ -200,13 +213,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: sessionStatus === "authenticated" && Boolean(user),
       isLoading,
+      isConnecting,
       sessionStatus,
       login,
       register,
       logout,
       refreshProfile,
     }),
-    [isLoading, login, logout, refreshProfile, register, sessionStatus, user],
+    [isLoading, isConnecting, login, logout, refreshProfile, register, sessionStatus, user],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
