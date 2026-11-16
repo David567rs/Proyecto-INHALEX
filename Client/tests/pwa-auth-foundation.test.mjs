@@ -243,12 +243,33 @@ test("cookie mutations use the shared browser lock when available", async () => 
   navigator.locks = {
     async request(name, operation) {
       names.push(name)
-      return operation()
+      return operation({ name, mode: "exclusive" })
     },
   }
   try {
-    assert.equal(await serializeAuthMutation(async () => "done"), "done")
+    assert.equal(await serializeAuthMutation(async (...args) => { assert.deepEqual(args, []); return "done" }), "done")
     assert.deepEqual(names, ["inhalex-auth-session"])
+  } finally {
+    delete navigator.locks
+  }
+})
+
+test("a session waiting for another tab stops at its deadline without a late mutation", async () => {
+  let releaseLock
+  let mutations = 0
+  navigator.locks = {
+    request(_name, operation) {
+      return new Promise((resolve, reject) => {
+        releaseLock = () => Promise.resolve().then(() => operation({ name: "inhalex-auth-session", mode: "exclusive" })).then(resolve, reject)
+      })
+    },
+  }
+  try {
+    await assert.rejects(serializeAuthMutation(async () => { mutations += 1 }, Date.now() + 15), ApiError)
+    assert.equal(mutations, 0)
+    await releaseLock()
+    await new Promise((resolve) => setImmediate(resolve))
+    assert.equal(mutations, 0)
   } finally {
     delete navigator.locks
   }
