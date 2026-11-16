@@ -1,0 +1,29 @@
+name: Comprobar API de INHALEX
+
+on:
+  schedule:
+    - cron: '3-58/5 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/render-health.yml
+
+permissions: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    concurrency:
+      group: inhalex-render-health
+      cancel-in-progress: false
+    steps:
+      - name: Verificar la API y la conexión de MongoDB
+        shell: bash
+        run: |
+          response="$RUNNER_TEMP/inhalex-health.json"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 85 \
+            --output "$response" --write-out 'HTTP %{http_code} en %{time_total} s\n' \
+            https://inhalex-backend.onrender.com/api/health
+          jq -e 'select(.status == "ok" and .database.status == "connected") | {uptimeSeconds}' "$response"
