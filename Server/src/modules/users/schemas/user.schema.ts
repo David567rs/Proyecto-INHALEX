@@ -95,6 +95,9 @@ export class User {
   })
   email: string;
 
+  @Prop({ type: Date })
+  emailVerifiedAt?: Date;
+
   @Prop({ required: true, trim: true, match: /^\d{10,15}$/ })
   phone: string;
 

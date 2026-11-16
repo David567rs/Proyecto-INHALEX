@@ -16,6 +16,7 @@ interface CreateUserInput {
   email: string;
   phone: string;
   passwordHash: string;
+  emailVerifiedAt?: Date;
   role?: UserRole;
   status?: UserStatus;
   lastLoginAt?: Date;

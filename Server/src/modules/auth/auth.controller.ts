@@ -16,6 +16,10 @@ import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { AUTH_COOKIE_NAME } from './auth.constants';
 import { RegisterDto } from './dto/register.dto';
+import {
+  SendRegistrationCodeDto,
+  VerifiedRegisterDto,
+} from './dto/registration-verification.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ExchangeAlexaLinkCodeDto } from './dto/exchange-alexa-link-code.dto';
@@ -32,6 +36,30 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const authResponse = await this.authService.register(registerDto);
+    this.setAuthCookie(response, authResponse.accessToken);
+    return authResponse;
+  }
+
+  @Post('register/verification')
+  @HttpCode(202)
+  @Header('Cache-Control', 'no-store')
+  requestRegistrationCode(
+    @Body() input: SendRegistrationCodeDto,
+    @Req() request: Request,
+  ) {
+    return this.authService.requestRegistrationCode(
+      input.email,
+      request.ip ?? request.socket.remoteAddress ?? 'unknown',
+    );
+  }
+
+  @Post('register/verified')
+  @Header('Cache-Control', 'no-store')
+  async registerVerified(
+    @Body() input: VerifiedRegisterDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const authResponse = await this.authService.registerVerified(input);
     this.setAuthCookie(response, authResponse.accessToken);
     return authResponse;
   }
