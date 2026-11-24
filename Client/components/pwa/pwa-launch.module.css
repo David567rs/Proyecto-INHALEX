@@ -1,0 +1,43 @@
+.splash {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    pointer-events: none;
+    padding: 24px;
+    background: #f7faf7;
+    color: #165c35;
+    /* Transparency is the default once the startup animation ends. */
+    opacity: 0;
+    animation: show-splash 1500ms linear;
+  }
+
+  :global(html:has(:focus-visible)) .splash {
+    display: none;
+  }
+
+  .mark {
+    width: 112px;
+    height: 112px;
+    background: url("/pwa/icon-192.png") center / contain no-repeat;
+  }
+
+  .name {
+    font-family: var(--font-manrope), system-ui, sans-serif;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    margin-inline-start: .12em;
+  }
+}
+
+@keyframes show-splash {
+  from, to { opacity: 1; }
+}

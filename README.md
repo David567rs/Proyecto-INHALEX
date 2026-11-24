@@ -2,6 +2,10 @@
 
 Repositorio organizado por aplicaciones para separar con claridad el frontend, el backend y la documentacion operativa.
 
+## Entrega de la PWA
+
+[Actividad 9-2: aplicación, código, pruebas y capturas](docs/actividad-9-2-pwa.md)
+
 ## Estructura
 
 ```text
