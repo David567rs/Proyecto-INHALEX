@@ -5,6 +5,7 @@ import { Download, RefreshCw, WifiOff } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { PUBLIC_PAGE_PATHS } from "@/pwa/public-pages.mjs"
+import styles from "./pwa-launch.module.css"
 
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>
@@ -165,6 +166,12 @@ export function PwaProvider({ children }: { children: ReactNode }) {
 
   return <PwaContext.Provider value={{ ready, installed, canInstall: Boolean(prompt), error: error || environmentError, offline, install, send }}>
     {children}
+    {pathname === "/" && !hydrated && (
+      <div className={styles.splash} data-pwa-launch-splash aria-hidden="true">
+        <span className={styles.mark} />
+        <span className={styles.name}>INHALEX</span>
+      </div>
+    )}
     {(offline || stale !== null || waiting) && <aside className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-xl rounded-2xl border border-emerald-200 bg-white p-4 text-sm text-emerald-950 shadow-xl" aria-label="Estado de INHALEX" aria-live="polite">
       {waiting ? <>
         <p className="flex items-center gap-2 font-semibold"><Download className="h-4 w-4" />Hay una nueva versión de INHALEX</p>
